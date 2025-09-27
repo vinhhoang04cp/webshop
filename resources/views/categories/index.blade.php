@@ -182,7 +182,7 @@ function loadCategories() {
         method: 'GET',
         success: function(response) {
             hideLoading();
-            displayCategories(response.data);
+            displayCategories(response.data.data);
         },
         error: function(xhr) {
             hideLoading();
@@ -209,7 +209,7 @@ function displayCategories(categories) {
                 <td>${category.id}</td>
                 <td><strong>${category.name}</strong></td>
                 <td>${category.description || '<em class="text-muted">No description</em>'}</td>
-                <td>${formatDate(category.created_at)}</td>
+                <td>${category.created_at ? formatDate(category.created_at) : '<em class="text-muted">N/A</em>'}</td>
                 <td>
                     <div class="btn-group btn-group-sm" role="group">
                         <button type="button" class="btn btn-outline-info" onclick="viewCategory(${category.id})" title="View">

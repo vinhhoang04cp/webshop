@@ -18,6 +18,8 @@ class CategoryResource extends JsonResource
             'id' => $this->category_id,
             'name' => $this->name,
             'description' => $this->description,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
             'products_count' => $this->whenLoaded('products', function () {
                 return $this->products->count();
             }),
