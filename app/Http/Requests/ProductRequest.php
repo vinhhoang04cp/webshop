@@ -27,17 +27,24 @@ class ProductRequest extends FormRequest
             'name' => 'required|string|max:255',
             'description' => 'nullable|string|max:2000',
             'price' => 'required|numeric|min:0',
-            'stock' => 'required|integer|min:0',
+            'stock_quantity' => 'nullable|integer|min:0',
             'category_id' => 'required|exists:categories,category_id',
             'image_url' => 'nullable|string|max:255',
         ];
 
-        // Add unique validation rule for updates
+        // For update requests, make fields optional with 'sometimes'
         if ($this->isMethod('put') || $this->isMethod('patch')) {
-            // Try to get product ID from route parameters
             $productId = $this->route('id') ?? $this->route('product');
-            $rules['name'] = 'required|string|max:255|unique:products,name,'.$productId.',product_id';
+            $rules = [
+                'name' => 'sometimes|required|string|max:255|unique:products,name,' . $productId . ',product_id',
+                'description' => 'sometimes|nullable|string|max:2000',
+                'price' => 'sometimes|required|numeric|min:0',
+                'stock_quantity' => 'sometimes|nullable|integer|min:0',
+                'category_id' => 'sometimes|required|exists:categories,category_id',
+                'image_url' => 'sometimes|nullable|string|max:255',
+            ];
         } else {
+            // For create, add unique validation for name
             $rules['name'] = 'required|string|max:255|unique:products,name';
         }
 
@@ -76,9 +83,8 @@ class ProductRequest extends FormRequest
             'price.required' => 'The price is required.',
             'price.numeric' => 'The price must be a number.',
             'price.min' => 'The price must be at least 0.',
-            'stock.required' => 'The stock quantity is required.',
-            'stock.integer' => 'The stock quantity must be an integer.',
-            'stock.min' => 'The stock quantity must be at least 0.',
+            'stock_quantity.integer' => 'The stock quantity must be an integer.',
+            'stock_quantity.min' => 'The stock quantity must be at least 0.',
             'category_id.required' => 'The category is required.',
             'category_id.exists' => 'The selected category is invalid.',
         ];
@@ -90,7 +96,7 @@ class ProductRequest extends FormRequest
             'name' => 'product name',
             'description' => 'product description',
             'price' => 'product price',
-            'stock' => 'product stock',
+            'stock_quantity' => 'product stock quantity',
             'category_id' => 'category',
         ];
     }

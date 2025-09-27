@@ -14,13 +14,13 @@ class CategoryController extends Controller
     /**
      * Display a listing of the categories.
      *
-     * @return \Illuminate\Http\Resources\Json\ResourceCollection
+     * @return \Illuminate\Http\Resources\Json\ResourceCollection // Tra ve danh sach dang resource collection
      */
     public function index()
     {
-        $categories = Category::all();  // Fetch all categories
+        $categories = Category::all();  // Lay tat ca danh muc
 
-        return new CategoryCollection($categories);  // Return as a resource collection
+        return new CategoryCollection($categories);  // Tra ve danh sach dang resource collection
     }
 
     /**
@@ -28,16 +28,16 @@ class CategoryController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function store(CategoryRequest $request)
+    public function store(CategoryRequest $request) 
     {
         $category = Category::create([
-            'name' => $request->name,  // Use validated data
-            'description' => $request->description,  // Use validated data
+            'name' => $request->name,  // Su dung du lieu da duoc validate
+            'description' => $request->description,  // Su dung du lieu da duoc validate
         ]);
 
-        return (new CategoryResource($category))  // Return the created category as a resource
-            ->additional([  // Add additional data to the response
-                'status' => true, // Success status
+        return (new CategoryResource($category))  // Tra ve danh muc da duoc tao dang resource
+            ->additional([  // Them du lieu them vao phan hoi
+                'status' => true, // Trang thai thanh cong
                 'message' => 'Category created successfully',   // Success message
             ])
             ->response()
@@ -53,15 +53,15 @@ class CategoryController extends Controller
     public function show($id)
     {
         $category = Category::find($id);
-        // Find the category by ID
-        // If not found, return a 404 response   
+        // Tim danh muc theo ID
+        // Neu khong tim thay, tra ve loi 404
         if (! $category) {
             return response()->json([
                 'status' => false,
                 'message' => 'Category not found',  
             ], 404);
         }
-        // If found, return the category as a resource with additional data
+        // Neu tim thay, tra ve danh muc dang resource
         return (new CategoryResource($category))
             ->additional([
                 'status' => true,
@@ -79,8 +79,9 @@ class CategoryController extends Controller
      */
     public function update(CategoryRequest $request, $id)
     {
+        // Tim danh muc theo ID
         $category = Category::find($id);
-
+        // Neu khong tim thay, tra ve loi 404
         if (! $category) {
             return response()->json([
                 'status' => false,
@@ -92,7 +93,7 @@ class CategoryController extends Controller
             'name' => $request->name,
             'description' => $request->description,
         ]);
-
+        // Tra ve danh muc da duoc cap nhat dang resource
         return (new CategoryResource($category))
             ->additional([
                 'status' => true,
@@ -109,7 +110,8 @@ class CategoryController extends Controller
     public function destroy($id)
     {
         $category = Category::find($id);
-
+        // Tim danh muc theo ID
+        // Neu khong tim thay, tra ve loi 404
         if (! $category) {
             return response()->json([
                 'status' => false,
@@ -117,7 +119,7 @@ class CategoryController extends Controller
             ], 404);
         }
 
-        // Check if the category has associated products
+        // Kiem tra neu danh muc co san pham lien ket
         if ($category->products->count() > 0) {
             return response()->json([
                 'status' => false,
