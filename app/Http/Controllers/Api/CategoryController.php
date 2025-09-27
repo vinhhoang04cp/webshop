@@ -17,9 +17,9 @@ class CategoryController extends Controller
      */
     public function index()
     {
-        $categories = Category::all();
+        $categories = Category::all();  // Fetch all categories
 
-        return new CategoryCollection($categories);
+        return new CategoryCollection($categories);  // Return as a resource collection
     }
 
     /**
@@ -30,14 +30,14 @@ class CategoryController extends Controller
     public function store(CategoryRequest $request)
     {
         $category = Category::create([
-            'name' => $request->name,
-            'description' => $request->description,
+            'name' => $request->name,  // Use validated data
+            'description' => $request->description,  // Use validated data
         ]);
 
-        return (new CategoryResource($category))
-            ->additional([
-                'status' => true,
-                'message' => 'Category created successfully',
+        return (new CategoryResource($category))  // Return the created category as a resource
+            ->additional([  // Add additional data to the response
+                'status' => true, // Success status
+                'message' => 'Category created successfully',   // Success message
             ])
             ->response()
             ->setStatusCode(201);
@@ -52,19 +52,22 @@ class CategoryController extends Controller
     public function show($id)
     {
         $category = Category::find($id);
-
+        // Find the category by ID
+        // If not found, return a 404 response   
         if (! $category) {
             return response()->json([
                 'status' => false,
-                'message' => 'Category not found',
+                'message' => 'Category not found',  
             ], 404);
         }
-
+        // If found, return the category as a resource with additional data
         return (new CategoryResource($category))
             ->additional([
                 'status' => true,
                 'message' => 'Category retrieved successfully',
-            ]);
+            ])
+            ->response()
+            ->setStatusCode(200);
     }
 
     /**
