@@ -10,8 +10,11 @@ class Inventory extends Model
     use HasFactory;
 
     protected $table = 'inventory';
+
     protected $primaryKey = 'inventory_id';
+
     const UPDATED_AT = 'updated_at';
+
     const CREATED_AT = null;
 
     protected $fillable = [

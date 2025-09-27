@@ -2,10 +2,9 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
-use App\Models\Product;
 use App\Models\Inventory;
+use App\Models\Product;
+use Illuminate\Database\Seeder;
 
 class InventorySeeder extends Seeder
 {

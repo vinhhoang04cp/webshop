@@ -10,6 +10,7 @@ class RevenueReport extends Model
     use HasFactory;
 
     protected $table = 'revenue_reports';
+
     protected $primaryKey = 'report_id';
 
     protected $fillable = [
