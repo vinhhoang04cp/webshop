@@ -43,6 +43,12 @@ class ProductController extends Controller
             $request->only(['name', 'description', 'price', 'category_id', 'stock_quantity', 'image_url'])
         );
 
+        // Reorder IDs để đảm bảo thứ tự 1, 2, 3, ...
+        Product::reorderIds();
+        
+        // Refresh product instance để lấy ID mới sau reorder
+        $product = $product->fresh();
+
         // Trả về ProductResource cho đối tượng vừa tạo + meta kèm status/message.
         // Sử dụng HTTP 201 (Created) đúng chuẩn REST khi tạo thành công.
         return (new ProductResource($product))
@@ -109,6 +115,12 @@ class ProductController extends Controller
             $request->only(['name', 'description', 'price', 'category_id', 'stock_quantity', 'image_url'])
         );
 
+        // Reorder IDs để đảm bảo thứ tự 1, 2, 3, ...
+        Product::reorderIds();
+        
+        // Refresh product instance để lấy ID mới sau reorder (nếu có thay đổi)
+        $product = $product->fresh();
+
         // Trả về ProductResource sau cập nhật + meta
         // Thường dùng 200 OK (hoặc 204 No Content nếu không cần body).
         return (new ProductResource($product))
@@ -157,6 +169,9 @@ class ProductController extends Controller
         // Thực hiện xoá.
         // Nếu dùng SoftDeletes trong Model, lệnh này sẽ "đánh dấu xoá" thay vì xoá cứng.
         $product->delete();
+
+        // Reorder IDs để đảm bảo thứ tự 1, 2, 3, ...
+        Product::reorderIds();
 
         // Trả về JSON thông báo thành công. 200 OK là mặc định.
         return response()->json([

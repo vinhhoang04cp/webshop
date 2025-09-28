@@ -46,6 +46,12 @@ class CategoryController extends Controller
             'description' => $request->description,
         ]);
 
+        // Reorder IDs để đảm bảo thứ tự 1, 2, 3, ...
+        Category::reorderIds();
+        
+        // Refresh category instance để lấy ID mới sau reorder
+        $category = $category->fresh();
+
         // Trả về đối tượng vừa tạo dưới dạng Resource để định dạng field trả về.
         // ->additional(): thêm meta đi kèm (status, message...) ngoài data chính.
         // ->response(): chuyển Resource thành Response
@@ -117,6 +123,12 @@ class CategoryController extends Controller
             'description' => $request->description,
         ]);
 
+        // Reorder IDs để đảm bảo thứ tự 1, 2, 3, ...
+        Category::reorderIds();
+        
+        // Refresh category instance để lấy ID mới sau reorder (nếu có thay đổi)
+        $category = $category->fresh();
+
         // Trả về Resource sau cập nhật + meta (không cần setStatusCode vì 200 là mặc định).
         // Có thể cân nhắc trả 200 (OK) hoặc 202 (Accepted) tuỳ semantics, nhưng 200 là phổ biến.
         return (new CategoryResource($category))
@@ -160,6 +172,9 @@ class CategoryController extends Controller
         // Thực hiện xoá.
         // Nếu dùng SoftDeletes trong Model, lệnh này sẽ "đánh dấu xoá" thay vì xoá cứng.
         $category->delete();
+
+        // Reorder IDs để đảm bảo thứ tự 1, 2, 3, ...
+        Category::reorderIds();
 
         // Trả về JSON thông báo thành công. 200 OK là mặc định.
         return response()->json([
