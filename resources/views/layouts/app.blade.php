@@ -43,6 +43,7 @@
             </a>
             <div class="navbar-nav ms-auto">
                 <a class="nav-link" href="{{ route('categories.index') }}">Categories</a>
+                <a class="nav-link" href="{{ route('products.index') }}">Products</a>
             </div>
         </div>
     </nav>
