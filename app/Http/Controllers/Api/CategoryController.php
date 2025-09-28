@@ -13,13 +13,13 @@ class CategoryController extends Controller
     /**
      * Display a listing of the categories.
      *
-     * @return \Illuminate\Http\Resources\Json\ResourceCollection
+     * @return \Illuminate\Http\Resources\Json\ResourceCollection  // Tra ve ve CategoryCollection
      */
     public function index()
     {
-        $categories = Category::all();
+        $categories = Category::all(); // $categories chua toan bo danh muc tu database
 
-        return new CategoryCollection($categories);
+        return new CategoryCollection($categories); 
     }
 
     /**
@@ -30,13 +30,13 @@ class CategoryController extends Controller
     public function store(CategoryRequest $request)
     {
         $category = Category::create([
-            'name' => $request->name,
+            'name' => $request->name,  // lay tu request
             'description' => $request->description,
         ]);
 
-        Category::reorderIds();
+        Category::reorderIds();  // Goi ham sap xep lai ID sau khi tao moi
 
-        $category = $category->fresh();
+        $category = $category->fresh();  // Tai lai doi tuong category de lay thong tin moi nhat
 
         return (new CategoryResource($category))
             ->additional([

@@ -12,12 +12,12 @@ class CategoryCollection extends ResourceCollection
      *
      * @return array<int|string, mixed>
      */
-    public function toArray(Request $request): array
+    public function toArray(Request $request): array // Tra ve mot mang chua toan bo danh muc
     {
         return [
             'data' => $this->collection,
             'meta' => [
-                'total' => $this->collection->count(),
+                'total' => $this->collection->count(),  // Dem so luong danh muc trong collection
             ],
         ];
     }

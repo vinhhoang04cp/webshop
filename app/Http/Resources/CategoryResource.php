@@ -12,7 +12,7 @@ class CategoryResource extends JsonResource
      *
      * @return array<string, mixed>
      */
-    public function toArray(Request $request): array
+    public function toArray(Request $request): array  // Tra ve mot mang chua thong tin cua category
     {
         return [
             'id' => $this->category_id,

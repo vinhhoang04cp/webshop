@@ -4,14 +4,14 @@ namespace App\Http\Requests;
 
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Http\Exceptions\HttpResponseException; // HttpResponseException la thu vien de xu ly loi validation thanh JSON
 
 class CategoryRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
      */
-    public function authorize(): bool
+    public function authorize(): bool  // Tra ve true de cho phep tat ca nguoi dung su dung request nay
     {
         return true;
     }
@@ -21,7 +21,7 @@ class CategoryRequest extends FormRequest
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
-    public function rules(): array
+    public function rules(): array  // Tra ve mang chua cac quy tac validation
     {
         $rules = [
             'name' => 'required|string|max:150',
@@ -45,8 +45,8 @@ class CategoryRequest extends FormRequest
      */
     protected function failedValidation(Validator $validator)
     {
-        if ($this->expectsJson() || $this->is('api/*')) {
-            throw new HttpResponseException(response()->json([
+        if ($this->expectsJson() || $this->is('api/*')) {  // $this->is('api/*') kiem tra xem URL co bat dau bang 'api/' khong
+            throw new HttpResponseException(response()->json([  // throw new HttpResponseException lam cho viec tra ve loi validation thanh JSON
                 'status' => false,
                 'message' => 'Validation errors',
                 'errors' => $validator->errors(),
