@@ -138,15 +138,20 @@ class ProductController extends Controller
         }
 
         // Kiểm tra ràng buộc nghiệp vụ: nếu sản phẩm đang có liên kết thì không cho xoá.
-        // $product->orders: quan hệ hasMany/belongsToMany (cần định nghĩa trong Model Product).
-        // Lưu ý: đây là lazy loading -> có thể phát sinh N+1 trong một số tình huống batch.
-        // Nếu muốn tối ưu, có thể eager load hoặc dùng exists() để đếm nhanh:
-        // if ($product->orders()->exists()) { ... }
-        if ($product->orders->count() > 0) {
+        // Kiểm tra xem sản phẩm có trong bất kỳ đơn hàng nào không
+        if ($product->orderItems()->exists()) {
             return response()->json([
                 'status' => false,
                 'message' => 'Cannot delete product with associated orders',
-            ], 400); // 400 Bad Request (cũng có thể cân nhắc 409 Conflict tuỳ chuẩn team)
+            ], 400);
+        }
+
+        // Kiểm tra xem sản phẩm có trong giỏ hàng nào không
+        if ($product->cartItems()->exists()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Cannot delete product with items in cart',
+            ], 400);
         }
 
         // Thực hiện xoá.
