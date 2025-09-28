@@ -13,7 +13,15 @@ class CartSeeder extends Seeder
      */
     public function run(): void
     {
-        $user = User::first();
-        Cart::create(['user_id' => $user->id]);
+        $users = User::limit(15)->get(); // Lấy 15 users đầu tiên
+        $faker = \Faker\Factory::create();
+
+        foreach ($users as $user) {
+            Cart::create([
+                'user_id' => $user->id,
+                'created_at' => $faker->dateTimeBetween('-2 months', 'now'),
+                'updated_at' => now(),
+            ]);
+        }
     }
 }

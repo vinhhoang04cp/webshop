@@ -14,13 +14,31 @@ class CartItemSeeder extends Seeder
      */
     public function run(): void
     {
-        $cart = Cart::first();
-        $product = Product::first();
+        $carts = Cart::all();
+        $products = Product::all();
+        $faker = \Faker\Factory::create();
 
-        CartItem::create([
-            'cart_id' => $cart->cart_id,
-            'product_id' => $product->product_id,
-            'quantity' => 2,
-        ]);
+        foreach ($carts as $cart) {
+            // Tạo 1-4 items cho mỗi giỏ hàng
+            $itemCount = $faker->numberBetween(1, 4);
+            $usedProducts = [];
+            
+            for ($i = 0; $i < $itemCount; $i++) {
+                // Đảm bảo không trùng sản phẩm trong cùng giỏ hàng
+                $availableProducts = $products->whereNotIn('product_id', $usedProducts);
+                if ($availableProducts->count() > 0) {
+                    $randomProduct = $availableProducts->random();
+                    $usedProducts[] = $randomProduct->product_id;
+                    
+                    CartItem::create([
+                        'cart_id' => $cart->cart_id,
+                        'product_id' => $randomProduct->product_id,
+                        'quantity' => $faker->numberBetween(1, 3),
+                        'created_at' => $faker->dateTimeBetween($cart->created_at, 'now'),
+                        'updated_at' => now(),
+                    ]);
+                }
+            }
+        }
     }
 }

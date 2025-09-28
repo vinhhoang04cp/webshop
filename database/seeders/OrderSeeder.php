@@ -13,13 +13,24 @@ class OrderSeeder extends Seeder
      */
     public function run(): void
     {
-        $user = User::first();
+        $users = User::all();
+        $faker = \Faker\Factory::create('vi_VN');
+        $statuses = ['pending', 'paid', 'shipped', 'completed', 'cancelled'];
 
-        Order::create([
-            'user_id' => $user->id,
-            'order_date' => now(),
-            'status' => 'pending',
-            'total_amount' => 2401.00,
-        ]);
+        // Tạo 30 orders
+        for ($i = 0; $i < 30; $i++) {
+            $randomUser = $users->random();
+            $orderDate = $faker->dateTimeBetween('-6 months', 'now');
+            $status = $faker->randomElement($statuses);
+
+            Order::create([
+                'user_id' => $randomUser->id,
+                'order_date' => $orderDate,
+                'status' => $status,
+                'total_amount' => 0, // Sẽ được cập nhật sau khi thêm order items
+                'created_at' => $orderDate,
+                'updated_at' => $orderDate,
+            ]);
+        }
     }
 }

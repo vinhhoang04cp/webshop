@@ -12,7 +12,26 @@ class CategorySeeder extends Seeder
      */
     public function run(): void
     {
-        Category::create(['name' => 'Electronics', 'description' => 'Electronic devices']);
-        Category::create(['name' => 'Books', 'description' => 'Various kinds of books']);
+        $categories = [
+            ['name' => 'Điện tử', 'description' => 'Thiết bị điện tử, máy tính, điện thoại'],
+            ['name' => 'Thời trang', 'description' => 'Quần áo, giày dép, phụ kiện thời trang'],
+            ['name' => 'Nhà cửa & Đời sống', 'description' => 'Đồ gia dụng, nội thất, trang trí'],
+            ['name' => 'Sách', 'description' => 'Sách văn học, giáo khoa, tham khảo'],
+            ['name' => 'Thể thao & Du lịch', 'description' => 'Dụng cụ thể thao, đồ du lịch'],
+            ['name' => 'Làm đẹp & Sức khỏe', 'description' => 'Mỹ phẩm, chăm sóc sức khỏe'],
+            ['name' => 'Đồ chơi', 'description' => 'Đồ chơi trẻ em, game, puzzle'],
+            ['name' => 'Ô tô & Xe máy', 'description' => 'Phụ tùng, phụ kiện xe hơi, xe máy'],
+            ['name' => 'Mẹ & Bé', 'description' => 'Đồ dùng cho mẹ và trẻ em'],
+            ['name' => 'Trang sức', 'description' => 'Nhẫn, dây chuyền, đồng hồ'],
+            ['name' => 'Văn phòng phẩm', 'description' => 'Dụng cụ học tập, văn phòng'],
+            ['name' => 'Thực phẩm & Đồ uống', 'description' => 'Thực phẩm tươi sống, đồ uống'],
+            ['name' => 'Thú cưng', 'description' => 'Đồ dùng cho thú cưng'],
+            ['name' => 'Vườn & Ngoài trời', 'description' => 'Cây cảnh, dụng cụ làm vườn'],
+            ['name' => 'Nghệ thuật & Thủ công', 'description' => 'Đồ nghệ thuật, thủ công mỹ nghệ']
+        ];
+
+        foreach ($categories as $category) {
+            Category::create($category);
+        }
     }
 }
