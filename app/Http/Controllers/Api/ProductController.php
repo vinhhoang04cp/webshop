@@ -45,7 +45,7 @@ class ProductController extends Controller
 
         // Reorder IDs để đảm bảo thứ tự 1, 2, 3, ...
         Product::reorderIds();
-        
+
         // Refresh product instance để lấy ID mới sau reorder
         $product = $product->fresh();
 
@@ -117,7 +117,7 @@ class ProductController extends Controller
 
         // Reorder IDs để đảm bảo thứ tự 1, 2, 3, ...
         Product::reorderIds();
-        
+
         // Refresh product instance để lấy ID mới sau reorder (nếu có thay đổi)
         $product = $product->fresh();
 

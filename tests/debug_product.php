@@ -1,22 +1,22 @@
 <?php
 
-require_once __DIR__ . '/../vendor/autoload.php';
-$app = require_once __DIR__ . '/../bootstrap/app.php';
+require_once __DIR__.'/../vendor/autoload.php';
+$app = require_once __DIR__.'/../bootstrap/app.php';
 $app->make('Illuminate\Contracts\Console\Kernel')->bootstrap();
 
-use App\Models\Product;
 use App\Models\Category;
+use App\Models\Product;
 
 echo "=== Debug Product Reorder ===\n";
 
 try {
     // Kiểm tra category có sẵn
     $category = Category::first();
-    if (!$category) {
+    if (! $category) {
         echo "No category found, creating one...\n";
         $category = Category::create([
             'name' => 'Debug Category',
-            'description' => 'Debug category'
+            'description' => 'Debug category',
         ]);
     }
 
@@ -28,7 +28,7 @@ try {
         'price' => 100.00,
         'category_id' => $category->category_id,
         'stock_quantity' => 10,
-        'image_url' => 'debug.jpg'
+        'image_url' => 'debug.jpg',
     ]);
 
     echo "Product created with ID: {$product->product_id}\n";
@@ -56,7 +56,7 @@ try {
     echo "\nDebug test product deleted.\n";
 
 } catch (Exception $e) {
-    echo "Error: " . $e->getMessage() . "\n";
-    echo "Line: " . $e->getLine() . "\n";
-    echo "File: " . $e->getFile() . "\n";
+    echo 'Error: '.$e->getMessage()."\n";
+    echo 'Line: '.$e->getLine()."\n";
+    echo 'File: '.$e->getFile()."\n";
 }

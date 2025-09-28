@@ -1,7 +1,7 @@
 <?php
 
-require_once __DIR__ . '/../vendor/autoload.php';
-$app = require_once __DIR__ . '/../bootstrap/app.php';
+require_once __DIR__.'/../vendor/autoload.php';
+$app = require_once __DIR__.'/../bootstrap/app.php';
 $app->make('Illuminate\Contracts\Console\Kernel')->bootstrap();
 
 use App\Models\Category;
@@ -12,7 +12,7 @@ echo "=== Debug Category Reorder ===\n";
 echo "Creating new category...\n";
 $category = Category::create([
     'name' => 'Debug Test Category',
-    'description' => 'Debug test description'
+    'description' => 'Debug test description',
 ]);
 
 echo "Category created with ID: {$category->category_id}\n";
