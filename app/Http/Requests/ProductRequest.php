@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest; // 
-use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Contracts\Validation\Validator; //
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
 class ProductRequest extends FormRequest
@@ -36,7 +36,7 @@ class ProductRequest extends FormRequest
         if ($this->isMethod('put') || $this->isMethod('patch')) {
             $productId = $this->route('id') ?? $this->route('product');
             $rules = [
-                'name' => 'sometimes|required|string|max:255|unique:products,name,' . $productId . ',product_id',
+                'name' => 'sometimes|required|string|max:255|unique:products,name,'.$productId.',product_id',
                 'description' => 'sometimes|nullable|string|max:2000',
                 'price' => 'sometimes|required|numeric|min:0',
                 'stock_quantity' => 'sometimes|nullable|integer|min:0',
@@ -48,8 +48,9 @@ class ProductRequest extends FormRequest
             $rules['name'] = 'required|string|max:255|unique:products,name';
         }
 
-        return $rules; 
+        return $rules;
     }
+
     /**
      * Handle a failed validation attempt.
      *
@@ -59,7 +60,7 @@ class ProductRequest extends FormRequest
      */
     protected function failedValidation(Validator $validator)
     {
-        // If this is an API request, return JSON response      
+        // If this is an API request, return JSON response
         if ($this->expectsJson() || $this->is('api/*')) {
             throw new HttpResponseException(response()->json([
                 'status' => false,

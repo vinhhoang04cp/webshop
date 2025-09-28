@@ -9,11 +9,11 @@ class Category extends Model
 {
     use HasFactory;
 
-    protected $table = 'categories';
+    protected $table = 'categories'; // Ten bang trong CSDL
 
-    protected $primaryKey = 'category_id';
+    protected $primaryKey = 'category_id';   // Khoa chinh cua bang
 
-    public $timestamps = true;
+    public $timestamps = true; // Tu dong quan ly created_at va updated_at
 
     protected $fillable = [
         'name',
@@ -22,6 +22,6 @@ class Category extends Model
 
     public function products()
     {
-        return $this->hasMany(Product::class, 'category_id', 'category_id');
+        return $this->hasMany(Product::class, 'category_id', 'category_id'); // Moi quan he 1-n voi Product
     }
 }
