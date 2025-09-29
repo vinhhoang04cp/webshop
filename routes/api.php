@@ -43,3 +43,11 @@ Route::prefix('orders')->group(function () {
     Route::put('/{id}', [\App\Http\Controllers\Api\OrderController::class, 'update']);
     Route::delete('/{id}', [\App\Http\Controllers\Api\OrderController::class, 'destroy']);
 });
+// OrderItem API routes
+Route::prefix('order-items')->group(function () {
+    Route::get('/', [\App\Http\Controllers\Api\OrderItemController::class, 'index']);
+    Route::post('/', [\App\Http\Controllers\Api\OrderItemController::class, 'store']);
+    Route::get('/{id}', [\App\Http\Controllers\Api\OrderItemController::class, 'show']);
+    Route::put('/{id}', [\App\Http\Controllers\Api\OrderItemController::class, 'update']);
+    Route::delete('/{id}', [\App\Http\Controllers\Api\OrderItemController::class, 'destroy']);
+});

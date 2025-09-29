@@ -17,8 +17,8 @@ class OrderController extends Controller
         if ($request->has('status')) {
             $query->where('status', $request->get('status'));
         }
-        if ($request->has('customer_name')) {
-            $query->where('customer_name', 'LIKE', '%'.$request->get('customer_name').'%');
+        if ($request->has('user_id')) {
+            $query->where('user_id', $request->get('user_id'));
         }
         if ($request->has('min_total')) {
             $query->where('total_amount', '>=', $request->get('min_total'));
