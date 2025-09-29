@@ -23,19 +23,19 @@ class OrderItemSeeder extends Seeder
             // Tạo 1-5 items cho mỗi order
             $itemCount = $faker->numberBetween(1, 5);
             $usedProducts = [];
-            
+
             for ($i = 0; $i < $itemCount; $i++) {
                 // Đảm bảo không trùng sản phẩm trong cùng order
                 $availableProducts = $products->whereNotIn('product_id', $usedProducts);
                 if ($availableProducts->count() > 0) {
                     $randomProduct = $availableProducts->random();
                     $usedProducts[] = $randomProduct->product_id;
-                    
+
                     $quantity = $faker->numberBetween(1, 3);
                     $unitPrice = $randomProduct->price;
                     $subtotal = $quantity * $unitPrice;
                     $totalAmount += $subtotal;
-                    
+
                     OrderItem::create([
                         'order_id' => $order->order_id,
                         'product_id' => $randomProduct->product_id,
@@ -46,7 +46,7 @@ class OrderItemSeeder extends Seeder
                     ]);
                 }
             }
-            
+
             // Cập nhật tổng tiền của order
             $order->update(['total_amount' => $totalAmount]);
         }

@@ -27,7 +27,7 @@ class CategorySeeder extends Seeder
             ['name' => 'Thực phẩm & Đồ uống', 'description' => 'Thực phẩm tươi sống, đồ uống'],
             ['name' => 'Thú cưng', 'description' => 'Đồ dùng cho thú cưng'],
             ['name' => 'Vườn & Ngoài trời', 'description' => 'Cây cảnh, dụng cụ làm vườn'],
-            ['name' => 'Nghệ thuật & Thủ công', 'description' => 'Đồ nghệ thuật, thủ công mỹ nghệ']
+            ['name' => 'Nghệ thuật & Thủ công', 'description' => 'Đồ nghệ thuật, thủ công mỹ nghệ'],
         ];
 
         foreach ($categories as $category) {

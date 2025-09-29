@@ -13,14 +13,14 @@ class RevenueReportSeeder extends Seeder
     public function run(): void
     {
         $faker = \Faker\Factory::create();
-        
+
         // Tạo báo cáo doanh thu cho 12 tháng gần đây, mỗi tháng chỉ 1 báo cáo
         for ($i = 12; $i >= 1; $i--) {
             $date = now()->subMonths($i)->startOfMonth();
             $totalOrders = $faker->numberBetween(50, 200);
             $totalRevenue = $faker->numberBetween(50000000, 500000000); // 50M - 500M VND
             $totalProfit = $totalRevenue * $faker->randomFloat(2, 0.1, 0.3); // 10-30% profit
-            
+
             RevenueReport::create([
                 'date' => $date->toDateString(),
                 'total_orders' => $totalOrders,

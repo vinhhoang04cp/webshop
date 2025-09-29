@@ -5,11 +5,10 @@ namespace App\Http\Requests;
 use Illuminate\Contracts\Validation\Validator; //
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Unique;
-use Illuminate\Support\Facades\Route;
-use Illuminate\Http\Request;
-use App\Models\Product; 
 
 class ProductRequest extends FormRequest
 {
@@ -32,6 +31,7 @@ class ProductRequest extends FormRequest
             $productId = $this->route('id') ?? $this->route('product'); // Lay ID san pham tu route parameter
             $this->merge(['product_id' => $productId]); // Them product_id vao request de su dung trong rule unique
         }
+
         return [
             'name' => [
                 'required',
@@ -43,7 +43,7 @@ class ProductRequest extends FormRequest
             'price' => ['required', 'numeric', 'min:0'],
             'stock_quantity' => ['nullable', 'integer', 'min:0'],
             'category_id' => ['required', 'exists:categories,id'], // Kiem tra category_id phai ton tai trong bang categories
-        ];  
+        ];
     }
 
     /**
@@ -62,7 +62,7 @@ class ProductRequest extends FormRequest
                 'message' => 'Validation errors',
                 'errors' => $validator->errors(),
             ], 422));
-        }   
+        }
     }
 
     public function messages()
@@ -71,6 +71,7 @@ class ProductRequest extends FormRequest
             $productId = $this->route('id') ?? $this->route('product');
             $this->merge(['product_id' => $productId]);
         }
+
         return [
             'name.required' => 'Product name is required.',
             'name.string' => 'Product name must be a string.',

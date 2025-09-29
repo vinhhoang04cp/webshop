@@ -14,7 +14,7 @@ class ProductDetailSeeder extends Seeder
     public function run(): void
     {
         $products = Product::all();
-        
+
         // Tạo chi tiết cho một số sản phẩm
         $productDetails = [
             ['product_name' => 'iPhone 15 Pro Max', 'size' => '6.7 inch', 'color' => 'Titan Tự Nhiên', 'material' => 'Titanium'],
@@ -46,7 +46,7 @@ class ProductDetailSeeder extends Seeder
             ['product_name' => 'Nhẫn vàng 18K', 'size' => '17', 'color' => 'Vàng', 'material' => '18K Gold'],
             ['product_name' => 'Dây chuyền bạc 925', 'size' => '45cm', 'color' => 'Bạc', 'material' => '925 Silver'],
             ['product_name' => 'Dây chuyền bạc 925', 'size' => '50cm', 'color' => 'Bạc', 'material' => '925 Silver'],
-            ['product_name' => 'Ghế văn phòng ergonomic', 'size' => 'Standard', 'color' => 'Đen', 'material' => 'Mesh + Nylon']
+            ['product_name' => 'Ghế văn phòng ergonomic', 'size' => 'Standard', 'color' => 'Đen', 'material' => 'Mesh + Nylon'],
         ];
 
         foreach ($productDetails as $detail) {

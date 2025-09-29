@@ -22,14 +22,14 @@ class CartItemSeeder extends Seeder
             // Tạo 1-4 items cho mỗi giỏ hàng
             $itemCount = $faker->numberBetween(1, 4);
             $usedProducts = [];
-            
+
             for ($i = 0; $i < $itemCount; $i++) {
                 // Đảm bảo không trùng sản phẩm trong cùng giỏ hàng
                 $availableProducts = $products->whereNotIn('product_id', $usedProducts);
                 if ($availableProducts->count() > 0) {
                     $randomProduct = $availableProducts->random();
                     $usedProducts[] = $randomProduct->product_id;
-                    
+
                     CartItem::create([
                         'cart_id' => $cart->cart_id,
                         'product_id' => $randomProduct->product_id,

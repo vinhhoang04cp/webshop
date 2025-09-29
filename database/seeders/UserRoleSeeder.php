@@ -20,7 +20,7 @@ class UserRoleSeeder extends Seeder
 
         foreach ($users as $index => $user) {
             $roleAssignment = [];
-            
+
             // Gán role theo user email
             if (strpos($user->email, 'admin') !== false) {
                 $adminRole = $roles->where('role_name', 'admin')->first();
@@ -33,7 +33,7 @@ class UserRoleSeeder extends Seeder
                 $customerRole = $roles->where('role_name', 'customer')->first();
                 $roleAssignment[] = $customerRole->role_id;
             }
-            
+
             // Tạo user role assignments
             foreach ($roleAssignment as $roleId) {
                 UserRole::create([

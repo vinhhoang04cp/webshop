@@ -8,6 +8,7 @@ use App\Http\Resources\ProductCollection; // Resource Collection: chuẩn hoá d
 use App\Http\Resources\ProductResource; // Resource: chuẩn hoá 1 bản ghi
 use App\Models\Product; // Eloquent Model ánh xạ bảng 'products'
 use Illuminate\Http\Request; // Lớp Request của Laravel
+
 // (Không dùng trực tiếp ở đây vì đã dùng ProductRequest, nhưng vẫn có thể hữu ích)
 
 class ProductController extends Controller

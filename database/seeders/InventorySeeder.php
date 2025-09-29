@@ -15,12 +15,12 @@ class InventorySeeder extends Seeder
     {
         $products = Product::all();
         $faker = \Faker\Factory::create();
-        
+
         foreach ($products as $product) {
             // Tạo dữ liệu inventory đơn giản với các cột có sẵn
             $stockIn = $faker->numberBetween(0, 20);
             $stockOut = $faker->numberBetween(0, 10);
-            
+
             Inventory::create([
                 'product_id' => $product->product_id,
                 'stock_in' => $stockIn,

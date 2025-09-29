@@ -14,7 +14,7 @@ class CategoryController extends Controller
     /**
      * Display a listing of the categories.
      *
-     * @return \Illuminate\Http\Resources\Json\ResourceCollection  // Tra ve ve CategoryCollection
+     * @return \Illuminate\Http\Resources\Json\ResourceCollection // Tra ve ve CategoryCollection
      */
     public function index(Request $request)
     {
@@ -24,7 +24,8 @@ class CategoryController extends Controller
         } else {
             $categories->loadCount('products'); // Neu khong co tham so with_products, chi load count san pham trong moi danh muc
         }
-        return new CategoryCollection($categories); 
+
+        return new CategoryCollection($categories);
     }
 
     /**

@@ -5,11 +5,11 @@ namespace App\Http\Requests;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException; // HttpResponseException la thu vien de xu ly loi validation thanh JSON
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Unique;
-use Illuminate\Support\Facades\Route;
-use Illuminate\Http\Request;
-use App\Models\Category;
+
 class CategoryRequest extends FormRequest
 {
     /**
@@ -31,6 +31,7 @@ class CategoryRequest extends FormRequest
             $categoryId = $this->route('id') ?? $this->route('category'); // Lay ID danh muc tu route parameter
             $this->merge(['category_id' => $categoryId]); // Them category_id vao request de su dung trong rule unique
         }
+
         return [
             'name' => [
                 'required',
