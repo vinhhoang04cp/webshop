@@ -5,6 +5,11 @@ namespace App\Http\Requests;
 use Illuminate\Contracts\Validation\Validator; //
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Unique;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
+use App\Models\Product; 
 
 class ProductRequest extends FormRequest
 {
@@ -23,32 +28,22 @@ class ProductRequest extends FormRequest
      */
     public function rules(): array
     {
-        $rules = [
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string|max:2000',
-            'price' => 'required|numeric|min:0',
-            'stock_quantity' => 'nullable|integer|min:0',
-            'category_id' => 'required|exists:categories,category_id',
-            'image_url' => 'nullable|string|max:255',
-        ];
-
-        // For update requests, make fields optional with 'sometimes'
-        if ($this->isMethod('put') || $this->isMethod('patch')) {
-            $productId = $this->route('id') ?? $this->route('product');
-            $rules = [
-                'name' => 'sometimes|required|string|max:255|unique:products,name,'.$productId.',product_id',
-                'description' => 'sometimes|nullable|string|max:2000',
-                'price' => 'sometimes|required|numeric|min:0',
-                'stock_quantity' => 'sometimes|nullable|integer|min:0',
-                'category_id' => 'sometimes|required|exists:categories,category_id',
-                'image_url' => 'sometimes|nullable|string|max:255',
-            ];
-        } else {
-            // For create, add unique validation for name
-            $rules['name'] = 'required|string|max:255|unique:products,name';
+        if ($this->isMethod('put') || $this->isMethod('patch')) { // Neu la PUT hoac PATCH (update)
+            $productId = $this->route('id') ?? $this->route('product'); // Lay ID san pham tu route parameter
+            $this->merge(['product_id' => $productId]); // Them product_id vao request de su dung trong rule unique
         }
-
-        return $rules;
+        return [
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('products')->ignore($this->product_id), // Kiem tra unique trong bang products, bo qua ban ghi hien tai khi update
+            ],
+            'description' => ['nullable', 'string', 'max:2000'],
+            'price' => ['required', 'numeric', 'min:0'],
+            'stock_quantity' => ['nullable', 'integer', 'min:0'],
+            'category_id' => ['required', 'exists:categories,id'], // Kiem tra category_id phai ton tai trong bang categories
+        ];  
     }
 
     /**
@@ -61,33 +56,35 @@ class ProductRequest extends FormRequest
     protected function failedValidation(Validator $validator)
     {
         // If this is an API request, return JSON response
-        if ($this->expectsJson() || $this->is('api/*')) {
+        if ($this->expectsJson() || $this->is('api/*')) {  // $this->is('api/*') kiem tra xem URL co bat dau bang 'api/' khong
             throw new HttpResponseException(response()->json([
                 'status' => false,
                 'message' => 'Validation errors',
                 'errors' => $validator->errors(),
             ], 422));
-        }
-        // For web requests, use the default behavior (redirect back with errors)
-        parent::failedValidation($validator);
+        }   
     }
 
     public function messages()
     {
+        if ($this->isMethod('put') || $this->isMethod('patch')) {
+            $productId = $this->route('id') ?? $this->route('product');
+            $this->merge(['product_id' => $productId]);
+        }
         return [
-            'name.required' => 'The product name is required.',
-            'name.string' => 'The product name must be a string.',
-            'name.max' => 'The product name may not be greater than 255 characters.',
-            'name.unique' => 'The product name has already been taken.',
-            'description.string' => 'The description must be a string.',
-            'description.max' => 'The description may not be greater than 2000 characters.',
-            'price.required' => 'The price is required.',
-            'price.numeric' => 'The price must be a number.',
-            'price.min' => 'The price must be at least 0.',
-            'stock_quantity.integer' => 'The stock quantity must be an integer.',
-            'stock_quantity.min' => 'The stock quantity must be at least 0.',
-            'category_id.required' => 'The category is required.',
-            'category_id.exists' => 'The selected category is invalid.',
+            'name.required' => 'Product name is required.',
+            'name.string' => 'Product name must be a string.',
+            'name.max' => 'Product name must not exceed 255 characters.',
+            'name.unique' => 'Product name must be unique.',
+            'description.string' => 'Product description must be a string.',
+            'description.max' => 'Product description must not exceed 2000 characters.',
+            'price.required' => 'Product price is required.',
+            'price.numeric' => 'Product price must be a number.',
+            'price.min' => 'Product price must be at least 0.',
+            'stock_quantity.integer' => 'Stock quantity must be an integer.',
+            'stock_quantity.min' => 'Stock quantity must be at least 0.',
+            'category_id.required' => 'Category is required.',
+            'category_id.exists' => 'Selected category does not exist.',
         ];
     }
 
@@ -97,7 +94,7 @@ class ProductRequest extends FormRequest
             'name' => 'product name',
             'description' => 'product description',
             'price' => 'product price',
-            'stock_quantity' => 'product stock quantity',
+            'stock_quantity' => 'stock quantity',
             'category_id' => 'category',
         ];
     }

@@ -7,6 +7,7 @@ use App\Http\Requests\CategoryRequest;
 use App\Http\Resources\CategoryCollection;
 use App\Http\Resources\CategoryResource;
 use App\Models\Category;
+use Illuminate\Http\Request;
 
 class CategoryController extends Controller
 {
@@ -15,10 +16,14 @@ class CategoryController extends Controller
      *
      * @return \Illuminate\Http\Resources\Json\ResourceCollection  // Tra ve ve CategoryCollection
      */
-    public function index()
+    public function index(Request $request)
     {
         $categories = Category::all(); // $categories chua toan bo danh muc tu database
-
+        if ($request->has('with_products') && $request->get('with_products')) { // Neu co tham so with_products=true trong query string
+            $categories->load('products'); // Eager load quan he 'products' neu co tham so with_products=true
+        } else {
+            $categories->loadCount('products'); // Neu khong co tham so with_products, chi load count san pham trong moi danh muc
+        }
         return new CategoryCollection($categories); 
     }
 

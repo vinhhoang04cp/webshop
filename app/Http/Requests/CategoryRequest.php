@@ -5,7 +5,11 @@ namespace App\Http\Requests;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException; // HttpResponseException la thu vien de xu ly loi validation thanh JSON
-
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Unique;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
+use App\Models\Category;
 class CategoryRequest extends FormRequest
 {
     /**
@@ -23,19 +27,19 @@ class CategoryRequest extends FormRequest
      */
     public function rules(): array  // Tra ve mang chua cac quy tac validation
     {
-        $rules = [
-            'name' => 'required|string|max:150',
-            'description' => 'nullable|string|max:1000',
-        ];
-
-        if ($this->isMethod('put') || $this->isMethod('patch')) {
-            $categoryId = $this->route('id') ?? $this->route('category');
-            $rules['name'] = 'required|string|max:150|unique:categories,name,'.$categoryId.',category_id';
-        } else {
-            $rules['name'] = 'required|string|max:150|unique:categories,name';
+        if ($this->isMethod('put') || $this->isMethod('patch')) { // Neu la PUT hoac PATCH (update)
+            $categoryId = $this->route('id') ?? $this->route('category'); // Lay ID danh muc tu route parameter
+            $this->merge(['category_id' => $categoryId]); // Them category_id vao request de su dung trong rule unique
         }
-
-        return $rules;
+        return [
+            'name' => [
+                'required',
+                'string',
+                'max:150',
+                Rule::unique('categories')->ignore($this->category_id), // Kiem tra unique trong bang categories, bo qua ban ghi hien tai khi update
+            ],
+            'description' => ['nullable', 'string'],
+        ];
     }
 
     /**
@@ -63,13 +67,23 @@ class CategoryRequest extends FormRequest
      */
     public function messages()
     {
-        return [
-            'name.required' => 'Tên danh mục là bắt buộc.',
-            'name.string' => 'Tên danh mục phải là chuỗi ký tự.',
-            'name.max' => 'Tên danh mục không được vượt quá 150 ký tự.',
-            'name.unique' => 'Tên danh mục này đã tồn tại. Vui lòng chọn tên khác.',
-            'description.string' => 'Mô tả phải là chuỗi ký tự.',
-        ];
+        if ($this->isMethod('put') || $this->isMethod('patch')) {
+            return [
+                'name.required' => 'Tên danh mục không được để trống.',
+                'name.string' => 'Tên danh mục phải là chuỗi ký tự.',
+                'name.max' => 'Tên danh mục không được vượt quá 150 ký tự.',
+                'name.unique' => 'Tên danh mục đã tồn tại.',
+                'description.string' => 'Mô tả danh mục phải là chuỗi ký tự.',
+            ];
+        } else {
+            return [
+                'name.required' => 'Tên danh mục không được để trống.',
+                'name.string' => 'Tên danh mục phải là chuỗi ký tự.',
+                'name.max' => 'Tên danh mục không được vượt quá 150 ký tự.',
+                'name.unique' => 'Tên danh mục đã tồn tại.',
+                'description.string' => 'Mô tả danh mục phải là chuỗi ký tự.',
+            ];
+        }
     }
 
     /**

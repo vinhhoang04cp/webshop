@@ -7,7 +7,7 @@ use App\Http\Requests\ProductRequest; // FormRequest để validate/authorize d�
 use App\Http\Resources\ProductCollection; // Resource Collection: chuẩn hoá danh sách
 use App\Http\Resources\ProductResource; // Resource: chuẩn hoá 1 bản ghi
 use App\Models\Product; // Eloquent Model ánh xạ bảng 'products'
-
+use Illuminate\Http\Request; // Lớp Request của Laravel
 // (Không dùng trực tiếp ở đây vì đã dùng ProductRequest, nhưng vẫn có thể hữu ích)
 
 class ProductController extends Controller
@@ -18,12 +18,18 @@ class ProductController extends Controller
      * @return \Illuminate\Http\Resources\Json\ResourceCollection
      *                                                            Trả về danh sách sản phẩm dưới dạng Resource Collection, giúp thống nhất cấu trúc JSON.
      */
-    public function index() // Trả về danh sách sản phẩm
+    public function index(Request $request) // Trả về danh sách sản phẩm
     {
+        $category = $request->get('category'); // Lấy tham số lọc category từ query string, ví dụ ?category=1
         // Eager load quan hệ 'category' để tránh N+1 query khi serialize ra JSON.
         // Lưu ý: nếu dữ liệu lớn, cân nhắc paginate() thay vì get().
         // Ví dụ: $products = Product::with('category')->paginate(15);
-        $products = Product::with('category')->get(); // $products là Collection các Product kèm Category
+        if ($category) {
+            $products = Product::with('category')->where('category_id', $category)->get();
+        } else {
+            $products = Product::with('category')->get();
+        }
+        // $products = Product::with('category')->get(); // $products là Collection các Product kèm Category , 'category' là tên quan hệ trong Model Product
 
         // Bọc bằng ProductCollection để kiểm soát field trả ra, có thể thêm meta/pagination nếu dùng paginate().
         return new ProductCollection($products);
