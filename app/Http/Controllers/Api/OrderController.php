@@ -20,6 +20,12 @@ class OrderController extends Controller
         if ($request->has('user_id')) {
             $query->where('user_id', $request->get('user_id'));
         }
+        if ($request->has('min_date')) {
+            $query->where('order_date', '>=', $request->get('min_date'));
+        }
+        if ($request->has('max_date')) {
+            $query->where('order_date', '<=', $request->get('max_date'));
+        }
         if ($request->has('min_total')) {
             $query->where('total_amount', '>=', $request->get('min_total'));
         }
@@ -28,6 +34,7 @@ class OrderController extends Controller
         }
 
         $orders = $query->get();
+        $orders = $query->paginate(10); // Paginate results, 10 per page
 
         return response()->json($orders);
     }

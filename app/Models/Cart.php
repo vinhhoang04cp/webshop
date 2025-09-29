@@ -26,4 +26,17 @@ class Cart extends Model
     {
         return $this->hasMany(CartItem::class, 'cart_id', 'cart_id');
     }
+
+    public function totalPrice()
+    {
+        return $this->items->sum(function ($item) {
+            return $item->quantity * $item->price;
+        });
+    }
+
+    public function totalItems()
+    {
+        return $this->items->sum('quantity');
+    }
+
 }

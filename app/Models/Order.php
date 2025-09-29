@@ -45,4 +45,14 @@ class Order extends Model
     {
         return $this->items()->count();
     }
+
+    public function getTotalQuantityAttribute()
+    {
+        return $this->items()->sum('quantity');
+    }
+
+    public function getTotalAmountAttribute()
+    {
+        return $this->items()->sum(\DB::raw('quantity * price'));
+    }
 }

@@ -28,4 +28,14 @@ class CartItem extends Model
     {
         return $this->belongsTo(Product::class, 'product_id', 'product_id');
     }
+
+    public function price()
+    {
+        return $this->product ? $this->product->price : 0;
+    }
+
+    public function totalPrice()
+    {
+        return $this->quantity * $this->price();
+    }
 }
