@@ -21,14 +21,17 @@ class RevenueReportSeeder extends Seeder
             $totalRevenue = $faker->numberBetween(50000000, 500000000); // 50M - 500M VND
             $totalProfit = $totalRevenue * $faker->randomFloat(2, 0.1, 0.3); // 10-30% profit
 
-            RevenueReport::create([
-                'date' => $date->toDateString(),
-                'total_orders' => $totalOrders,
-                'total_revenue' => $totalRevenue,
-                'total_profit' => $totalProfit,
-                'created_at' => $date,
-                'updated_at' => $date,
-            ]);
+            // Sử dụng updateOrCreate để tránh duplicate entry
+            RevenueReport::updateOrCreate(
+                ['date' => $date->toDateString()], // Điều kiện tìm kiếm
+                [ // Dữ liệu để tạo hoặc cập nhật
+                    'total_orders' => $totalOrders,
+                    'total_revenue' => $totalRevenue,
+                    'total_profit' => $totalProfit,
+                    'created_at' => $date,
+                    'updated_at' => $date,
+                ]
+            );
         }
     }
 }

@@ -21,18 +21,34 @@ class ProductController extends Controller
      */
     public function index(Request $request) // Trả về danh sách sản phẩm
     {
-        $category = $request->get('category'); // Lấy tham số lọc category từ query string, ví dụ ?category=1
-        // Eager load quan hệ 'category' để tránh N+1 query khi serialize ra JSON.
-        // Lưu ý: nếu dữ liệu lớn, cân nhắc paginate() thay vì get().
-        // Ví dụ: $products = Product::with('category')->paginate(15);
-        if ($category) {
-            $products = Product::with('category')->where('category_id', $category)->get();
-        } else {
-            $products = Product::with('category')->get();
-        }
-        // $products = Product::with('category')->get(); // $products là Collection các Product kèm Category , 'category' là tên quan hệ trong Model Product
+        $query = Product::with('category');
 
-        // Bọc bằng ProductCollection để kiểm soát field trả ra, có thể thêm meta/pagination nếu dùng paginate().
+        // Lọc theo category
+        if ($request->has('category')) {
+            $query->where('category_id', $request->get('category'));
+        }
+
+        // Lọc theo tên (tìm gần đúng)
+        if ($request->has('name')) {
+            $query->where('name', 'LIKE', '%'.$request->get('name').'%');
+        }
+
+        // Lọc theo giá (có thể theo khoảng giá)
+        if ($request->has('min_price')) {
+            $query->where('price', '>=', $request->get('min_price'));
+        }
+        if ($request->has('max_price')) {
+            $query->where('price', '<=', $request->get('max_price'));
+        }
+
+        // Lọc theo tồn kho
+        if ($request->has('stock_quantity')) {
+            $query->where('stock_quantity', $request->get('stock_quantity'));
+        }
+
+        // Nếu dữ liệu lớn, khuyến nghị paginate
+        $products = $query->paginate(15);
+
         return new ProductCollection($products);
     }
 

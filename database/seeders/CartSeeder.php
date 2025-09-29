@@ -17,11 +17,13 @@ class CartSeeder extends Seeder
         $faker = \Faker\Factory::create();
 
         foreach ($users as $user) {
-            Cart::create([
-                'user_id' => $user->id,
-                'created_at' => $faker->dateTimeBetween('-2 months', 'now'),
-                'updated_at' => now(),
-            ]);
+            Cart::updateOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'created_at' => $faker->dateTimeBetween('-2 months', 'now'),
+                    'updated_at' => now(),
+                ]
+            );
         }
     }
 }

@@ -36,11 +36,15 @@ class UserRoleSeeder extends Seeder
 
             // Tạo user role assignments
             foreach ($roleAssignment as $roleId) {
-                UserRole::create([
-                    'user_id' => $user->id,
-                    'role_id' => $roleId,
-                    'assigned_at' => $faker->dateTimeBetween('-1 year', 'now'),
-                ]);
+                UserRole::firstOrCreate(
+                    [
+                        'user_id' => $user->id,
+                        'role_id' => $roleId,
+                    ],
+                    [
+                        'assigned_at' => $faker->dateTimeBetween('-1 year', 'now'),
+                    ]
+                );
             }
         }
     }

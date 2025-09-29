@@ -30,13 +30,17 @@ class CartItemSeeder extends Seeder
                     $randomProduct = $availableProducts->random();
                     $usedProducts[] = $randomProduct->product_id;
 
-                    CartItem::create([
-                        'cart_id' => $cart->cart_id,
-                        'product_id' => $randomProduct->product_id,
-                        'quantity' => $faker->numberBetween(1, 3),
-                        'created_at' => $faker->dateTimeBetween($cart->created_at, 'now'),
-                        'updated_at' => now(),
-                    ]);
+                    CartItem::updateOrCreate(
+                        [
+                            'cart_id' => $cart->cart_id,
+                            'product_id' => $randomProduct->product_id,
+                        ],
+                        [
+                            'quantity' => $faker->numberBetween(1, 3),
+                            'created_at' => $faker->dateTimeBetween($cart->created_at, 'now'),
+                            'updated_at' => now(),
+                        ]
+                    );
                 }
             }
         }

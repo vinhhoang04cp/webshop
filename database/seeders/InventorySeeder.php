@@ -21,13 +21,15 @@ class InventorySeeder extends Seeder
             $stockIn = $faker->numberBetween(0, 20);
             $stockOut = $faker->numberBetween(0, 10);
 
-            Inventory::create([
-                'product_id' => $product->product_id,
-                'stock_in' => $stockIn,
-                'stock_out' => $stockOut,
-                'current_stock' => $product->stock_quantity,
-                'updated_at' => now(),
-            ]);
+            Inventory::updateOrCreate(
+                ['product_id' => $product->product_id],
+                [
+                    'stock_in' => $stockIn,
+                    'stock_out' => $stockOut,
+                    'current_stock' => $product->stock_quantity,
+                    'updated_at' => now(),
+                ]
+            );
         }
     }
 }

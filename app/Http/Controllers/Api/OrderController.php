@@ -13,12 +13,21 @@ class OrderController extends Controller
      */
     public function index(Request $request)
     {
-        $orders = Order::all(); // $orders lay tu database, chua toan bo don hang , Order::all() tra ve toan bo don hang
-        if ($request->has('with_user') && $request->get('with_user')) { // Neu co tham so with_user=true trong query string, thi load quan he user, tham so o day la ?with_user=true
-            $orders->load('user'); // load quan he 'user' neu co tham so with_user=true
-        } else {
-            $orders->loadCount('products'); // Neu khong co tham so with_user, chi load count san pham trong moi don hang
+        $query = Order::query();
+        if ($request->has('status')) {
+            $query->where('status', $request->get('status'));
         }
+        if ($request->has('customer_name')) {
+            $query->where('customer_name', 'LIKE', '%'.$request->get('customer_name').'%');
+        }
+        if ($request->has('min_total')) {
+            $query->where('total_amount', '>=', $request->get('min_total'));
+        }
+        if ($request->has('max_total')) {
+            $query->where('total_amount', '<=', $request->get('max_total'));
+        }
+
+        $orders = $query->get();
 
         return response()->json($orders);
     }

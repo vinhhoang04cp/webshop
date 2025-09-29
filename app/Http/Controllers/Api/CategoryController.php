@@ -18,12 +18,16 @@ class CategoryController extends Controller
      */
     public function index(Request $request)
     {
-        $categories = Category::all(); // $categories chua toan bo danh muc tu database
-        if ($request->has('with_products') && $request->get('with_products')) { // Neu co tham so with_products=true trong query string
-            $categories->load('products'); // Eager load quan he 'products' neu co tham so with_products=true
-        } else {
-            $categories->loadCount('products'); // Neu khong co tham so with_products, chi load count san pham trong moi danh muc
+        $query = Category::query();
+        if ($request->has('name')) {
+            $query->where('name', 'LIKE', '%'.$request->get('name').'%');
         }
+
+        if ($request->has('description')) {
+            $query->where('description', 'LIKE', '%'.$request->get('description').'%');
+        }
+        // Neu du lieu lon, khuyen nghi paginate
+        $categories = $query->paginate(15); // Phan trang, moi trang
 
         return new CategoryCollection($categories);
     }
