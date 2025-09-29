@@ -55,4 +55,23 @@ class Order extends Model
     {
         return $this->items()->sum(\DB::raw('quantity * price'));
     }
+
+    public static function reorderIds()
+    {
+        // Tắt tạm thời kiểm tra foreign key để có thể cập nhật ID
+        \DB::statement('SET FOREIGN_KEY_CHECKS = 0');
+
+        // Lấy tất cả orders theo thứ tự ID hiện tại
+        $orders = self::orderBy('order_id')->get();
+
+        // Cập nhật lại ID tuần tự bắt đầu từ 1
+        $newId = 1;
+        foreach ($orders as $order) {
+            $order->order_id = $newId++;
+            $order->save();
+        }
+
+        // Bật lại kiểm tra foreign key
+        \DB::statement('SET FOREIGN_KEY_CHECKS = 1');
+    }
 }

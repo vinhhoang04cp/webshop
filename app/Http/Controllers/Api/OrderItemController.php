@@ -3,8 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Http\Resources\OrderItemCollection;
 use App\Models\OrderItem;
+use Illuminate\Http\Request;
 
 class OrderItemController extends Controller
 {
@@ -30,14 +31,14 @@ class OrderItemController extends Controller
         if ($request->has('min_quantity')) {
             $query->where('quantity', '>=', $request->get('min_quantity'));
         }
-        if ($request->has('max_quantity')) {
+        if ($request->has('max_quantity')) { // has('max_quantity') truyen tham so max_quantity tu request
             $query->where('quantity', '<=', $request->get('max_quantity'));
-        }   
+        }
 
         $orderItems = $query->get();
         $orderItems = $query->paginate(10); // Paginate results, 10 per page
 
-        return response()->json($orderItems);
+        return new OrderItemCollection($orderItems);
     }
 
     /**

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\OrderRequest;
 use App\Models\Order;
 use Illuminate\Http\Request;
 
@@ -14,7 +15,7 @@ class OrderController extends Controller
     public function index(Request $request)
     {
         $query = Order::query();
-        if ($request->has('status')) {
+        if ($request->has('status')) {  // has('status') truyen tham so status tu request
             $query->where('status', $request->get('status'));
         }
         if ($request->has('user_id')) {
@@ -42,9 +43,16 @@ class OrderController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(OrderRequest $request)
     {
         //
+        $order = Order::create($request->validated());
+        Order::reorderIds();
+        $order = $order->fresh(); // Tải lại để lấy dữ liệu mới nhất
+        retturn(new OrderResource($order))
+            ->response()
+            ->setStatusCode(201); // Trả về 201 Created với dữ liệu đã chuẩn hoá
+
     }
 
     /**

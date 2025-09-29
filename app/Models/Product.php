@@ -142,5 +142,5 @@ class Product extends Model
         static::deleted(function ($product) {
             self::reorderIds();
         });
-    } 
+    }
 }
