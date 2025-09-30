@@ -27,14 +27,14 @@ class OrderRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'user_id' => ['required', 'exists:users,id'],
+            'user_id' => ['required', 'integer', 'exists:users,id'],
             'order_date' => ['required', 'date'],
             'status' => ['required', Rule::in(['pending', 'processing', 'completed', 'cancelled'])],
             'total_amount' => ['required', 'numeric', 'min:0'],
             'items' => ['required', 'array', 'min:1'],
-            'items.*.product_id' => ['required', 'exists:products,id'],
+            'items.*.product_id' => ['required', 'integer', 'exists:products,product_id'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
-            'items.*.price' => ['required', 'numeric', 'min:0'],
+            'items.*.price' => ['required', 'numeric', 'min:0'], // Gia phai lon hon hoac bang 0
         ];
     }
 

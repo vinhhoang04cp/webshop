@@ -74,5 +74,4 @@ class Order extends Model
         // Bật lại kiểm tra foreign key
         \DB::statement('SET FOREIGN_KEY_CHECKS = 1');
     }
-
 }

@@ -129,18 +129,4 @@ class Product extends Model
         DB::statement('SET FOREIGN_KEY_CHECKS = 1');
     }
 
-    protected static function booted()
-    {
-        static::created(function ($product) {
-            self::reorderIds();
-        });
-
-        static::updated(function ($product) {
-            self::reorderIds();
-        });
-
-        static::deleted(function ($product) {
-            self::reorderIds();
-        });
-    }
 }
