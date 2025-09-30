@@ -49,14 +49,24 @@ class OrderController extends Controller
     public function store(OrderRequest $request)
     {
         // Tạo transaction để đảm bảo data integrity
-        DB::beginTransaction();
+        DB::beginTransaction(); // transaction thuc hien cac thao tac tren db
         
         try {
-            // Tạo order với dữ liệu đã validate (loại bỏ items khỏi fillable data)
+            // Lấy dữ liệu đã validate và tách items
             $orderData = $request->validated();
-            $items = $orderData['items'];
-            unset($orderData['items']);
+            $items = $orderData['items']; // $items la mot mang chua cac san pham trong don hang lay tu request, bao gom product_id, quantity, va price cho moi san pham.
+            unset($orderData['items']); // Loai bo items khoi orderData de tranh loi khi tao order
             
+            // Tự động tính tổng tiền từ các items
+            $totalAmount = 0;
+            foreach ($items as $item) {
+                $totalAmount += $item['quantity'] * $item['price'];
+            }
+            
+            // Gán tổng tiền đã tính toán vào order data
+            $orderData['total_amount'] = $totalAmount;
+            
+            // Tạo order với tổng tiền đã được tính tự động
             $order = Order::create($orderData);
             
             // Tạo order items
@@ -67,11 +77,10 @@ class OrderController extends Controller
                     'price' => $item['price']
                 ]);
             }
+
+            Order::reorderIds();
             
-            // Comment out reorderIds for now - có vấn đề với SQLite trong test
-            // Order::reorderIds();
-            
-            DB::commit();
+            DB::commit(); //commit de luu cac thay doi neu khong co loi xay ra trong transaction
             
             $order = $order->fresh(); // Tải lại để lấy dữ liệu mới nhất
             return (new OrderResource($order))

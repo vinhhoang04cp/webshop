@@ -30,6 +30,7 @@ class OrderItemRequest extends FormRequest
             'product_id' => ['required', 'integer', 'exists:products,product_id'],
             'quantity' => ['required', 'integer', 'min:1'],
             'price' => ['required', 'numeric', 'min:0'], // Gia phai lon hon hoac bang 0
+            'total_price' => ['required', 'numeric', 'min:0'], // Gia phai lon hon hoac bang 0
 
         ];
     }
