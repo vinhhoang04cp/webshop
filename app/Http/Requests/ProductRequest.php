@@ -42,7 +42,7 @@ class ProductRequest extends FormRequest
             'description' => ['nullable', 'string', 'max:2000'],
             'price' => ['required', 'numeric', 'min:0'],
             'stock_quantity' => ['nullable', 'integer', 'min:0'],
-            'category_id' => ['required', 'exists:categories,id'], // Kiem tra category_id phai ton tai trong bang categories
+            'category_id' => ['required', 'exists:categories,category_id'], // Kiem tra category_id phai ton tai trong bang categories
         ];
     }
 

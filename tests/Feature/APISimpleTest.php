@@ -15,9 +15,27 @@ class APISimpleTest extends TestCase
 
     public function test_all_api_endpoints()
     {
-        echo "\n=== COMPREHENSIVE API TEST REPORT ===\n\n";
+        echo "=== COMPREHENSIVE API TEST REPORT ===\n\n";
         
         $results = [];
+        
+        // Create shared test data
+        $category = Category::create(['name' => 'Test Category', 'description' => 'Test']);
+        
+        // Refresh to get the correct ID after reorderIds()
+        $category = $category->fresh();
+        if (!$category) {
+            // If fresh() fails, get the latest category
+            $category = Category::latest('category_id')->first();
+        }
+        
+        echo "Created category with ID: {$category->category_id}\n";
+        
+        $user = User::create([
+            'name' => 'Test User',
+            'email' => 'test@example.com',
+            'password' => bcrypt('password')
+        ]);
         
         // 1. Categories API
         echo "1. CATEGORIES API\n";
@@ -32,7 +50,7 @@ class APISimpleTest extends TestCase
         ];
         
         // POST category
-        $categoryData = ['name' => 'Test Category', 'description' => 'Test description'];
+        $categoryData = ['name' => 'Test Category New ' . time(), 'description' => 'Test description'];
         $response = $this->postJson('/api/categories', $categoryData);
         echo "POST /api/categories: {$response->getStatusCode()}\n";
         if ($response->getStatusCode() >= 400) {
@@ -57,21 +75,20 @@ class APISimpleTest extends TestCase
         echo "2. PRODUCTS API\n";
         echo "===============\n";
         
-        // Create category first for product
-        $category = Category::create(['name' => 'Test Category', 'description' => 'Test']);
-        
         $response = $this->getJson('/api/products');
         echo "GET /api/products: {$response->getStatusCode()}\n";
         $results['products']['get_all'] = [
             'status' => $response->getStatusCode(),
             'success' => $response->getStatusCode() >= 200 && $response->getStatusCode() < 300
         ];
-        
+
+        // POST product (using shared category)
         $productData = [
-            'name' => 'Test Product',
+            'name' => 'Test Product ' . time(),
             'description' => 'Test description',
             'price' => 99.99,
-            'category_id' => $category->id
+            'stock_quantity' => 100,
+            'category_id' => $category->category_id  // Use the correct primary key
         ];
         $response = $this->postJson('/api/products', $productData);
         echo "POST /api/products: {$response->getStatusCode()}\n";
@@ -89,24 +106,40 @@ class APISimpleTest extends TestCase
         echo "3. ORDERS API\n";
         echo "=============\n";
         
-        // Create user first
-        $user = User::create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-            'password' => bcrypt('password')
+        // Create product for order items (using shared category and user)
+        $product = Product::create([
+            'name' => 'Test Product for Order ' . time(),
+            'description' => 'Test description',
+            'price' => 50.00,
+            'stock_quantity' => 100,
+            'category_id' => $category->category_id
         ]);
         
+        // Refresh to get correct ID after reorderIds()
+        $product = $product->fresh();
+        if (!$product) {
+            $product = Product::latest('product_id')->first();
+        }
+
         $response = $this->getJson('/api/orders');
         echo "GET /api/orders: {$response->getStatusCode()}\n";
         $results['orders']['get_all'] = [
             'status' => $response->getStatusCode(),
             'success' => $response->getStatusCode() >= 200 && $response->getStatusCode() < 300
         ];
-        
+
         $orderData = [
             'user_id' => $user->id,
-            'total_amount' => 199.99,
-            'status' => 'pending'
+            'order_date' => now()->format('Y-m-d'),
+            'status' => 'pending',
+            'total_amount' => 100.00,
+            'items' => [
+                [
+                    'product_id' => $product->product_id,
+                    'quantity' => 2,
+                    'price' => 50.00
+                ]
+            ]
         ];
         $response = $this->postJson('/api/orders', $orderData);
         echo "POST /api/orders: {$response->getStatusCode()}\n";
@@ -116,9 +149,7 @@ class APISimpleTest extends TestCase
         $results['orders']['post'] = [
             'status' => $response->getStatusCode(),
             'success' => $response->getStatusCode() >= 200 && $response->getStatusCode() < 300
-        ];
-        
-        echo "\n";
+        ];        echo "\n";
         
         // 4. Order Items API
         echo "4. ORDER ITEMS API\n";
