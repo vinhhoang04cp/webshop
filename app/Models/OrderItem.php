@@ -34,4 +34,14 @@ class OrderItem extends Model
     {
         return $this->belongsTo(ProductDetail::class, 'detail_id', 'detail_id');
     }
+
+    public function getTotalPriceAttribute()
+    {
+        return $this->quantity * $this->price;
+    }   
+
+    public static function reorderIds()
+    {
+        return self::orderBy('order_id', 'desc')->pluck('order_id')->unique()->toArray();
+    }
 }

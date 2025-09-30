@@ -32,6 +32,7 @@ class OrderCollection extends ResourceCollection
         return [
             'status' => true,
             'message' => 'Orders retrieved successfully',
+            'timestamp' => now(),
         ];
     }
 }

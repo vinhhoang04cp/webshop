@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\OrderRequest;
 use App\Models\Order;
 use Illuminate\Http\Request;
+use App\Http\Resources\OrderCollection;
+use App\Http\Resources\OrderResource;
 
 class OrderController extends Controller
 {
@@ -37,7 +39,7 @@ class OrderController extends Controller
         $orders = $query->get();
         $orders = $query->paginate(10); // Paginate results, 10 per page
 
-        return response()->json($orders);
+        return new OrderCollection($orders);
     }
 
     /**

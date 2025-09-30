@@ -22,6 +22,8 @@ class OrderItemResource extends JsonResource
             'price' => $this->price,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
+            'total_price' => $this->total_price,
+            'product' => new ProductResource($this->whenLoaded('product')),
         ];
     }
 }

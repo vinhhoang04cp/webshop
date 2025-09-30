@@ -26,6 +26,10 @@ class OrderResource extends JsonResource
             'products_count' => $this->whenLoaded('products', function () {
                 return $this->products->count();
             }),
+            'total_quantity' => $this->whenLoaded('products', function () {
+                return $this->products->sum('pivot.quantity');
+            }),
+            'items' => OrderItemResource::collection($this->whenLoaded('items')),
         ];
     }
 }
