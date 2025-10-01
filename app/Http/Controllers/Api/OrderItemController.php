@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\OrderItemCollection;
+use App\Http\Resources\OrderItemResource;
 use App\Models\OrderItem;
 use Illuminate\Http\Request;
 
@@ -31,11 +32,10 @@ class OrderItemController extends Controller
         if ($request->has('min_quantity')) {
             $query->where('quantity', '>=', $request->get('min_quantity'));
         }
-        if ($request->has('max_quantity')) { // has('max_quantity') truyen tham so max_quantity tu request
+        if ($request->has('max_quantity')) {
             $query->where('quantity', '<=', $request->get('max_quantity'));
         }
 
-        $orderItems = $query->get();
         $orderItems = $query->paginate(10); // Paginate results, 10 per page
 
         return new OrderItemCollection($orderItems);
@@ -46,7 +46,13 @@ class OrderItemController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $orderItem = OrderItem::create($request->all());
+        OrderItem::reorderIds();
+        $orderItem->fresh();
+
+        return (new OrderItemResource($orderItem))
+            ->response()
+            ->setStatusCode(201);
     }
 
     /**
@@ -54,7 +60,9 @@ class OrderItemController extends Controller
      */
     public function show(string $id)
     {
-        //
+        $orderItem = OrderItem::findOrFail($id);
+
+        return new OrderItemResource($orderItem);
     }
 
     /**
@@ -62,14 +70,32 @@ class OrderItemController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        $orderItem = OrderItem::findOrFail($id);
+        $orderItem->update($request->all());
+        OrderItem::reorderIds();
+        $orderItem->fresh();
+
+        return (new OrderItemResource($orderItem))
+            ->additional([
+                'status' => true,
+                'message' => 'Order item updated successfully',
+            ])
+            ->response()
+            ->setStatusCode(200);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy($id)
     {
-        //
+        $orderItem = OrderItem::findOrFail($id);
+        $orderItem->delete();
+        OrderItem::reorderIds();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Order item deleted successfully',
+        ], 200);
     }
 }

@@ -31,9 +31,9 @@ class OrderRequest extends FormRequest
             'order_date' => ['required', 'date'],
             'status' => ['required', Rule::in(['pending', 'processing', 'completed', 'cancelled'])],
             // total_amount sẽ được tính tự động từ items
-            //'items' la mot mang chua cac san pham trong don hang, lay tu request
+            // 'items' la mot mang chua cac san pham trong don hang, lay tu request
             'items' => ['required', 'array', 'min:1'],
-            //'items.*.product_id' => ['required', 'integer', 'exists:products,id'] lay tu request
+            // 'items.*.product_id' => ['required', 'integer', 'exists:products,id'] lay tu request
             'items.*.product_id' => ['required', 'integer', 'exists:products,product_id'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
         ];

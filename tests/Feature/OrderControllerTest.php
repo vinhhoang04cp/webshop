@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\Order;
-use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -15,23 +14,24 @@ class OrderControllerTest extends TestCase
     use RefreshDatabase, WithFaker;
 
     private $user;
+
     private $product;
 
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // Tạo user để test
         $this->user = User::factory()->create();
-        
+
         // Tạo category trước để tránh lỗi foreign key
         $category = \App\Models\Category::factory()->create();
-        
+
         // Tạo product để test
         $this->product = Product::factory()->create([
             'name' => 'Test Product',
             'price' => 100.00,
-            'category_id' => $category->category_id
+            'category_id' => $category->category_id,
         ]);
     }
 
@@ -47,31 +47,31 @@ class OrderControllerTest extends TestCase
                 [
                     'product_id' => $this->product->product_id,
                     'quantity' => 2,
-                    'price' => 100.00
-                ]
-            ]
+                    'price' => 100.00,
+                ],
+            ],
         ];
 
         $response = $this->postJson('/api/orders', $orderData);
 
         $response->assertStatus(201)
-                ->assertJsonStructure([
-                    'data' => [
-                        'order_id',
-                        'user_id', 
-                        'order_date',
-                        'status',
-                        'total_amount',
-                        'created_at',
-                        'updated_at'
-                    ]
-                ]);
+            ->assertJsonStructure([
+                'data' => [
+                    'order_id',
+                    'user_id',
+                    'order_date',
+                    'status',
+                    'total_amount',
+                    'created_at',
+                    'updated_at',
+                ],
+            ]);
 
         // Kiểm tra order đã được tạo trong database
         $this->assertDatabaseHas('orders', [
             'user_id' => $this->user->id,
             'status' => 'pending',
-            'total_amount' => 200.00
+            'total_amount' => 200.00,
         ]);
     }
 
@@ -86,15 +86,15 @@ class OrderControllerTest extends TestCase
                 [
                     'product_id' => $this->product->product_id,
                     'quantity' => 2,
-                    'price' => 100.00
-                ]
-            ]
+                    'price' => 100.00,
+                ],
+            ],
         ];
 
         $response = $this->postJson('/api/orders', $orderData);
 
         $response->assertStatus(422)
-                ->assertJsonValidationErrors(['user_id']);
+            ->assertJsonValidationErrors(['user_id']);
     }
 
     /** @test */
@@ -109,15 +109,15 @@ class OrderControllerTest extends TestCase
                 [
                     'product_id' => $this->product->product_id,
                     'quantity' => 2,
-                    'price' => 100.00
-                ]
-            ]
+                    'price' => 100.00,
+                ],
+            ],
         ];
 
         $response = $this->postJson('/api/orders', $orderData);
 
         $response->assertStatus(422)
-                ->assertJsonValidationErrors(['user_id']);
+            ->assertJsonValidationErrors(['user_id']);
     }
 
     /** @test */
@@ -131,15 +131,15 @@ class OrderControllerTest extends TestCase
                 [
                     'product_id' => $this->product->product_id,
                     'quantity' => 2,
-                    'price' => 100.00
-                ]
-            ]
+                    'price' => 100.00,
+                ],
+            ],
         ];
 
         $response = $this->postJson('/api/orders', $orderData);
 
         $response->assertStatus(422)
-                ->assertJsonValidationErrors(['order_date']);
+            ->assertJsonValidationErrors(['order_date']);
     }
 
     /** @test */
@@ -154,15 +154,15 @@ class OrderControllerTest extends TestCase
                 [
                     'product_id' => $this->product->product_id,
                     'quantity' => 2,
-                    'price' => 100.00
-                ]
-            ]
+                    'price' => 100.00,
+                ],
+            ],
         ];
 
         $response = $this->postJson('/api/orders', $orderData);
 
         $response->assertStatus(422)
-                ->assertJsonValidationErrors(['status']);
+            ->assertJsonValidationErrors(['status']);
     }
 
     /** @test */
@@ -176,15 +176,15 @@ class OrderControllerTest extends TestCase
                 [
                     'product_id' => $this->product->product_id,
                     'quantity' => 2,
-                    'price' => 100.00
-                ]
-            ]
+                    'price' => 100.00,
+                ],
+            ],
         ];
 
         $response = $this->postJson('/api/orders', $orderData);
 
         $response->assertStatus(422)
-                ->assertJsonValidationErrors(['total_amount']);
+            ->assertJsonValidationErrors(['total_amount']);
     }
 
     /** @test */
@@ -199,15 +199,15 @@ class OrderControllerTest extends TestCase
                 [
                     'product_id' => $this->product->product_id,
                     'quantity' => 2,
-                    'price' => 100.00
-                ]
-            ]
+                    'price' => 100.00,
+                ],
+            ],
         ];
 
         $response = $this->postJson('/api/orders', $orderData);
 
         $response->assertStatus(422)
-                ->assertJsonValidationErrors(['total_amount']);
+            ->assertJsonValidationErrors(['total_amount']);
     }
 
     /** @test */
@@ -217,13 +217,13 @@ class OrderControllerTest extends TestCase
             'user_id' => $this->user->id,
             'order_date' => now()->format('Y-m-d'),
             'status' => 'pending',
-            'total_amount' => 200.00
+            'total_amount' => 200.00,
         ];
 
         $response = $this->postJson('/api/orders', $orderData);
 
         $response->assertStatus(422)
-                ->assertJsonValidationErrors(['items']);
+            ->assertJsonValidationErrors(['items']);
     }
 
     /** @test */
@@ -234,13 +234,13 @@ class OrderControllerTest extends TestCase
             'order_date' => now()->format('Y-m-d'),
             'status' => 'pending',
             'total_amount' => 200.00,
-            'items' => []
+            'items' => [],
         ];
 
         $response = $this->postJson('/api/orders', $orderData);
 
         $response->assertStatus(422)
-                ->assertJsonValidationErrors(['items']);
+            ->assertJsonValidationErrors(['items']);
     }
 
     /** @test */
@@ -255,15 +255,15 @@ class OrderControllerTest extends TestCase
                 [
                     'product_id' => 99999, // ID không tồn tại
                     'quantity' => 2,
-                    'price' => 100.00
-                ]
-            ]
+                    'price' => 100.00,
+                ],
+            ],
         ];
 
         $response = $this->postJson('/api/orders', $orderData);
 
         $response->assertStatus(422)
-                ->assertJsonValidationErrors(['items.0.product_id']);
+            ->assertJsonValidationErrors(['items.0.product_id']);
     }
 
     /** @test */
@@ -278,15 +278,15 @@ class OrderControllerTest extends TestCase
                 [
                     'product_id' => $this->product->product_id,
                     'quantity' => 0, // Quantity phải >= 1
-                    'price' => 100.00
-                ]
-            ]
+                    'price' => 100.00,
+                ],
+            ],
         ];
 
         $response = $this->postJson('/api/orders', $orderData);
 
         $response->assertStatus(422)
-                ->assertJsonValidationErrors(['items.0.quantity']);
+            ->assertJsonValidationErrors(['items.0.quantity']);
     }
 
     /** @test */
@@ -301,15 +301,15 @@ class OrderControllerTest extends TestCase
                 [
                     'product_id' => $this->product->product_id,
                     'quantity' => 2,
-                    'price' => -50.00 // Price không được âm
-                ]
-            ]
+                    'price' => -50.00, // Price không được âm
+                ],
+            ],
         ];
 
         $response = $this->postJson('/api/orders', $orderData);
 
         $response->assertStatus(422)
-                ->assertJsonValidationErrors(['items.0.price']);
+            ->assertJsonValidationErrors(['items.0.price']);
     }
 
     /** @test */
@@ -319,7 +319,7 @@ class OrderControllerTest extends TestCase
         $product2 = Product::factory()->create([
             'name' => 'Test Product 2',
             'price' => 50.00,
-            'category_id' => $category2->category_id
+            'category_id' => $category2->category_id,
         ]);
 
         $orderData = [
@@ -331,14 +331,14 @@ class OrderControllerTest extends TestCase
                 [
                     'product_id' => $this->product->product_id,
                     'quantity' => 2,
-                    'price' => 100.00
+                    'price' => 100.00,
                 ],
                 [
                     'product_id' => $product2->product_id,
                     'quantity' => 3,
-                    'price' => 50.00
-                ]
-            ]
+                    'price' => 50.00,
+                ],
+            ],
         ];
 
         $response = $this->postJson('/api/orders', $orderData);
@@ -349,7 +349,7 @@ class OrderControllerTest extends TestCase
         $this->assertDatabaseHas('orders', [
             'user_id' => $this->user->id,
             'status' => 'pending',
-            'total_amount' => 350.00
+            'total_amount' => 350.00,
         ]);
     }
 }

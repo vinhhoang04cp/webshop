@@ -4,11 +4,11 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\OrderRequest;
+use App\Http\Resources\OrderCollection;
+use App\Http\Resources\OrderResource;
 use App\Models\Order;
 use App\Models\Product;
 use Illuminate\Http\Request;
-use App\Http\Resources\OrderCollection;
-use App\Http\Resources\OrderResource;
 use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
@@ -51,13 +51,13 @@ class OrderController extends Controller
     {
         // Tạo transaction để đảm bảo data integrity
         DB::beginTransaction(); // transaction thuc hien cac thao tac tren db
-        
+
         try {
             // Lấy dữ liệu đã validate và tách items
             $orderData = $request->validated();
             $items = $orderData['items']; // $items la mot mang chua cac san pham trong don hang lay tu request,$items lay tu Request
             unset($orderData['items']); // Loai bo items khoi orderData de tranh loi khi tao order
-            
+
             // Tự động tính tổng tiền từ giá sản phẩm trong database
             $totalAmount = 0;
             foreach ($items as $index => $item) { // $index => $item lay tu mang items
@@ -66,44 +66,51 @@ class OrderController extends Controller
                 $productPrice = $product->price;
                 // Tính tổng tiền cho từng sản phẩm
                 $totalAmount += $item['quantity'] * $productPrice; // += la phep cong don cac product lai voi nhau
-                
+
                 // Cập nhật giá trong item để lưu vào order_items
                 $items[$index]['price'] = $productPrice;
             }
-            
+
             // Gán tổng tiền đã tính toán vào order data
             $orderData['total_amount'] = $totalAmount; // $
-            
+
             // Tạo order với tổng tiền đã được tính tự động
             $order = Order::create($orderData);
-            
+
             // Tạo order items với giá đã được lấy từ database
             foreach ($items as $item) {
                 $order->items()->create([
                     'product_id' => $item['product_id'],
                     'quantity' => $item['quantity'],
-                    'price' => $item['price'] // Giá đã được cập nhật từ database
+                    'price' => $item['price'], // Giá đã được cập nhật từ database
                 ]);
             }
-            
-            DB::commit(); //commit de luu cac thay doi neu khong co loi xay ra trong transaction
-            
+
+            DB::commit(); // commit de luu cac thay doi neu khong co loi xay ra trong transaction
+
             // Load lại order với relationships
             $order = Order::with('items')->find($order->order_id);
-            
+
+            // Trả về dữ liệu đã chuẩn hoá sử dụng OrderResource
             return (new OrderResource($order))
                 ->response()
                 ->setStatusCode(201); // Trả về 201 Created với dữ liệu đã chuẩn hoá
-                
+
         } catch (\Exception $e) {
             DB::rollback();
+
             return response()->json([
                 'status' => false,
                 'message' => 'Failed to create order',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
         \DB::reorderIds(); // Goi ham reorderIds de sap xep lai ID sau khi tao moi
+
+        return (new OrderResource($order))
+            ->response()
+            ->setStatusCode(201); // Trả về 201 Created với dữ liệu đã chuẩn hoá
+
     }
 
     /**
@@ -123,63 +130,90 @@ class OrderController extends Controller
     public function update(OrderRequest $request, string $id)
     {
         DB::beginTransaction();
-        
+
         try {
             $order = Order::findOrFail($id);
-            
+
             // Lấy dữ liệu đã validate và tách items
             $orderData = $request->validated();
             $items = $orderData['items'] ?? [];
             unset($orderData['items']);
-            
+
             // Nếu có items mới, tính lại tổng tiền
-            if (!empty($items)) {
+            if (! empty($items)) {
                 $totalAmount = 0;
-                
+
                 // Xóa các order items cũ
                 $order->items()->delete();
-                
+
                 // Tạo order items mới với giá từ database
                 foreach ($items as $index => $item) {
                     $product = Product::findOrFail($item['product_id']);
                     $productPrice = $product->price;
-                    
+
                     $totalAmount += $item['quantity'] * $productPrice;
-                    
+
                     $order->items()->create([
                         'product_id' => $item['product_id'],
                         'quantity' => $item['quantity'],
-                        'price' => $productPrice
+                        'price' => $productPrice,
                     ]);
                 }
-                
+
                 $orderData['total_amount'] = $totalAmount;
             }
-            
+
             // Cập nhật thông tin order
             $order->update($orderData);
-            
+
             DB::commit();
-            
+
             // Load lại order với relationships
             $order = Order::with('items')->find($order->order_id);
+
             return new OrderResource($order);
-            
+
         } catch (\Exception $e) {
             DB::rollback();
+
             return response()->json([
                 'status' => false,
                 'message' => 'Failed to update order',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
+        \DB::reorderIds(); // Goi ham reorderIds de sap xep lai ID sau khi tao moi
+
+        return (new OrderResource($order))
+            ->response()
+            ->setStatusCode(201); // Trả về 201 Created với dữ liệu đã chuẩn hoá
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy($id)
     {
         //
+        $order = Order::findOrFail($id);
+        if (! $order) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Order not found',
+            ], 404);
+        }
+
+        $order->delete();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Order deleted successfully',
+        ], 200);
+
+        \DB::reorderIds(); // Goi ham reorderIds de sap xep lai ID sau khi tao moi
+
+        return (new OrderResource($order))
+            ->response()
+            ->setStatusCode(201); // Trả về 201 Created với dữ liệu đã chuẩn hoá
     }
 }

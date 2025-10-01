@@ -38,7 +38,7 @@ class OrderItem extends Model
     public function getTotalPriceAttribute()
     {
         return $this->quantity * $this->price;
-    }   
+    }
 
     public static function reorderIds()
     {
