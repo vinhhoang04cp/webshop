@@ -62,8 +62,8 @@ class OrderController extends Controller
             $totalAmount = 0;
             foreach ($items as $index => $item) { // $index => $item lay tu mang items
                 // Lấy giá sản phẩm từ database
-                $product = Product::findOrFail($item['product_id']);
-                $productPrice = $product->price;
+                $product = Product::findOrFail($item['product_id']); // tim kiem san pham trong db bang product_id
+                $productPrice = $product->price; // lay gia san pham tu db
                 // Tính tổng tiền cho từng sản phẩm
                 $totalAmount += $item['quantity'] * $productPrice; // += la phep cong don cac product lai voi nhau
 
@@ -78,6 +78,7 @@ class OrderController extends Controller
             $order = Order::create($orderData);
 
             // Tạo order items với giá đã được lấy từ database
+            // dung de lap qua tung item trong mang items va tao moi order item
             foreach ($items as $item) {
                 $order->items()->create([
                     'product_id' => $item['product_id'],
@@ -96,8 +97,8 @@ class OrderController extends Controller
                 ->response()
                 ->setStatusCode(201); // Trả về 201 Created với dữ liệu đã chuẩn hoá
 
-        } catch (\Exception $e) {
-            DB::rollback();
+        } catch (\Exception $e) { // neu co loi xay ra trong transaction
+            DB::rollback(); // rollback de hoan tac lai cac thay doi trong transaction
 
             return response()->json([
                 'status' => false,

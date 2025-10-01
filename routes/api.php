@@ -59,3 +59,10 @@ Route::prefix('product-details')->group(function () {
     Route::put('/{id}', [\App\Http\Controllers\Api\ProductDetailController::class, 'update']);
     Route::delete('/{id}', [\App\Http\Controllers\Api\ProductDetailController::class, 'destroy']);
 });
+Route::prefix('carts')->group(function () {
+    Route::get('/', [\App\Http\Controllers\Api\CartController::class, 'index']);
+    Route::post('/', [\App\Http\Controllers\Api\CartController::class, 'store']);
+    Route::get('/{id}', [\App\Http\Controllers\Api\CartController::class, 'show']);
+    Route::put('/{id}', [\App\Http\Controllers\Api\CartController::class, 'update']);
+    Route::delete('/{id}', [\App\Http\Controllers\Api\CartController::class, 'destroy']);
+});
