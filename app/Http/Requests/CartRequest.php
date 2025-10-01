@@ -27,15 +27,24 @@ class CartRequest extends FormRequest
      */
     public function rules(): array
     {
+        // Cho store method (tạo cart mới)
+        if ($this->isMethod('post') && !$this->route('id')) {
+            return [
+                'items' => ['required', 'array', 'min:1'],
+                'items.*.product_id' => ['required', 'integer', 'exists:products,product_id'],
+                'items.*.quantity' => ['required', 'integer', 'min:1'],
+            ];
+        }
+        
+        // Cho update method hoặc các trường hợp khác
         return [
-            //
-            'product_id' => ['required', 'integer', 'exists:products,id'],
-            'quantity' => ['required', 'integer', 'min:1'],
-            'cart_id' => ['nullable', 'integer', Rule::exists('carts', 'id')->where(function ($query) {
+            'product_id' => ['sometimes', 'required', 'integer', 'exists:products,product_id'],
+            'quantity' => ['sometimes', 'required', 'integer', 'min:1'],
+            'cart_id' => ['nullable', 'integer', Rule::exists('carts', 'cart_id')->where(function ($query) {
                 $query->where('user_id', auth()->id());
             })],
-            'items' => ['required', 'array', 'min:1'],
-            'items.*.product_id' => ['required', 'integer', 'exists:products,id'],
+            'items' => ['sometimes', 'required', 'array', 'min:1'],
+            'items.*.product_id' => ['required', 'integer', 'exists:products,product_id'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
         ];
     }

@@ -38,4 +38,19 @@ class CartItem extends Model
     {
         return $this->quantity * $this->price();
     }
+
+    protected $appends = ['price', 'total_price'];
+    protected $casts = [
+        'price' => 'decimal:2',
+        'total_price' => 'decimal:2',
+    ];
+    public function getPriceAttribute()
+    {
+        return $this->price();
+    }
+    public function getTotalPriceAttribute()
+    {
+        return $this->totalPrice();
+    }
+    
 }
