@@ -51,10 +51,7 @@ class Order extends Model
         return $this->items()->sum('quantity');
     }
 
-    public function getTotalAmountAttribute() // ham nay se duoc goi den khi truy cap thuoc tinh total_amount
-    {
-        return $this->items()->sum(\DB::raw('quantity * price'));
-    }
+    // Removed getTotalAmountAttribute to avoid conflict with fillable total_amount field
 
     public static function reorderIds()
     {

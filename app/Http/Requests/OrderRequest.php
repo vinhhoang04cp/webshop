@@ -31,10 +31,11 @@ class OrderRequest extends FormRequest
             'order_date' => ['required', 'date'],
             'status' => ['required', Rule::in(['pending', 'processing', 'completed', 'cancelled'])],
             // total_amount sẽ được tính tự động từ items
+            //'items' la mot mang chua cac san pham trong don hang, lay tu request
             'items' => ['required', 'array', 'min:1'],
+            //'items.*.product_id' => ['required', 'integer', 'exists:products,id'] lay tu request
             'items.*.product_id' => ['required', 'integer', 'exists:products,product_id'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
-            'items.*.price' => ['required', 'numeric', 'min:0'], // Gia phai lon hon hoac bang 0
         ];
     }
 
@@ -56,9 +57,7 @@ class OrderRequest extends FormRequest
             'items.*.quantity.required' => 'Quantity is required for each item',
             'items.*.quantity.integer' => 'Quantity must be an integer for each item',
             'items.*.quantity.min' => 'Quantity must be at least 1 for each item',
-            'items.*.price.required' => 'Price is required for each item',
-            'items.*.price.numeric' => 'Price must be a number for each item',
-            'items.*.price.min' => 'Price must be at least 0 for each item',
+            // Đã loại bỏ price validation messages vì sẽ lấy từ database
         ];
     }
 
