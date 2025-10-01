@@ -15,7 +15,6 @@ return new class extends Migration
             $table->id('order_id');
             $table->unsignedBigInteger('user_id');
             $table->dateTime('order_date');
-            $table->enum('status', ['pending', 'paid', 'shipped', 'completed', 'cancelled']);
             $table->decimal('total_amount', 12, 2);
             $table->timestamps();
 

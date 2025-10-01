@@ -29,7 +29,6 @@ class OrderRequest extends FormRequest
         return [
             'user_id' => ['required', 'integer', 'exists:users,id'],
             'order_date' => ['required', 'date'],
-            'status' => ['required', Rule::in(['pending', 'processing', 'completed', 'cancelled'])],
             // total_amount sẽ được tính tự động từ items
             // 'items' la mot mang chua cac san pham trong don hang, lay tu request
             'items' => ['required', 'array', 'min:1'],
@@ -46,8 +45,6 @@ class OrderRequest extends FormRequest
             'user_id.exists' => 'User not found',
             'order_date.required' => 'Order date is required',
             'order_date.date' => 'Order date must be a valid date',
-            'status.required' => 'Status is required',
-            'status.in' => 'Status must be one of: pending, processing, completed, cancelled',
             // total_amount messages removed as it's calculated automatically
             'items.required' => 'Order items are required',
             'items.array' => 'Order items must be an array',

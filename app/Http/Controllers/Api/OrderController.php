@@ -19,9 +19,6 @@ class OrderController extends Controller
     public function index(Request $request)
     {
         $query = Order::query();
-        if ($request->has('status')) {  // has('status') truyen tham so status tu request
-            $query->where('status', $request->get('status'));
-        }
         if ($request->has('user_id')) {
             $query->where('user_id', $request->get('user_id'));
         }
@@ -54,13 +51,13 @@ class OrderController extends Controller
 
         try {
             // Lấy dữ liệu đã validate và tách items
-            $orderData = $request->validated();
+            $orderData = $request->validated(); //orderaData la mot mang chua du lieu da duoc validate, lay tu Request
             $items = $orderData['items']; // $items la mot mang chua cac san pham trong don hang lay tu request,$items lay tu Request
             unset($orderData['items']); // Loai bo items khoi orderData de tranh loi khi tao order
 
             // Tự động tính tổng tiền từ giá sản phẩm trong database
-            $totalAmount = 0;
-            foreach ($items as $index => $item) { // $index => $item lay tu mang items
+            $totalAmount = 0; // khoi tao bien totalAmount de tinh tong tien
+            foreach ($items as $index => $item) { // lap qua tung item trong mang items
                 // Lấy giá sản phẩm từ database
                 $product = Product::findOrFail($item['product_id']); // tim kiem san pham trong db bang product_id
                 $productPrice = $product->price; // lay gia san pham tu db
