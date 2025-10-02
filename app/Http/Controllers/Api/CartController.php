@@ -33,10 +33,10 @@ class CartController extends Controller
         $grandTotal = 0; // Tổng giá của tất cả cart
 
         foreach ($carts as $cart) { // cart la bien luu tru cart hien tai , lap voi moi cart trong carts
-            $cartTotalAmount = 0; // tong tien cua cart hien tai
+            $cartTotalAmount = 0; // khoi tao tong tien cua cart hien tai
             $totalItems = 0; // tong so luong item trong cart
 
-            foreach ($cart->items as $cartItem) { // cartItem la bien luu tru cart item, lap voi moi cart item trong cart
+            foreach ($cart->items as $cartItem) { // cartItem la bien luu tru moi 1 item, lap voi moi cart item trong cart
                 $cartTotalAmount += $cartItem->product->price * $cartItem->quantity; // tong tien se bang tien cua cart item * so luong
                 $totalItems += $cartItem->quantity; // cong don so luong item trong cart
             }
@@ -324,6 +324,7 @@ class CartController extends Controller
 
         // Xóa cart
         $cart->delete();
+        \DB::reorderIds(); // Goi ham reorderIds de sap xep lai ID sau khi xoa
 
         return response()->json([
             'status' => true,

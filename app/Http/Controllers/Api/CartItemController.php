@@ -48,17 +48,33 @@ class CartItemController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show($id)
     {
         //
+        $cartItem = CartItem::findOrFail($id);
+        return (new CartItemResource($cartItem))
+            ->response()
+            ->setStatusCode(200);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, $id)
     {
         //
+        $cartItem = CartItem::findOrFail($id);
+        $cartItem->update($request->all());
+        CartItem::reorderIds();
+        $cartItem->fresh();
+
+        return (new CartItemResource($cartItem))
+            ->additional([
+                'status' => true,
+                'message' => 'Cart item updated successfully',
+            ])
+            ->response()
+            ->setStatusCode(200);
     }
 
     /**
@@ -67,5 +83,13 @@ class CartItemController extends Controller
     public function destroy(string $id)
     {
         //
+        $cartItem = CartItem::findOrFail($id);
+        $cartItem->delete();
+        CartItem::reorderIds();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Cart item deleted successfully',
+        ], 200);
     }
 }
