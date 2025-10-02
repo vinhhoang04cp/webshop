@@ -79,13 +79,13 @@ class CartController extends Controller
     {
         DB::beginTransaction(); // DB transaction lam viec voi nhieu cau lenh DB, neu co loi thi rollback ve trang thai truoc do
         try {
-            $cartData = $request->validated(); // validate du lieu truyen tu request
+            $cartData = $request->validated(); // $cartData la 1 mang  duoc luu tru du lieu da duoc validate
 
             // Xác định user_id
             $userId = auth()->id() ?? $request->user_id ?? 1; // $userId lay tu auth hoac request hoac mac dinh la 1
 
             // check xem $cartData truyen tu request co cart_id khong
-            if (isset($cartData['cart_id'])) {
+            if (isset($cartData['cart_id'])) { // neu co cart_id thi tim cart theo cart_id va user_id
                 $cart = Cart::where('cart_id', $cartData['cart_id']) // query cart theo cart_id
                     ->where('user_id', $userId) // Kiem tra cart thuoc ve user hien tai
                     ->first(); // Lay cart neu co
@@ -94,7 +94,7 @@ class CartController extends Controller
                     throw new Exception("Cart with ID {$cartData['cart_id']} not found or does not belong to user"); // thong bao loi rang cart khong ton tai hoac khong thuoc ve user
                 } // Neu khong tim thay cart thi throw exception
             } else {
-                $cart = Cart::where('user_id', $userId)->first();
+                $cart = Cart::where('user_id', $userId)->first(); //first() lay cart dau tien neu co
             }
 
             // Nếu chưa có cart thì tạo mới
@@ -138,9 +138,9 @@ class CartController extends Controller
                 }
             */
             // neu du lieu truyen vao co product_id va quantity
-            elseif (isset($cartData['product_id']) && isset($cartData['quantity'])) {
+            elseif (isset($cartData['product_id']) && isset($cartData['quantity'])) { //$cartData la du lieu truyen vao tu request
                 $itemsToAdd[] = [ // them phan tu vao mang itemsToAdd
-                    'product_id' => $cartData['product_id'], // gan product_id va quantity vao mang itemsToAdd
+                    'product_id' => $cartData['product_id'], // gan product_id va quantity tu request vao mang itemsToAdd
                     'quantity' => $cartData['quantity'],
                 ];
             }
@@ -269,7 +269,7 @@ class CartController extends Controller
                 }
             }
 
-            DB::commit();
+            DB::commit(); // commit neu khong co loi xay ra
 
             // Load lại cart với relationships
             $cart = Cart::with('items.product')->find($cart->cart_id);

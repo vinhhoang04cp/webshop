@@ -69,7 +69,7 @@ class OrderController extends Controller
             }
 
             // Gán tổng tiền đã tính toán vào order data
-            $orderData['total_amount'] = $totalAmount; //
+            $orderData['total_amount'] = $totalAmount; // gan gia tri cua bien totalAmount vao bien $orderData la 1 mang chua du lieu da duoc validate
 
             // Tạo order với tổng tiền đã được tính tự động
             $order = Order::create($orderData);
