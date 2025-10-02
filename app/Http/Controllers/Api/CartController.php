@@ -94,7 +94,7 @@ class CartController extends Controller
                     throw new Exception("Cart with ID {$cartData['cart_id']} not found or does not belong to user"); // thong bao loi rang cart khong ton tai hoac khong thuoc ve user
                 } // Neu khong tim thay cart thi throw exception
             } else {
-                $cart = Cart::where('user_id', $userId)->first(); //first() lay cart dau tien neu co
+                $cart = Cart::where('user_id', $userId)->first(); // first() lay cart dau tien neu co
             }
 
             // Nếu chưa có cart thì tạo mới
@@ -138,7 +138,7 @@ class CartController extends Controller
                 }
             */
             // neu du lieu truyen vao co product_id va quantity
-            elseif (isset($cartData['product_id']) && isset($cartData['quantity'])) { //$cartData la du lieu truyen vao tu request
+            elseif (isset($cartData['product_id']) && isset($cartData['quantity'])) { // $cartData la du lieu truyen vao tu request
                 $itemsToAdd[] = [ // them phan tu vao mang itemsToAdd
                     'product_id' => $cartData['product_id'], // gan product_id va quantity tu request vao mang itemsToAdd
                     'quantity' => $cartData['quantity'],

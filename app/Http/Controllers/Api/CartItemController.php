@@ -52,6 +52,7 @@ class CartItemController extends Controller
     {
         //
         $cartItem = CartItem::findOrFail($id);
+
         return (new CartItemResource($cartItem))
             ->response()
             ->setStatusCode(200);
