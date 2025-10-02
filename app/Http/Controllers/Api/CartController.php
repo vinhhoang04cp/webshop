@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CartRequest;
-use App\Http\Resources\CartCollection;
 use App\Http\Resources\CartResource;
 use App\Models\Cart;
 use App\Models\Product;
@@ -19,7 +18,7 @@ class CartController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Cart::query(); // $query la bien truy van Cart model
+        $query = Cart::with('items.product'); // Load cả items và product để tính tổng giá
         // Loc theo user_id neu co
         if ($request->has('user_id')) { // neu request co user_id , $request co nghia la lay du lieu tu request
             $query->where('user_id', $request->get('user_id')); // them dieu kien loc user_id vao truy van
@@ -27,12 +26,50 @@ class CartController extends Controller
         if ($request->has('product_id')) {
             $query->where('product_id', $request->get('product_id'));
         }
-        $carts = $query->get(); // Lay tat ca du lieu tu truy van
         $carts = $query->paginate(10); // Phan trang 10 per page by default
 
-        return (new CartCollection($carts)) // tra ve collection da chuan hoa , $carts co nghia la lay du lieu tu model Cart
-            ->response()
-            ->setStatusCode(200);
+        // Tính tổng giá cho mỗi cart
+        $cartsData = []; // tao 1 mang luu tru du lieu cart
+        $grandTotal = 0; // Tổng giá của tất cả cart
+
+        foreach ($carts as $cart) { // cart la bien luu tru cart hien tai , lap voi moi cart trong carts
+            $cartTotalAmount = 0; // tong tien cua cart hien tai
+            $totalItems = 0; // tong so luong item trong cart
+
+            foreach ($cart->items as $cartItem) { // cartItem la bien luu tru cart item, lap voi moi cart item trong cart
+                $cartTotalAmount += $cartItem->product->price * $cartItem->quantity; // tong tien se bang tien cua cart item * so luong
+                $totalItems += $cartItem->quantity; // cong don so luong item trong cart
+            }
+
+            $cartData = new CartResource($cart); // chuan hoa du lieu cart hien tai
+            // them thong tin tong tien va tong so luong item vao cartData
+            $cartData->additional([
+                'total_amount' => $cartTotalAmount, // tong tien cua cart hien tai , lay tu bien $cartTotalAmount
+                'total_items' => $totalItems, // tong so luong item trong cart, lay tu bien $totalItems
+            ]);
+
+            $cartsData[] = [ // them du lieu cart vao mang cartsData
+                'cart' => $cartData, // chuan hoa du lieu cart hien tai
+                'total_amount' => $cartTotalAmount, // tong tien cua cart hien tai , lay tu bien $cartTotalAmount
+                'total_items' => $totalItems, // tong so luong item trong cart, lay tu bien $totalItems
+            ];
+
+            $grandTotal += $cartTotalAmount; // cong don tong tien cua tat ca cart
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Carts retrieved successfully',
+            'data' => $cartsData,
+            'pagination' => [
+                'current_page' => $carts->currentPage(),
+                'per_page' => $carts->perPage(),
+                'total' => $carts->total(),
+                'last_page' => $carts->lastPage(),
+            ],
+            'grand_total' => $grandTotal, // Tổng giá của tất cả cart
+            'total_carts' => $carts->total(),
+        ], 200);
     }
 
     /**
@@ -291,6 +328,6 @@ class CartController extends Controller
         return response()->json([
             'status' => true,
             'message' => 'Cart deleted successfully',
-        ], 200);    
+        ], 200);
     }
 }

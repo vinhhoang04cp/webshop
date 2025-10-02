@@ -69,7 +69,7 @@ class OrderController extends Controller
             }
 
             // Gán tổng tiền đã tính toán vào order data
-            $orderData['total_amount'] = $totalAmount; // 
+            $orderData['total_amount'] = $totalAmount; //
 
             // Tạo order với tổng tiền đã được tính tự động
             $order = Order::create($orderData);
@@ -78,8 +78,8 @@ class OrderController extends Controller
             // dung de lap qua tung item trong mang items va tao moi order item
             foreach ($items as $item) {
                 $order->items()->create([
-                    'product_id' => $item['product_id'], //[product_id] lay tu request
-                    'quantity' => $item['quantity'], //[quantity] lay tu request
+                    'product_id' => $item['product_id'], // [product_id] lay tu request
+                    'quantity' => $item['quantity'], // [quantity] lay tu request
                     'price' => $item['price'], // Giá đã được cập nhật từ database
                 ]);
             }

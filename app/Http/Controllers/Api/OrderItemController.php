@@ -60,7 +60,7 @@ class OrderItemController extends Controller
      */
     public function show($id)
     {
-        $orderItem = OrderItem::findOrFail($id);  
+        $orderItem = OrderItem::findOrFail($id);
 
         return new OrderItemResource($orderItem);
     }

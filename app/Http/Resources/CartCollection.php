@@ -7,8 +7,7 @@ use Illuminate\Http\Resources\Json\ResourceCollection;
 
 class CartCollection extends ResourceCollection
 {
-
-    public function with ($request)
+    public function with($request)
     {
         return [
             'status' => true,
@@ -16,6 +15,7 @@ class CartCollection extends ResourceCollection
             'timestamp' => now(),
         ];
     }
+
     /**
      * Transform the resource collection into an array.
      *
