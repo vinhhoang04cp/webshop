@@ -27,10 +27,12 @@ class CartController extends Controller
         if ($request->has('product_id')) {
             $query->where('product_id', $request->get('product_id'));
         }
-
+        $carts = $query->get(); // Lay tat ca du lieu tu truy van
         $carts = $query->paginate(10); // Phan trang 10 per page by default
 
-        return new CartCollection($carts); // tra ve collection da chuan hoa , $carts co nghia la lay du lieu tu model Cart
+        return (new CartCollection($carts)) // tra ve collection da chuan hoa , $carts co nghia la lay du lieu tu model Cart
+            ->response()
+            ->setStatusCode(200);
     }
 
     /**
