@@ -39,25 +39,71 @@ class CartController extends Controller
         DB::beginTransaction();
         try {
             $cartData = $request->validated();
-            $items = $cartData['items'];
+            
+            // Xác định user_id
+            $userId = auth()->id() ?? $request->user_id ?? 1;
 
-            // Tạo cart mới cho user
-            $cart = Cart::create([
-                'user_id' => auth()->id() ?? $request->user_id ?? 1, // Lấy user_id từ auth hoặc request
-            ]);
+            // Kiểm tra xem user đã có cart chưa hoặc sử dụng cart_id nếu được cung cấp
+            if (isset($cartData['cart_id'])) {
+                $cart = Cart::where('cart_id', $cartData['cart_id'])
+                    ->where('user_id', $userId)
+                    ->first();
+                    
+                if (!$cart) {
+                    throw new Exception("Cart with ID {$cartData['cart_id']} not found or does not belong to user");
+                }
+            } else {
+                $cart = Cart::where('user_id', $userId)->first();
+            }
+            
+            // Nếu chưa có cart thì tạo mới
+            if (!$cart) {
+                $cart = Cart::create([
+                    'user_id' => $userId,
+                ]);
+            }
 
-            // Tạo cart items với giá lấy từ database
-            foreach ($items as $item) {
+            $totalAmount = 0;
+            $itemsToAdd = [];
+
+            // Xử lý items array nếu có
+            if (isset($cartData['items']) && is_array($cartData['items'])) {
+                $itemsToAdd = $cartData['items'];
+            } 
+            // Xử lý single item nếu có product_id và quantity
+            elseif (isset($cartData['product_id']) && isset($cartData['quantity'])) {
+                $itemsToAdd[] = [
+                    'product_id' => $cartData['product_id'],
+                    'quantity' => $cartData['quantity'],
+                ];
+            }
+
+            // Thêm hoặc cập nhật cart items
+            foreach ($itemsToAdd as $item) {
                 $product = Product::find($item['product_id']);
                 
                 if (!$product) {
                     throw new Exception("Product with ID {$item['product_id']} not found");
                 }
 
-                $cart->items()->create([
-                    'product_id' => $item['product_id'],
-                    'quantity' => $item['quantity'],
-                ]);
+                // Kiểm tra xem sản phẩm đã có trong cart chưa
+                $cartItem = $cart->items()->where('product_id', $item['product_id'])->first();
+                
+                if ($cartItem) {
+                    // Nếu đã có thì cập nhật số lượng (cộng dồn)
+                    $cartItem->quantity += $item['quantity'];
+                    $cartItem->save();
+                } else {
+                    // Nếu chưa có thì tạo mới
+                    $cart->items()->create([
+                        'product_id' => $item['product_id'],
+                        'quantity' => $item['quantity'],
+                    ]);
+                }
+
+                // Tính tổng tiền: giá sản phẩm * số lượng
+                $itemTotal = $product->price * $item['quantity'];
+                $totalAmount += $itemTotal;
             }
 
             DB::commit();
@@ -65,16 +111,27 @@ class CartController extends Controller
             // Load lại cart với relationships
             $cart = Cart::with('items.product')->find($cart->cart_id);
 
-            // Trả về dữ liệu đã chuẩn hoá sử dụng CartResource
-            return (new CartResource($cart))
-                ->response()
-                ->setStatusCode(201);
+            // Tính tổng tiền của toàn bộ cart (bao gồm cả items cũ)
+            $cartTotalAmount = 0;
+            foreach ($cart->items as $cartItem) {
+                $cartTotalAmount += $cartItem->product->price * $cartItem->quantity;
+            }
+
+            // Trả về dữ liệu đã chuẩn hoá sử dụng CartResource với thông tin tổng tiền
+            return response()->json([
+                'status' => true,
+                'message' => 'Items added to cart successfully',
+                'data' => new CartResource($cart),
+                'total_amount' => $cartTotalAmount,
+                'total_items' => $cart->items->sum('quantity'),
+                'items_added' => count($itemsToAdd),
+            ], 201);
         } catch (Exception $e) {
             DB::rollback();
 
             return response()->json([
                 'status' => false,
-                'message' => 'Failed to create cart',
+                'message' => 'Failed to add items to cart',
                 'error' => $e->getMessage(),
             ], 500);
         }
@@ -85,59 +142,90 @@ class CartController extends Controller
      */
     public function update(CartRequest $request, $id)
     {
-        //
-        \DB::beginTransaction(); //
-        try{
+        DB::beginTransaction();
+        try {
             $cartData = $request->validated();
-            $items = $cartData['items'];
-            unset($cartData['items']);
+            
+            // Tìm cart theo ID
+            $cart = Cart::find($id);
+            
+            if (!$cart) {
+                throw new Exception("Cart with ID {$id} not found");
+            }
+            
+            // Kiểm tra quyền sở hữu cart
+            $userId = auth()->id() ?? $request->user_id ?? 1;
+            if ($cart->user_id !== $userId) {
+                throw new Exception("Unauthorized to update this cart");
+            }
 
-            $totalAmount = 0;
-            foreach($items as $index => $item){
+            $itemsToUpdate = [];
+
+            // Xử lý items array nếu có
+            if (isset($cartData['items']) && is_array($cartData['items'])) {
+                $itemsToUpdate = $cartData['items'];
+            } 
+            // Xử lý single item nếu có product_id và quantity
+            elseif (isset($cartData['product_id']) && isset($cartData['quantity'])) {
+                $itemsToUpdate[] = [
+                    'product_id' => $cartData['product_id'],
+                    'quantity' => $cartData['quantity'],
+                ];
+            }
+
+            // Cập nhật cart items
+            foreach ($itemsToUpdate as $item) {
                 $product = Product::find($item['product_id']);
-                $productPrice = $product->price;
-                $totalAmount += $productPrice * $item['quantity'];
-                $items[$index]['price'] = $productPrice;
+                
+                if (!$product) {
+                    throw new Exception("Product with ID {$item['product_id']} not found");
+                }
+
+                // Tìm cart item
+                $cartItem = $cart->items()->where('product_id', $item['product_id'])->first();
+                
+                if ($cartItem) {
+                    // Cập nhật số lượng (ghi đè, không cộng dồn)
+                    $cartItem->quantity = $item['quantity'];
+                    $cartItem->save();
+                } else {
+                    // Nếu chưa có thì tạo mới
+                    $cart->items()->create([
+                        'product_id' => $item['product_id'],
+                        'quantity' => $item['quantity'],
+                    ]);
+                }
             }
-            $cartData['total_amount'] = $totalAmount; // $
 
-            // Tạo order với tổng tiền đã được tính tự động
-            $cart = Cart::create($cartData);
+            DB::commit();
 
-            // Tạo order items với giá đã được lấy từ database
-            // dung de lap qua tung item trong mang items va tao moi order item
-            foreach ($items as $item) {
-                $cart->items()->create([
-                    'product_id' => $item['product_id'],
-                    'quantity' => $item['quantity'],
-                    'price' => $item['price'], // Giá đã được cập nhật từ database
-                ]);
+            // Load lại cart với relationships
+            $cart = Cart::with('items.product')->find($cart->cart_id);
+
+            // Tính tổng tiền của toàn bộ cart
+            $cartTotalAmount = 0;
+            foreach ($cart->items as $cartItem) {
+                $cartTotalAmount += $cartItem->product->price * $cartItem->quantity;
             }
 
-            DB::commit(); // commit de luu cac thay doi neu khong co loi xay ra trong transaction
-
-            // Load lại order với relationships
-            $order = Order::with('items')->find($order->order_id);
-
-            // Trả về dữ liệu đã chuẩn hoá sử dụng OrderResource
-            return (new OrderResource($order))
-                ->response()
-                ->setStatusCode(201); // Trả về 201 Created với dữ liệu đã chuẩn hoá
+            // Trả về dữ liệu đã chuẩn hoá sử dụng CartResource
+            return response()->json([
+                'status' => true,
+                'message' => 'Cart updated successfully',
+                'data' => new CartResource($cart),
+                'total_amount' => $cartTotalAmount,
+                'total_items' => $cart->items->sum('quantity'),
+            ], 200);
         } catch (Exception $e) {
-        DB::rollback(); // rollback de hoan tac lai cac thay doi trong transaction
+            DB::rollback();
 
             return response()->json([
                 'status' => false,
-                'message' => 'Failed to create order',
+                'message' => 'Failed to update cart',
                 'error' => $e->getMessage(),
             ], 500);
         }
-        \DB::reorderIds(); // Goi ham reorderIds de sap xep lai ID sau khi tao moi
-
-        return (new CartResource($cart))
-            ->response()
-            ->setStatusCode(201); // Trả về 201 Created với dữ liệu đã chuẩn hoá   
-        }
+    }
 
     /**
      * Remove the specified resource from storage.

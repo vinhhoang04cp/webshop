@@ -35,9 +35,16 @@ class CartItemController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(CartItemRequest $request)
+    public function store(Request $request)
     {
         //
+        $cartItem = CartItem::create($request->all());
+        CartItem::reorderIds();
+        $cartItem->fresh();
+
+        return (new CartItemResource($cartItem))
+            ->response()
+            ->setStatusCode(201);
     }
 
     /**

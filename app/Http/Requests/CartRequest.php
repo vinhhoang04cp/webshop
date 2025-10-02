@@ -27,26 +27,44 @@ class CartRequest extends FormRequest
      */
     public function rules(): array
     {
+        // Định nghĩa quy tắc chung
+        $commonRules = [
+            'cart_id' => ['nullable', 'integer', Rule::exists('carts', 'cart_id')->where(function ($query) {
+                $query->where('user_id', auth()->id() ?? request('user_id') ?? 1);
+            })],
+            'user_id' => ['nullable', 'integer', 'exists:users,id'],
+        ];
+
         // Cho store method (tạo cart mới)
         if ($this->isMethod('post') && !$this->route('id')) {
-            return [
-                'items' => ['required', 'array', 'min:1'],
-                'items.*.product_id' => ['required', 'integer', 'exists:products,product_id'],
-                'items.*.quantity' => ['required', 'integer', 'min:1'],
-            ];
+            // Kiểm tra xem request có 'items' hay không
+            if ($this->has('items')) {
+                return array_merge($commonRules, [
+                    'items' => ['required', 'array', 'min:1'],
+                    'items.*.product_id' => ['required', 'integer', 'exists:products,product_id'],
+                    'items.*.quantity' => ['required', 'integer', 'min:1'],
+                ]);
+            } else {
+                return array_merge($commonRules, [
+                    'product_id' => ['required', 'integer', 'exists:products,product_id'],
+                    'quantity' => ['required', 'integer', 'min:1'],
+                ]);
+            }
         }
         
         // Cho update method hoặc các trường hợp khác
-        return [
-            'product_id' => ['sometimes', 'required', 'integer', 'exists:products,product_id'],
-            'quantity' => ['sometimes', 'required', 'integer', 'min:1'],
-            'cart_id' => ['nullable', 'integer', Rule::exists('carts', 'cart_id')->where(function ($query) {
-                $query->where('user_id', auth()->id());
-            })],
-            'items' => ['sometimes', 'required', 'array', 'min:1'],
-            'items.*.product_id' => ['required', 'integer', 'exists:products,product_id'],
-            'items.*.quantity' => ['required', 'integer', 'min:1'],
-        ];
+        if ($this->has('items')) {
+            return array_merge($commonRules, [
+                'items' => ['required', 'array', 'min:1'],
+                'items.*.product_id' => ['required', 'integer', 'exists:products,product_id'],
+                'items.*.quantity' => ['required', 'integer', 'min:1'],
+            ]);
+        } else {
+            return array_merge($commonRules, [
+                'product_id' => ['required', 'integer', 'exists:products,product_id'],
+                'quantity' => ['required', 'integer', 'min:1'],
+            ]);
+        }
     }
     public function messages()
     {
