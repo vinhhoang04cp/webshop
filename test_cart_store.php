@@ -8,7 +8,7 @@ $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
 
 $response = $kernel->handle(
     $request = Illuminate\Http\Request::create(
-        '/api/carts', 
+        '/api/carts',
         'POST',
         [],
         [],
@@ -18,12 +18,12 @@ $response = $kernel->handle(
             'items' => [
                 ['product_id' => 1, 'quantity' => 2],
                 ['product_id' => 2, 'quantity' => 1],
-            ]
+            ],
         ])
     )
 );
 
-echo "Status: " . $response->getStatusCode() . "\n";
-echo "Content: " . $response->getContent() . "\n";
+echo 'Status: '.$response->getStatusCode()."\n";
+echo 'Content: '.$response->getContent()."\n";
 
 $kernel->terminate($request, $response);

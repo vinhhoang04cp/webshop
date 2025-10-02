@@ -39,7 +39,8 @@ class Cart extends Model
         return $this->items->sum('quantity');
     }
 
-    public function reOrderIds(){
+    public function reOrderIds()
+    {
 
         \DB::statement('SET FOREIGN_KEY_CHECKS = 0'); // tat kiem tra foreign key
 
@@ -52,6 +53,5 @@ class Cart extends Model
         }
 
         \DB::statement('SET FOREIGN_KEY_CHECKS = 1');
-}
-
+    }
 }

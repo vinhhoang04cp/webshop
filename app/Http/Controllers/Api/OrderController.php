@@ -51,7 +51,7 @@ class OrderController extends Controller
 
         try {
             // Lấy dữ liệu đã validate và tách items
-            $orderData = $request->validated(); //orderaData la mot mang chua du lieu da duoc validate, lay tu Request
+            $orderData = $request->validated(); // orderaData la mot mang chua du lieu da duoc validate, lay tu Request
             $items = $orderData['items']; // $items la mot mang chua cac san pham trong don hang lay tu request,$items lay tu Request
             unset($orderData['items']); // Loai bo items khoi orderData de tranh loi khi tao order
 
@@ -69,7 +69,7 @@ class OrderController extends Controller
             }
 
             // Gán tổng tiền đã tính toán vào order data
-            $orderData['total_amount'] = $totalAmount; // $
+            $orderData['total_amount'] = $totalAmount; // 
 
             // Tạo order với tổng tiền đã được tính tự động
             $order = Order::create($orderData);
@@ -78,8 +78,8 @@ class OrderController extends Controller
             // dung de lap qua tung item trong mang items va tao moi order item
             foreach ($items as $item) {
                 $order->items()->create([
-                    'product_id' => $item['product_id'],
-                    'quantity' => $item['quantity'],
+                    'product_id' => $item['product_id'], //[product_id] lay tu request
+                    'quantity' => $item['quantity'], //[quantity] lay tu request
                     'price' => $item['price'], // Giá đã được cập nhật từ database
                 ]);
             }

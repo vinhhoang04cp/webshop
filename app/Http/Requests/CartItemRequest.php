@@ -3,11 +3,6 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Http\Exceptions\HttpResponseException;
-use Illuminate\Contracts\Validation\Validator;
-use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Unique;
-
 
 class CartItemRequest extends FormRequest
 {
@@ -32,11 +27,12 @@ class CartItemRequest extends FormRequest
             'product_id' => 'required|exists:products,id',
             'quantity' => 'required|integer|min:1',
             'price' => 'required|numeric|min:0', // Gia phai lon hon hoac bang 0
-            'total_price' => 'required|numeric|min:0', // Gia phai lon hon hoac bang 0  
+            'total_price' => 'required|numeric|min:0', // Gia phai lon hon hoac bang 0
         ];
     }
 
-    public function messages(){
+    public function messages()
+    {
         return [
             'cart_id.required' => 'Cart ID is required',
             'cart_id.exists' => 'Cart ID does not exist',
@@ -59,7 +55,7 @@ class CartItemRequest extends FormRequest
         $response = response()->json([
             'success' => false,
             'message' => 'Validation errors',
-            'data' => $validator->errors()
+            'data' => $validator->errors(),
         ], 422);
 
         throw new \Illuminate\Validation\ValidationException($validator, $response);

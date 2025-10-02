@@ -2,13 +2,12 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Contracts\Validation\Validator;
 use App\Models\User;
+use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Unique;
 
 class CartRequest extends FormRequest
 {
@@ -36,7 +35,7 @@ class CartRequest extends FormRequest
         ];
 
         // Cho store method (tạo cart mới)
-        if ($this->isMethod('post') && !$this->route('id')) {
+        if ($this->isMethod('post') && ! $this->route('id')) {
             // Kiểm tra xem request có 'items' hay không
             if ($this->has('items')) {
                 return array_merge($commonRules, [
@@ -51,7 +50,7 @@ class CartRequest extends FormRequest
                 ]);
             }
         }
-        
+
         // Cho update method hoặc các trường hợp khác
         if ($this->has('items')) {
             return array_merge($commonRules, [
@@ -66,6 +65,7 @@ class CartRequest extends FormRequest
             ]);
         }
     }
+
     public function messages()
     {
         return [
@@ -95,8 +95,8 @@ class CartRequest extends FormRequest
         throw new HttpResponseException(response()->json([
             'success' => false,
             'message' => 'Validation errors',
-            'data' => $errors
+            'data' => $errors,
         ], 422));
-            parent::failedValidation($validator);
+        parent::failedValidation($validator);
     }
 }

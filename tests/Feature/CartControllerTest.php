@@ -2,19 +2,19 @@
 
 namespace Tests\Feature;
 
-use Tests\TestCase;
 use App\Models\Cart;
-use App\Models\User;
-use App\Models\Product;
 use App\Models\Category;
+use App\Models\Product;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
+use Tests\TestCase;
 
 class CartControllerTest extends TestCase
 {
     use RefreshDatabase;
 
     protected $user;
+
     protected $products;
 
     protected function setUp(): void
@@ -59,7 +59,7 @@ class CartControllerTest extends TestCase
                     'user_id',
                     'created_at',
                     'updated_at',
-                ]
+                ],
             ]);
 
         // Kiểm tra cart đã được tạo trong database
@@ -156,8 +156,8 @@ class CartControllerTest extends TestCase
                         'user_id',
                         'created_at',
                         'updated_at',
-                    ]
-                ]
+                    ],
+                ],
             ]);
     }
 
@@ -172,10 +172,10 @@ class CartControllerTest extends TestCase
         Cart::create(['user_id' => $otherUser->id]);
 
         $response = $this->actingAs($this->user)
-            ->getJson('/api/carts?user_id=' . $this->user->id);
+            ->getJson('/api/carts?user_id='.$this->user->id);
 
         $response->assertStatus(200);
-        
+
         // Kiểm tra chỉ có cart của user hiện tại
         $data = $response->json('data');
         foreach ($data as $item) {
@@ -204,16 +204,16 @@ class CartControllerTest extends TestCase
 
         // Lấy cart từ database
         $cart = Cart::where('user_id', $this->user->id)->with('items.product')->first();
-        
+
         // Kiểm tra tổng số lượng items
         $this->assertEquals(5, $cart->items->sum('quantity'));
-        
+
         // Kiểm tra tổng giá trị cart (2*100 + 3*100 = 500)
         $expectedTotal = 500.00;
         $actualTotal = $cart->items->sum(function ($item) {
             return $item->quantity * $item->product->price;
         });
-        
+
         $this->assertEquals($expectedTotal, $actualTotal);
     }
 }
