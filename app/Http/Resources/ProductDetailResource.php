@@ -14,6 +14,7 @@ class ProductDetailResource extends JsonResource
             'message' => 'Product detail retrieved successfully',
         ];
     }
+
     /**
      * Transform the resource into an array.
      *

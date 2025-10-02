@@ -3,12 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use App\Models\ProductDetail;
-use App\Http\Requests\ProductDetailRequest;
-use App\Http\Resources\ProductDetailResource;
 use App\Http\Resources\ProductDetailCollection;
-use Illuminate\Support\Facades\DB;
+use App\Models\ProductDetail;
+use Illuminate\Http\Request;
 
 class ProductDetailController extends Controller
 {

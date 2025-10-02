@@ -26,9 +26,10 @@ class ProductDetailRequest extends FormRequest
             'product_id' => ['required', 'exists:products,id'],
             'size' => ['nullable', 'string', 'max:50'],
             'color' => ['nullable', 'string', 'max:50'],
-            'material' => ['nullable', 'string', 'max:100'],    
+            'material' => ['nullable', 'string', 'max:100'],
         ];
     }
+
     public function messages()
     {
         return [
@@ -42,6 +43,7 @@ class ProductDetailRequest extends FormRequest
             'material.max' => 'Material must not exceed 100 characters',
         ];
     }
+
     /**
      * Handle a failed validation attempt.
      *
@@ -49,12 +51,13 @@ class ProductDetailRequest extends FormRequest
      * @return void
      *
      * @throws \Illuminate\Http\Exceptions\HttpResponseException
-     */    protected function failedValidation(Validator $validator)
+     */
+    protected function failedValidation(Validator $validator)
     {
         throw new HttpResponseException(response()->json([
             'success' => false,
             'message' => 'Validation errors',
-            'errors' => $validator->errors()
+            'errors' => $validator->errors(),
         ], 422));
     }
 }
