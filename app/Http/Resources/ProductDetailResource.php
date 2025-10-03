@@ -23,7 +23,7 @@ class ProductDetailResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
+            'detail_id' => $this->detail_id,
             'product_id' => $this->product_id,
             'size' => $this->size,
             'color' => $this->color,

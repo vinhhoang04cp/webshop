@@ -3,6 +3,8 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Http\Exceptions\HttpResponseException;
 
 class ProductDetailRequest extends FormRequest
 {
@@ -23,7 +25,7 @@ class ProductDetailRequest extends FormRequest
     {
         return [
             //
-            'product_id' => ['required', 'exists:products,id'],
+            'product_id' => ['required', 'exists:products,product_id'],
             'size' => ['nullable', 'string', 'max:50'],
             'color' => ['nullable', 'string', 'max:50'],
             'material' => ['nullable', 'string', 'max:100'],
