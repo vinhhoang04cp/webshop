@@ -18,13 +18,13 @@ class CategoryController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Category::query()->orderBy('sort_order', 'asc');
-        if ($request->has('name')) {
-            $query->where('name', 'LIKE', '%'.$request->get('name').'%');
+        $query = Category::query(); //$query la bien de thuc hien query den Bang Category thong qua model
+        if ($request->has('name')) { // neu request truyen len cos name  
+            $query->where('name', 'LIKE', '%'.$request->get('name').'%'); //=> query den name 
         }
 
         if ($request->has('description')) {
-            $query->where('description', 'LIKE', '%'.$request->get('description').'%');
+            $query->where('description', 'LIKE', '%'.$request->get('description').'%'); 
         }
         // Neu du lieu lon, khuyen nghi paginate
         $categories = $query->paginate(15); // Phan trang, moi trang
@@ -39,16 +39,10 @@ class CategoryController extends Controller
      */
     public function store(CategoryRequest $request)
     {
-        // Xử lý sort_order: tự động tăng giá trị
-        $maxSortOrder = Category::max('sort_order') ?? 0;
-        
         $category = Category::create([
             'name' => $request->name,  // lay tu request
             'description' => $request->description,
-            'sort_order' => $request->input('sort_order', $maxSortOrder + 10), // Tăng 10 để dễ sắp xếp giữa các phần tử
         ]);
-
-        // Không cần reorderIds() nữa vì đã dùng sort_order
         
         $category = $category->fresh();  // Tai lai doi tuong category de lay thong tin moi nhat
 
@@ -107,10 +101,7 @@ class CategoryController extends Controller
         $category->update([
             'name' => $request->name,
             'description' => $request->description,
-            'sort_order' => $request->input('sort_order', $category->sort_order), // Giữ nguyên sort_order nếu không có trong request
         ]);
-
-        // Không cần reorderIds() nữa vì đã dùng sort_order
 
         $category = $category->fresh();
 
@@ -146,8 +137,6 @@ class CategoryController extends Controller
         }
 
         $category->delete();
-
-        // Không cần gọi reorderIds() nữa vì đã dùng sort_order
 
         return response()->json([
             'status' => true,

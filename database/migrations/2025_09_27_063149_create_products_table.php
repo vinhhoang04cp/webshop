@@ -19,7 +19,6 @@ return new class extends Migration
             $table->unsignedBigInteger('category_id');
             $table->unsignedInteger('stock_quantity');
             $table->string('image_url', 2048)->nullable();
-            $table->integer('sort_order')->default(0);
             $table->timestamps();
 
             $table->foreign('category_id')->references('category_id')->on('categories')->onDelete('restrict');

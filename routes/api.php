@@ -75,8 +75,3 @@ Route::prefix('cart-items')->group(function () {
     Route::delete('/{id}', [\App\Http\Controllers\Api\CartItemController::class, 'destroy']);
 });
 
-// Routes cho quản lý thứ tự sắp xếp
-Route::prefix('sort-order')->group(function () {
-    Route::post('/products', [\App\Http\Controllers\Api\SortOrderController::class, 'updateProductOrder']);
-    Route::post('/categories', [\App\Http\Controllers\Api\SortOrderController::class, 'updateCategoryOrder']);
-});
