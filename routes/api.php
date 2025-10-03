@@ -57,6 +57,7 @@ Route::prefix('product-details')->group(function () {
     Route::post('/', [\App\Http\Controllers\Api\ProductDetailController::class, 'store']);
     Route::get('/{id}', [\App\Http\Controllers\Api\ProductDetailController::class, 'show']);
     Route::put('/{id}', [\App\Http\Controllers\Api\ProductDetailController::class, 'update']);
+    Route::patch('/{id}', [\App\Http\Controllers\Api\ProductDetailController::class, 'update']);
     Route::delete('/{id}', [\App\Http\Controllers\Api\ProductDetailController::class, 'destroy']);
 });
 Route::prefix('carts')->group(function () {

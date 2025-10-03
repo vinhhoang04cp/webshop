@@ -51,6 +51,12 @@ class ProductDetailController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+ 
+        ProductDetail::reorderIds();
+        return (new ProductDetailResource($productDetail))
+            ->additional(['message' => 'Product detail created successfully'])
+            ->response()
+            ->setStatusCode(201);
     }
 
     /**
@@ -70,15 +76,24 @@ class ProductDetailController extends Controller
      */
     public function update(ProductDetailRequest $request, $id)
     {
-        //
-        $query = ProductDetail::find($id);
-        if (!$query) {
-            return response()->json(['message' => 'Product detail not found'], 404);
+        try {
+            $productDetail = ProductDetail::find($id);
+            if (!$productDetail) {
+                return response()->json(['message' => 'Product detail not found'], 404);
+            }
+
+            $productDetail->update($request->validated());
+
+            return (new ProductDetailResource($productDetail))
+                ->additional(['message' => 'Product detail updated successfully'])
+                ->response()
+                ->setStatusCode(200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to update product detail', 
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        $query->update($request->validated());
-
-        return response()->json(['message' => 'Product detail updated successfully', 'data' => $query]);
     }
 
     /**
