@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class Cart extends Model
 {
@@ -47,19 +48,48 @@ class Cart extends Model
         return $this->items->sum('quantity');
     }
 
-    public function reOrderIds()
+    public static function reOrderIds()
     {
+        try {
+            DB::statement('SET FOREIGN_KEY_CHECKS = 0');
 
-        \DB::statement('SET FOREIGN_KEY_CHECKS = 0'); // tat kiem tra foreign key
+            $carts = self::orderBy('cart_id')->get();
+            
+            if ($carts->isEmpty()) {
+                DB::statement('SET FOREIGN_KEY_CHECKS = 1');
+                return;
+            }
 
-        $carts = self::orderBy('cart_id')->get(); // lay tat ca cart hien tai theo thu tu ID
-        $newId = 1; // ID moi bat dau tu 1
+            $offset = 1000000;
 
-        foreach ($carts as $cart) {
-            \DB::table($this->table)->where('cart_id', $cart->cart_id)->update(['cart_id' => $newId]);
-            $newId++;
+            // First pass: assign temporary IDs
+            foreach ($carts as $index => $cart) {
+                $tempId = $offset + $index + 1;
+                DB::table('carts')->where('cart_id', $cart->cart_id)->update(['cart_id' => $tempId]);
+                
+                // Update foreign keys in cart_items
+                DB::table('cart_items')->where('cart_id', $cart->cart_id)->update(['cart_id' => $tempId]);
+            }
+
+            // Second pass: assign final sequential IDs
+            foreach ($carts as $index => $cart) {
+                $newId = $index + 1;
+                $tempId = $offset + $index + 1;
+                
+                DB::table('carts')->where('cart_id', $tempId)->update(['cart_id' => $newId]);
+                
+                // Update foreign keys in cart_items
+                DB::table('cart_items')->where('cart_id', $tempId)->update(['cart_id' => $newId]);
+            }
+
+            $maxId = $carts->count();
+            DB::statement('ALTER TABLE carts AUTO_INCREMENT = ' . ($maxId + 1));
+
+            DB::statement('SET FOREIGN_KEY_CHECKS = 1');
+            
+        } catch (\Exception $e) {
+            DB::statement('SET FOREIGN_KEY_CHECKS = 1');
+            throw $e;
         }
-
-        \DB::statement('SET FOREIGN_KEY_CHECKS = 1');
     }
 }

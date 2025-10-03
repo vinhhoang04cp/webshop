@@ -84,6 +84,9 @@ class OrderController extends Controller
                 ]);
             }
 
+            // Reorder IDs để đảm bảo thứ tự 1, 2, 3, ...
+            Order::reorderIds();
+
             DB::commit(); // commit de luu cac thay doi neu khong co loi xay ra trong transaction
 
             // Load lại order với relationships
@@ -103,11 +106,6 @@ class OrderController extends Controller
                 'error' => $e->getMessage(),
             ], 500);
         }
-        \DB::reorderIds(); // Goi ham reorderIds de sap xep lai ID sau khi tao moi
-
-        return (new OrderResource($order))
-            ->response()
-            ->setStatusCode(201); // Trả về 201 Created với dữ liệu đã chuẩn hoá
 
     }
 
@@ -169,6 +167,14 @@ class OrderController extends Controller
             // Load lại order với relationships
             $order = Order::with('items')->find($order->order_id);
 
+            // Reorder IDs để đảm bảo thứ tự 1, 2, 3, ...
+            Order::reorderIds();
+
+            DB::commit();
+
+            // Load lại order với relationships để trả về dữ liệu cập nhật
+            $order = Order::with('items')->find($order->order_id);
+
             return new OrderResource($order);
 
         } catch (\Exception $e) {
@@ -180,11 +186,6 @@ class OrderController extends Controller
                 'error' => $e->getMessage(),
             ], 500);
         }
-        \DB::reorderIds(); // Goi ham reorderIds de sap xep lai ID sau khi tao moi
-
-        return (new OrderResource($order))
-            ->response()
-            ->setStatusCode(201); // Trả về 201 Created với dữ liệu đã chuẩn hoá
     }
 
     /**
@@ -203,15 +204,12 @@ class OrderController extends Controller
 
         $order->delete();
 
+        // Reorder IDs để đảm bảo thứ tự 1, 2, 3, ...
+        Order::reorderIds();
+
         return response()->json([
             'status' => true,
             'message' => 'Order deleted successfully',
         ], 200);
-
-        \DB::reorderIds(); // Goi ham reorderIds de sap xep lai ID sau khi tao moi
-
-        return (new OrderResource($order))
-            ->response()
-            ->setStatusCode(201); // Trả về 201 Created với dữ liệu đã chuẩn hoá
     }
 }

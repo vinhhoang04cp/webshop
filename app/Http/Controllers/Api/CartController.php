@@ -10,6 +10,7 @@ use App\Models\Product;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class CartController extends Controller
 {
@@ -178,6 +179,14 @@ class CartController extends Controller
             // Load lại cart với relationships
             $cart = Cart::with('items.product')->find($cart->cart_id); // load lai cart voi items va product theo cart_id
 
+            // Reorder Cart IDs sau khi đã commit và load lại data
+            try {
+                Cart::reOrderIds();
+            } catch (\Exception $reorderException) {
+                // Log error nhưng không làm fail request chính
+                \Log::warning('Failed to reorder Cart IDs: ' . $reorderException->getMessage());
+            }
+
             // Tính tổng tiền của toàn bộ cart (bao gồm cả items cũ)
             $cartTotalAmount = 0; // tong tien cua cart ban dau la 0
             foreach ($cart->items as $cartItem) { // cartItem la bien luu tru cart item, lap voi moi cart item trong cart
@@ -202,11 +211,6 @@ class CartController extends Controller
                 'error' => $e->getMessage(),
             ], 500);
         }
-        \DB::reorderIds(); // Goi ham reorderIds de sap xep lai ID sau khi tao moi
-
-        return (new CartResource($cart))
-            ->response()
-            ->setStatusCode(201); // Trả về 201 Created với dữ liệu đã chuẩn hoá
     }
 
     /**
@@ -324,7 +328,14 @@ class CartController extends Controller
 
         // Xóa cart
         $cart->delete();
-        \DB::reorderIds(); // Goi ham reorderIds de sap xep lai ID sau khi xoa
+        
+        // Reorder Cart IDs với error handling
+        try {
+            Cart::reOrderIds();
+        } catch (\Exception $reorderException) {
+            // Log error nhưng không làm fail request chính
+            \Log::warning('Failed to reorder Cart IDs after delete: ' . $reorderException->getMessage());
+        }
 
         return response()->json([
             'status' => true,
