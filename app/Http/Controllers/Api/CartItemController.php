@@ -37,7 +37,7 @@ class CartItemController extends Controller
     {
         //
         $cartItem = CartItem::create($request->all());
-        CartItem::reorderIds();
+        // Không cần gọi CartItem::reorderIds() nữa vì phương thức này không an toàn
         $cartItem->fresh();
 
         return (new CartItemResource($cartItem))
@@ -66,7 +66,7 @@ class CartItemController extends Controller
         //
         $cartItem = CartItem::findOrFail($id);
         $cartItem->update($request->all());
-        CartItem::reorderIds();
+        // Không cần gọi CartItem::reorderIds() nữa vì phương thức này không an toàn
         $cartItem->fresh();
 
         return (new CartItemResource($cartItem))
@@ -86,7 +86,7 @@ class CartItemController extends Controller
         //
         $cartItem = CartItem::findOrFail($id);
         $cartItem->delete();
-        CartItem::reorderIds();
+        // Không cần gọi CartItem::reorderIds() nữa vì phương thức này không an toàn
 
         return response()->json([
             'status' => true,

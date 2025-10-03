@@ -21,7 +21,7 @@ class ProductController extends Controller
      */
     public function index(Request $request) // Trả về danh sách sản phẩm
     {
-        $query = Product::with('category');
+        $query = Product::with('category')->orderBy('sort_order', 'asc');
 
         // Lọc theo category
         if ($request->has('category')) {
@@ -62,15 +62,17 @@ class ProductController extends Controller
         // Tạo sản phẩm mới bằng mass assignment.
         // Đảm bảo các cột trong mảng dưới có mặt trong $fillable của Model Product để cho phép create/update hàng loạt.
         // only([...]) giúp chống truyền thừa field ngoài ý muốn (an toàn hơn so với all()).
+        // Xử lý sort_order: nếu không có, gán giá trị max hiện tại + 1
+        if (!$request->has('sort_order')) {
+            $maxSortOrder = Product::max('sort_order') ?? 0;
+            $request->merge(['sort_order' => $maxSortOrder + 10]); // Tăng 10 để dễ sắp xếp giữa các phần tử
+        }
+
         $product = Product::create(
-            $request->only(['name', 'description', 'price', 'category_id', 'stock_quantity', 'image_url'])
+            $request->only(['name', 'description', 'price', 'category_id', 'stock_quantity', 'image_url', 'sort_order'])
         );
 
-        // Reorder IDs để đảm bảo thứ tự 1, 2, 3, ...
-        Product::reorderIds();
-
-        // Refresh product instance để lấy ID mới sau reorder
-        $product = $product->fresh();
+        // Không cần reorderIds() nữa vì đã dùng sort_order
 
         // Trả về ProductResource cho đối tượng vừa tạo + meta kèm status/message.
         // Sử dụng HTTP 201 (Created) đúng chuẩn REST khi tạo thành công.
@@ -134,14 +136,12 @@ class ProductController extends Controller
 
         // Cập nhật bằng mass assignment (nhớ $fillable trong Model).
         // only([...]) để hạn chế field không mong muốn.
+        // Gửi cả sort_order nếu có trong request
         $product->update(
-            $request->only(['name', 'description', 'price', 'category_id', 'stock_quantity', 'image_url'])
+            $request->only(['name', 'description', 'price', 'category_id', 'stock_quantity', 'image_url', 'sort_order'])
         );
 
-        // Reorder IDs để đảm bảo thứ tự 1, 2, 3, ...
-        Product::reorderIds();
-
-        // Refresh product instance để lấy ID mới sau reorder (nếu có thay đổi)
+        // Không cần reorderIds() vì chúng ta đã dùng sort_order
         $product = $product->fresh();
 
         // Trả về ProductResource sau cập nhật + meta
@@ -193,8 +193,7 @@ class ProductController extends Controller
         // Nếu dùng SoftDeletes trong Model, lệnh này sẽ "đánh dấu xoá" thay vì xoá cứng.
         $product->delete();
 
-        // Reorder IDs để đảm bảo thứ tự 1, 2, 3, ...
-        Product::reorderIds();
+        // Không cần reorderIds() vì chúng ta đã dùng sort_order
 
         // Trả về JSON thông báo thành công. 200 OK là mặc định.
         return response()->json([

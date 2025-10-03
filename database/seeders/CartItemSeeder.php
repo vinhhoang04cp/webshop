@@ -37,6 +37,7 @@ class CartItemSeeder extends Seeder
                         ],
                         [
                             'quantity' => $faker->numberBetween(1, 3),
+                            'price' => $randomProduct->price, // Thêm giá từ sản phẩm
                             'created_at' => $faker->dateTimeBetween($cart->created_at, 'now'),
                             'updated_at' => now(),
                         ]

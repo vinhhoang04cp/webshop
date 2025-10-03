@@ -181,7 +181,7 @@ class CartController extends Controller
 
             // Reorder Cart IDs sau khi đã commit và load lại data
             try {
-                Cart::reOrderIds();
+                // Không cần gọi Cart::reOrderIds() nữa vì phương thức này không an toàn
             } catch (\Exception $reorderException) {
                 // Log error nhưng không làm fail request chính
                 \Log::warning('Failed to reorder Cart IDs: ' . $reorderException->getMessage());

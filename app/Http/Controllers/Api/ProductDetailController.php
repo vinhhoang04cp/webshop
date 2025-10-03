@@ -52,7 +52,7 @@ class ProductDetailController extends Controller
             ], 500);
         }
  
-        ProductDetail::reorderIds();
+        // Không cần gọi ProductDetail::reorderIds() nữa vì phương thức này không an toàn
         return (new ProductDetailResource($productDetail))
             ->additional(['message' => 'Product detail created successfully'])
             ->response()
