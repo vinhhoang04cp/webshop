@@ -43,7 +43,15 @@ class ProductDetail extends Model
         return $this->hasMany(ProductImage::class, 'detail_id', 'detail_id');
     }
 
+    /**
+     * DEPRECATED & DISABLED: Reorder product detail IDs
+     * WARNING: This method is DANGEROUS and can cause data loss!
+     */
     public static function reorderIds() {
+        \Log::warning('ProductDetail::reorderIds() called but disabled for safety. Consider removing this method entirely.');
+        return;
+        
+        // DISABLED FOR SAFETY - manipulating primary keys is dangerous
         // Tắt tạm thời kiểm tra foreign key để có thể cập nhật ID
         DB::statement('SET FOREIGN_KEY_CHECKS = 0');
 

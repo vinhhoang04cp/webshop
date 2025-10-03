@@ -18,6 +18,7 @@ class CartItem extends Model
         'cart_id',
         'product_id',
         'quantity',
+        'price',
     ];
 
     public function cart()
@@ -32,12 +33,13 @@ class CartItem extends Model
 
     public function price()
     {
-        return $this->product ? $this->product->price : 0;
+        // Nếu có price được lưu trong cart_items, dùng nó; nếu không thì lấy từ product
+        return $this->price ?? ($this->product ? $this->product->price : 0);
     }
 
     public function totalPrice()
     {
-        return $this->quantity * $this->price();
+        return $this->quantity * ($this->price ?? ($this->product ? $this->product->price : 0));
     }
 
     protected $appends = ['price', 'total_price'];
@@ -61,8 +63,16 @@ class CartItem extends Model
      * Reorder cart item IDs to ensure sequential numbering (1, 2, 3, ...).
      * This method will be called after create, update, or delete operations.
      */
+    /**
+     * DEPRECATED & DISABLED: Reorder cart item IDs
+     * WARNING: This method is DANGEROUS and can cause data loss!
+     */
     public static function reorderIds()
     {
+        \Log::warning('CartItem::reorderIds() called but disabled for safety. Consider removing this method entirely.');
+        return;
+        
+        // DISABLED FOR SAFETY - manipulating primary keys is dangerous
         DB::statement('SET FOREIGN_KEY_CHECKS = 0');
 
         $cartItems = self::orderBy('cart_item_id', 'asc')->get();

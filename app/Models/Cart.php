@@ -48,8 +48,16 @@ class Cart extends Model
         return $this->items->sum('quantity');
     }
 
+    /**
+     * DEPRECATED & DISABLED: Reorder cart IDs
+     * WARNING: This method is DANGEROUS and can cause data loss!
+     */
     public static function reOrderIds()
     {
+        \Log::warning('Cart::reOrderIds() called but disabled for safety. Consider removing this method entirely.');
+        return;
+        
+        // DISABLED FOR SAFETY - manipulating primary keys is dangerous
         try {
             DB::statement('SET FOREIGN_KEY_CHECKS = 0');
 
