@@ -74,4 +74,3 @@ Route::prefix('cart-items')->group(function () {
     Route::put('/{id}', [\App\Http\Controllers\Api\CartItemController::class, 'update']);
     Route::delete('/{id}', [\App\Http\Controllers\Api\CartItemController::class, 'destroy']);
 });
-

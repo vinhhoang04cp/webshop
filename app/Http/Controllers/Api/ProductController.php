@@ -17,37 +17,36 @@ class ProductController extends Controller
      * Display a listing of the resource.
      *
      * @return \Illuminate\Http\Resources\Json\ResourceCollection
-     *                                                            Trả về danh sách sản phẩm dưới dạng Resource Collection, giúp thống nhất cấu trúc JSON.
      */
     public function index(Request $request) // Trả về danh sách sản phẩm
     {
-        $query = Product::with('category');
+        $query = Product::with('category'); // $query là biến để thực hiện query đến bảng Product thông qua model
 
         // Lọc theo category
-        if ($request->has('category')) {
+        if ($request->has('category')) { // nếu request truyền lên có category
             $query->where('category_id', $request->get('category'));
         }
 
         // Lọc theo tên (tìm gần đúng)
-        if ($request->has('name')) {
-            $query->where('name', 'LIKE', '%'.$request->get('name').'%');
+        if ($request->has('name')) { //
+            $query->where('name', 'LIKE', '%'.$request->get('name').'%'); // thuc hien query den name
         }
 
         // Lọc theo giá (có thể theo khoảng giá)
-        if ($request->has('min_price')) {
-            $query->where('price', '>=', $request->get('min_price'));
+        if ($request->has('min_price')) {   // neu request truyen len co min_price
+            $query->where('price', '>=', $request->get('min_price')); // thuc hien query den min_price
         }
         if ($request->has('max_price')) {
-            $query->where('price', '<=', $request->get('max_price'));
+            $query->where('price', '<=', $request->get('max_price')); // thuc hien query den max_price
         }
 
         // Lọc theo tồn kho
-        if ($request->has('stock_quantity')) {
-            $query->where('stock_quantity', $request->get('stock_quantity'));
+        if ($request->has('stock_quantity')) { // nếu request truyền lên có stock_quantity
+            $query->where('stock_quantity', $request->get('stock_quantity')); // thuc hien query den stock_quantity
         }
 
         // Nếu dữ liệu lớn, khuyến nghị paginate
-        $products = $query->paginate(15);
+        $products = $query->paginate(15); // Phân trang, mỗi trang 15 bản ghi
 
         return new ProductCollection($products);
     }
@@ -67,8 +66,8 @@ class ProductController extends Controller
             $request->only(['name', 'description', 'price', 'category_id', 'stock_quantity', 'image_url'])
         );
 
-        // Trả về ProductResource cho đối tượng vừa tạo + meta kèm status/message.
-        // Sử dụng HTTP 201 (Created) đúng chuẩn REST khi tạo thành công.
+        $product = $product->fresh(); // Tải lại đối tượng product để lấy thông tin mới nhất
+
         return (new ProductResource($product))
             ->additional([
                 'status' => true,
@@ -81,14 +80,14 @@ class ProductController extends Controller
     /**
      * Display the specified resource.
      *
-     * @param  int|string  $id  ID sản phẩm cần lấy (đi từ route param)
+     * @param  int|string
      * @return \Illuminate\Http\JsonResponse
      */
     public function show($id)
     {
         // Eager load category để trả về thông tin danh mục kèm theo sản phẩm.
         // Dùng find() để tự kiểm soát JSON 404 (khác với findOrFail() sẽ throw exception).
-        $product = Product::with('category')->find($id);
+        $product = Product::with('category')->find($id); // query den bang Product thong qua model, tim kiem theo id, voi category
 
         // Không tìm thấy -> trả 404 với format JSON thống nhất của API.
         if (! $product) {

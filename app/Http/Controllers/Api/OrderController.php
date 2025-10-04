@@ -16,29 +16,29 @@ class OrderController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
+    public function index(Request $request) // Request $request de lay cac tham so truyen vao tu url
     {
-        $query = Order::query();
-        if ($request->has('user_id')) {
+        $query = Order::query(); // $query la bien de thuc hien query den Bang Order thong qua model
+        if ($request->has('user_id')) { // neu request truyen len co user_id
             $query->where('user_id', $request->get('user_id'));
         }
-        if ($request->has('min_date')) {
+        if ($request->has('min_date')) { // neu request truyen len co min_date
             $query->where('order_date', '>=', $request->get('min_date'));
         }
-        if ($request->has('max_date')) {
+        if ($request->has('max_date')) { // neu request truyen len co max_date
             $query->where('order_date', '<=', $request->get('max_date'));
         }
-        if ($request->has('min_total')) {
+        if ($request->has('min_total')) { //
             $query->where('total_amount', '>=', $request->get('min_total'));
         }
-        if ($request->has('max_total')) {
+        if ($request->has('max_total')) { // neu request truyen len co max_total
             $query->where('total_amount', '<=', $request->get('max_total'));
         }
 
-        $orders = $query->get();
-        $orders = $query->paginate(10); // Paginate results, 10 per page
+        $orders = $query->get(); // Lay tat ca ket qua tu query
+        $orders = $query->paginate(10); // Phan trang, moi trang 10 ban ghi
 
-        return new OrderCollection($orders);
+        return new OrderCollection($orders); // tra ve OrderCollection
     }
 
     /**

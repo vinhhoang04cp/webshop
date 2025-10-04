@@ -184,7 +184,7 @@ class CartController extends Controller
                 // Không cần gọi Cart::reOrderIds() nữa vì phương thức này không an toàn
             } catch (\Exception $reorderException) {
                 // Log error nhưng không làm fail request chính
-                \Log::warning('Failed to reorder Cart IDs: ' . $reorderException->getMessage());
+                \Log::warning('Failed to reorder Cart IDs: '.$reorderException->getMessage());
             }
 
             // Tính tổng tiền của toàn bộ cart (bao gồm cả items cũ)
@@ -328,13 +328,13 @@ class CartController extends Controller
 
         // Xóa cart
         $cart->delete();
-        
+
         // Reorder Cart IDs với error handling
         try {
             Cart::reOrderIds();
         } catch (\Exception $reorderException) {
             // Log error nhưng không làm fail request chính
-            \Log::warning('Failed to reorder Cart IDs after delete: ' . $reorderException->getMessage());
+            \Log::warning('Failed to reorder Cart IDs after delete: '.$reorderException->getMessage());
         }
 
         return response()->json([

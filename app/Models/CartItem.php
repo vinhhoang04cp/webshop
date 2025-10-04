@@ -62,10 +62,10 @@ class CartItem extends Model
     {
         // Accessor này chỉ kích hoạt khi truy cập thuộc tính thông qua $cartItem->price
         // và khi không có giá trị trong database
-        if (!isset($this->attributes['price']) || $this->attributes['price'] === null) {
+        if (! isset($this->attributes['price']) || $this->attributes['price'] === null) {
             return $this->price();
         }
-        
+
         return $this->attributes['price'];
     }
 
@@ -77,52 +77,4 @@ class CartItem extends Model
         return $this->totalPrice();
     }
 
-    /**
-     * Reorder cart item IDs to ensure sequential numbering (1, 2, 3, ...).
-     * This method will be called after create, update, or delete operations.
-     */
-    /**
-     * DEPRECATED & DISABLED: Reorder cart item IDs
-     * WARNING: This method is DANGEROUS and can cause data loss!
-     */
-    public static function reorderIds()
-    {
-        \Log::warning('CartItem::reorderIds() called but disabled for safety. Consider removing this method entirely.');
-        return;
-        
-        // DISABLED FOR SAFETY - manipulating primary keys is dangerous
-        DB::statement('SET FOREIGN_KEY_CHECKS = 0');
-
-        $cartItems = self::orderBy('cart_item_id', 'asc')->get();
-
-        if ($cartItems->isEmpty()) {
-            DB::statement('SET FOREIGN_KEY_CHECKS = 1');
-            return;
-        }
-
-        $offset = 1000000;
-
-        // First pass: assign temporary IDs
-        foreach ($cartItems as $index => $cartItem) {
-            $tempId = $offset + $index + 1;
-            DB::table('cart_items')
-                ->where('cart_item_id', $cartItem->cart_item_id)
-                ->update(['cart_item_id' => $tempId]);
-        }
-
-        // Second pass: assign final sequential IDs
-        foreach ($cartItems as $index => $cartItem) {
-            $newId = $index + 1;
-            $tempId = $offset + $index + 1;
-
-            DB::table('cart_items')
-                ->where('cart_item_id', $tempId)
-                ->update(['cart_item_id' => $newId]);
-        }
-
-        $maxId = $cartItems->count();
-        DB::statement('ALTER TABLE cart_items AUTO_INCREMENT = ' . ($maxId + 1));
-
-        DB::statement('SET FOREIGN_KEY_CHECKS = 1');
-    }
 }

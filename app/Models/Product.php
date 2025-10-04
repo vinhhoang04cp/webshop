@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
 
 class Product extends Model
 {
@@ -48,27 +47,4 @@ class Product extends Model
         return $this->hasMany(CartItem::class, 'product_id', 'product_id');
     }
 
-    /**
-     * DEPRECATED: Reorder product IDs to ensure sequential numbering (1, 2, 3, ...)
-     * WARNING: This method is DANGEROUS and can cause data loss!
-     * It disables foreign key checks and manipulates primary keys directly.
-     * 
-     * RECOMMENDATION: Remove this method entirely. Laravel auto-increment IDs
-     * don't need to be sequential. If you need sequential display numbers,
-     * use a separate 'display_order' column instead.
-     * 
-     * This method will be called after create, update, or delete operations
-     */
-    public static function reorderIds()
-    {
-        // DISABLED FOR SAFETY - this method is too dangerous
-        \Log::warning('reorderIds() method called but disabled for safety. Consider removing this method entirely.');
-        return;
-        
-        // If you really need sequential IDs, consider this safer alternative:
-        // 1. Add a 'display_order' column to products table
-        // 2. Update display_order instead of primary key
-        // 3. Use display_order for sorting/display purposes
-        // 4. Never modify primary keys of existing records
-    }
 }
