@@ -19,7 +19,7 @@ class CartController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Cart::with('items.product'); // Load cả items và product để tính tổng giá
+        $query = Cart::with('items.product'); // $query la bien de thuc hien query den Bang Cart thong qua model, with('items.product') de load relationship items va product
         // Loc theo user_id neu co
         if ($request->has('user_id')) { // neu request co user_id , $request co nghia la lay du lieu tu request
             $query->where('user_id', $request->get('user_id')); // them dieu kien loc user_id vao truy van
@@ -29,17 +29,17 @@ class CartController extends Controller
         }
         $carts = $query->paginate(10); // Phan trang 10 per page by default
 
-        // Tính tổng giá cho mỗi cart
+        // Tinh tong tien va tong so luong item cho moi cart
         $cartsData = []; // tao 1 mang luu tru du lieu cart
         $grandTotal = 0; // Tổng giá của tất cả cart
 
-        foreach ($carts as $cart) { // cart la bien luu tru cart hien tai , lap voi moi cart trong carts
-            $cartTotalAmount = 0; // khoi tao tong tien cua cart hien tai
-            $totalItems = 0; // tong so luong item trong cart
+        foreach ($carts as $cart) { // cart la bien luu tru moi cart trong mang carts
+            $cartTotalAmount = 0; // khoi tao tong tien cua cart hien tai la 0
+            $totalItems = 0; // tong so luong item trong cart hien tai la 0
 
-            foreach ($cart->items as $cartItem) { // cartItem la bien luu tru moi 1 item, lap voi moi cart item trong cart
-                $cartTotalAmount += $cartItem->product->price * $cartItem->quantity; // tong tien se bang tien cua cart item * so luong
-                $totalItems += $cartItem->quantity; // cong don so luong item trong cart
+            foreach ($cart->items as $cartItem) { // $cartItem la bien luu tru cart item, lap voi moi cart item trong cart
+                $cartTotalAmount += $cartItem->product->price * $cartItem->quantity; // Tong tien moi cart se bang tien cua cart item * so luong
+                $totalItems += $cartItem->quantity; // Tong so luong cart item se bang so luong cua cart item
             }
 
             $cartData = new CartResource($cart); // chuan hoa du lieu cart hien tai
@@ -178,14 +178,6 @@ class CartController extends Controller
 
             // Load lại cart với relationships
             $cart = Cart::with('items.product')->find($cart->cart_id); // load lai cart voi items va product theo cart_id
-
-            // Reorder Cart IDs sau khi đã commit và load lại data
-            try {
-                // Không cần gọi Cart::reOrderIds() nữa vì phương thức này không an toàn
-            } catch (\Exception $reorderException) {
-                // Log error nhưng không làm fail request chính
-                \Log::warning('Failed to reorder Cart IDs: '.$reorderException->getMessage());
-            }
 
             // Tính tổng tiền của toàn bộ cart (bao gồm cả items cũ)
             $cartTotalAmount = 0; // tong tien cua cart ban dau la 0
