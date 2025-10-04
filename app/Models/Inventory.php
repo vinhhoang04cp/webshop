@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Inventory extends Model
 {
-    use HasFactory; 
+    use HasFactory;
 
     protected $table = 'inventory'; // Su dung ten bang tuong ung la 'inventory'
 

@@ -16,7 +16,7 @@ class Category extends Model
     public $timestamps = true; // Su dung cot 'created_at' va 'updated_at' de theo doi thoi gian
 
     protected $fillable = [ // Cac cot co the gan gia tri hang loat
-        'name', 
+        'name',
         'description',
     ];
 

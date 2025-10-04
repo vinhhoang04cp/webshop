@@ -3,10 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use App\Models\Inventory;
 use App\Http\Resources\InventoryCollection;
-use App\Http\Resources\InventoryResource;   
+use App\Models\Inventory;
+use Illuminate\Http\Request;
 
 class InventoryController extends Controller
 {
@@ -30,7 +29,7 @@ class InventoryController extends Controller
         $inventories = $query->paginate(10); // Paginate results, 10 per page
 
         return new InventoryCollection($inventories);
-        
+
     }
 
     /**

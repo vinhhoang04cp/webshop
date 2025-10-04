@@ -25,6 +25,7 @@ class InventoryCollection extends ResourceCollection
             ],
         ];
     }
+
     public function with(Request $request): array
     {
         return [
