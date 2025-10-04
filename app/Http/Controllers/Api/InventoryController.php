@@ -4,15 +4,33 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\Inventory;
+use App\Http\Resources\InventoryCollection;
+use App\Http\Resources\InventoryResource;   
 
 class InventoryController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
+        $query = Inventory::query();
+
+        if ($request->has('product_id')) {
+            $query->where('product_id', $request->get('product_id'));
+        }
+        if ($request->has('min_quantity')) {
+            $query->where('quantity', '>=', $request->get('min_quantity'));
+        }
+        if ($request->has('max_quantity')) {
+            $query->where('quantity', '<=', $request->get('max_quantity'));
+        }
+
+        $inventories = $query->paginate(10); // Paginate results, 10 per page
+
+        return new InventoryCollection($inventories);
+        
     }
 
     /**

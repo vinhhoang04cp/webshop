@@ -7,7 +7,6 @@ use App\Http\Resources\OrderItemCollection;
 use App\Http\Resources\OrderItemResource;
 use App\Models\OrderItem;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class OrderItemController extends Controller
 {

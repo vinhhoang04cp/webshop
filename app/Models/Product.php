@@ -46,5 +46,4 @@ class Product extends Model
     {
         return $this->hasMany(CartItem::class, 'product_id', 'product_id');
     }
-
 }

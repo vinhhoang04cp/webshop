@@ -18,9 +18,9 @@ class ProductDetailController extends Controller
     {
         $query = ProductDetail::query(); // $query la bien de thuc hien query den Bang ProductDetail thong qua model
 
-         // Filter by product_id, color, size 
+        // Filter by product_id, color, size
 
-        if ($request->has('product_id')) {  // neu request truyen len co product_id 
+        if ($request->has('product_id')) {  // neu request truyen len co product_id
             $query->where('product_id', $request->get('product_id')); // thuc hien query den product_id
         }
         if ($request->has('color')) {  // neu request truyen len co color
