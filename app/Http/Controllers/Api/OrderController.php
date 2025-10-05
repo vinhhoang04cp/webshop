@@ -19,11 +19,11 @@ class OrderController extends Controller
     public function index(Request $request)
     {
         $query = Order::query();
-        
+
         $this->applyFilters($query, $request);
-        
+
         $orders = $query->paginate(10);
-        
+
         return new OrderCollection($orders);
     }
 
@@ -33,27 +33,28 @@ class OrderController extends Controller
     public function store(OrderRequest $request)
     {
         DB::beginTransaction();
-        
+
         try {
             $orderData = $request->validated();
             $items = $orderData['items'];
             unset($orderData['items']);
 
-            $itemsWithPrices = $this->calculateItemPrices($items); // 
+            $itemsWithPrices = $this->calculateItemPrices($items); //
             $orderData['total_amount'] = $this->calculateTotalAmount($itemsWithPrices);
 
             $order = Order::create($orderData);
             $this->createOrderItems($order, $itemsWithPrices);
-            
+
             Order::reorderIds();
             DB::commit();
 
             $order = Order::with('items')->find($order->order_id);
-            
+
             return (new OrderResource($order))->response()->setStatusCode(201);
-            
+
         } catch (\Exception $e) {
             DB::rollback();
+
             return response()->json([
                 'status' => false,
                 'message' => 'Failed to create order',
@@ -68,6 +69,7 @@ class OrderController extends Controller
     public function show($id)
     {
         $order = Order::with('items')->findOrFail($id);
+
         return new OrderResource($order);
     }
 
@@ -77,14 +79,14 @@ class OrderController extends Controller
     public function update(OrderRequest $request, string $id)
     {
         DB::beginTransaction();
-        
+
         try {
             $order = Order::findOrFail($id);
             $orderData = $request->validated();
             $items = $orderData['items'] ?? [];
             unset($orderData['items']);
 
-            if (!empty($items)) {
+            if (! empty($items)) {
                 $order->items()->delete();
                 $itemsWithPrices = $this->calculateItemPrices($items);
                 $orderData['total_amount'] = $this->calculateTotalAmount($itemsWithPrices);
@@ -96,10 +98,12 @@ class OrderController extends Controller
             DB::commit();
 
             $order = Order::with('items')->find($order->order_id);
+
             return new OrderResource($order);
-            
+
         } catch (\Exception $e) {
             DB::rollback();
+
             return response()->json([
                 'status' => false,
                 'message' => 'Failed to update order',
@@ -115,9 +119,9 @@ class OrderController extends Controller
     {
         $order = Order::findOrFail($id);
         $order->delete();
-        
+
         Order::reorderIds();
-        
+
         return response()->json([
             'status' => true,
             'message' => 'Order deleted successfully',
@@ -151,10 +155,11 @@ class OrderController extends Controller
      */
     private function calculateItemPrices($items)
     {
-        foreach ($items as $index => $item) {
+        foreach ($items as $index => $item) { // lap qua tung item trong mang items
             $product = Product::findOrFail($item['product_id']);
             $items[$index]['price'] = $product->price;
         }
+
         return $items;
     }
 
@@ -167,6 +172,7 @@ class OrderController extends Controller
         foreach ($items as $item) {
             $totalAmount += $item['quantity'] * $item['price'];
         }
+
         return $totalAmount;
     }
 

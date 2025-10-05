@@ -18,13 +18,10 @@ class ProductDetailRequest extends FormRequest
 
     /**
      * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
         return [
-            //
             'product_id' => ['required', 'exists:products,product_id'],
             'size' => ['nullable', 'string', 'max:50'],
             'color' => ['nullable', 'string', 'max:50'],
@@ -37,21 +34,14 @@ class ProductDetailRequest extends FormRequest
         return [
             'product_id.required' => 'Product ID is required',
             'product_id.exists' => 'Product not found',
-            'size.string' => 'Size must be a string',
             'size.max' => 'Size must not exceed 50 characters',
-            'color.string' => 'Color must be a string',
             'color.max' => 'Color must not exceed 50 characters',
-            'material.string' => 'Material must be a string',
             'material.max' => 'Material must not exceed 100 characters',
         ];
     }
 
     /**
      * Handle a failed validation attempt.
-     *
-     * @return void
-     *
-     * @throws \Illuminate\Http\Exceptions\HttpResponseException
      */
     protected function failedValidation(Validator $validator)
     {

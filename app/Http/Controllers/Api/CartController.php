@@ -20,21 +20,21 @@ class CartController extends Controller
     public function index(Request $request)
     {
         $query = Cart::with('items.product');
-        
+
         if ($request->has('user_id')) {
             $query->where('user_id', $request->get('user_id'));
         }
         if ($request->has('product_id')) {
             $query->where('product_id', $request->get('product_id'));
         }
-        
+
         $carts = $query->paginate(10);
         $cartsData = [];
         $grandTotal = 0;
 
         foreach ($carts as $cart) {
             $cartTotals = $this->calculateCartTotals($cart);
-            
+
             $cartData = new CartResource($cart);
             $cartData->additional([
                 'total_amount' => $cartTotals['amount'],
@@ -74,7 +74,7 @@ class CartController extends Controller
         try {
             $cartData = $request->validated(); // Tao bien cartData de luu du lieu tu request
             $userId = $this->getUserId($request); // Tao bien userId de luu id nguoi dung, $this->getUserId() se lay id tu auth hoac request hoac mac dinh la 1
-            $cart = $this->findOrCreateCart($cartData, $userId); //bien $cart de luu cart tim thay hoac tao moi
+            $cart = $this->findOrCreateCart($cartData, $userId); // bien $cart de luu cart tim thay hoac tao moi
             $itemsToAdd = $this->prepareItemsData($cartData); // bien $itemsToAdd de luu cac san pham can them vao cart, ham prepareItemsData se chuan hoa du lieu tu cartData
 
             foreach ($itemsToAdd as $item) { // lap qua tung item trong itemsToAdd, item la mot mang chua product_id va quantity
@@ -96,6 +96,7 @@ class CartController extends Controller
             ], 201);
         } catch (Exception $e) {
             DB::rollback();
+
             return response()->json([
                 'status' => false,
                 'message' => 'Failed to add items to cart',
@@ -114,7 +115,7 @@ class CartController extends Controller
             $cartData = $request->validated();
             $cart = Cart::findOrFail($id);
             $userId = $this->getUserId($request);
-            
+
             if ($cart->user_id !== $userId) {
                 throw new Exception('Unauthorized to update this cart');
             }
@@ -139,6 +140,7 @@ class CartController extends Controller
             ], 200);
         } catch (Exception $e) {
             DB::rollback();
+
             return response()->json([
                 'status' => false,
                 'message' => 'Failed to update cart',
@@ -154,7 +156,7 @@ class CartController extends Controller
     {
         $cart = Cart::findOrFail($id);
         $userId = auth()->id() ?? 1;
-        
+
         if ($cart->user_id !== $userId) {
             return response()->json([
                 'status' => false,
@@ -167,7 +169,7 @@ class CartController extends Controller
         try {
             Cart::reOrderIds();
         } catch (\Exception $e) {
-            \Log::warning('Failed to reorder Cart IDs after delete: ' . $e->getMessage());
+            \Log::warning('Failed to reorder Cart IDs after delete: '.$e->getMessage());
         }
 
         return response()->json([
@@ -213,14 +215,14 @@ class CartController extends Controller
                 ->where('user_id', $userId)
                 ->first();
 
-            if (!$cart) {
+            if (! $cart) {
                 throw new Exception("Cart with ID {$cartData['cart_id']} not found or does not belong to user");
             }
         } else {
             $cart = Cart::where('user_id', $userId)->first();
         }
 
-        if (!$cart) {
+        if (! $cart) {
             $cart = Cart::create(['user_id' => $userId]);
         }
 
@@ -235,7 +237,7 @@ class CartController extends Controller
         if (isset($cartData['items']) && is_array($cartData['items'])) {
             return $cartData['items'];
         }
-        
+
         if (isset($cartData['product_id']) && isset($cartData['quantity'])) {
             return [[
                 'product_id' => $cartData['product_id'],
