@@ -19,7 +19,7 @@ class CartController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Cart::with('items.product'); // $query la bien de thuc hien query den Bang Cart thong qua model, with('items.product') de load relationship items va product
+        $query = Cart::with('items.product'); // $query la bien de thuc hien query den Bang Cart thong qua model, with('items.product') la tham chieu den relationship items va product trong model Cart
         // Loc theo user_id neu co
         if ($request->has('user_id')) { // neu request co user_id , $request co nghia la lay du lieu tu request
             $query->where('user_id', $request->get('user_id')); // them dieu kien loc user_id vao truy van
@@ -33,16 +33,16 @@ class CartController extends Controller
         $cartsData = []; // tao 1 mang luu tru du lieu cart
         $grandTotal = 0; // Tổng giá của tất cả cart
 
-        foreach ($carts as $cart) { // cart la bien luu tru moi cart trong mang carts
-            $cartTotalAmount = 0; // khoi tao tong tien cua cart hien tai la 0
-            $totalItems = 0; // tong so luong item trong cart hien tai la 0
+        foreach ($carts as $cart) { // moi 1 cart trong carts se duoc lap qua, cart la bien luu tru cart hien tai cart la 1 gio hang con carts la tap hop cac cart
+            $cartTotalAmount = 0; // khoi tao tong tien cua moi cart hien tai la 0
+            $totalItems = 0; // tong so luong item trong moi cart hien tai la 0
 
-            foreach ($cart->items as $cartItem) { // $cartItem la bien luu tru cart item, lap voi moi cart item trong cart
-                $cartTotalAmount += $cartItem->product->price * $cartItem->quantity; // Tong tien moi cart se bang tien cua cart item * so luong
-                $totalItems += $cartItem->quantity; // Tong so luong cart item se bang so luong cua cart item
+            foreach ($cart->items as $cartItem) { // lap voi moi cart item trong cart, moi 1 cart co nhieu cart item
+                $cartTotalAmount += $cartItem->product->price * $cartItem->quantity; // Tong tien cua cart se bang gia san pham * so luong cua cart item
+                $totalItems += $cartItem->quantity; // Tong so luong cart item se bang cong don so luong cua cart item
             }
 
-            $cartData = new CartResource($cart); // chuan hoa du lieu cart hien tai
+            $cartData = new CartResource($cart); // $cartData la bien luu tru du lieu cart hien tai, CartResource la lop resource de chuan hoa du lieu cart
             // them thong tin tong tien va tong so luong item vao cartData
             $cartData->additional([
                 'total_amount' => $cartTotalAmount, // tong tien cua cart hien tai , lay tu bien $cartTotalAmount
@@ -63,10 +63,10 @@ class CartController extends Controller
             'message' => 'Carts retrieved successfully',
             'data' => $cartsData,
             'pagination' => [
-                'current_page' => $carts->currentPage(),
-                'per_page' => $carts->perPage(),
-                'total' => $carts->total(),
-                'last_page' => $carts->lastPage(),
+                'current_page' => $carts->currentPage(), // ham currentPage() lay trang hien tai
+                'per_page' => $carts->perPage(), // ham perPage() lay so luong item tren 1 trang
+                'total' => $carts->total(), // ham total() lay tong so item
+                'last_page' => $carts->lastPage(), // ham lastPage() lay trang cuoi cung
             ],
             'grand_total' => $grandTotal, // Tổng giá của tất cả cart
             'total_carts' => $carts->total(),
@@ -80,18 +80,18 @@ class CartController extends Controller
     {
         DB::beginTransaction(); // DB transaction lam viec voi nhieu cau lenh DB, neu co loi thi rollback ve trang thai truoc do
         try {
-            $cartData = $request->validated(); // $cartData la 1 mang  duoc luu tru du lieu da duoc validate
+            $cartData = $request->validated(); // $cartData la 1 mang  duoc luu tru du lieu da duoc validate truyen tu request
 
             // Xác định user_id
             $userId = auth()->id() ?? $request->user_id ?? 1; // $userId lay tu auth hoac request hoac mac dinh la 1
 
             // check xem $cartData truyen tu request co cart_id khong
-            if (isset($cartData['cart_id'])) { // neu co cart_id thi tim cart theo cart_id va user_id
-                $cart = Cart::where('cart_id', $cartData['cart_id']) // query cart theo cart_id
+            if (isset($cartData['cart_id'])) { // neu co cart_id thi tim cart theo cart_id va user_id // ham isset() kiem tra bien 'cart_id' co ton tai trong mang $cartData hay khong
+                $cart = Cart::where('cart_id', $cartData['cart_id']) // neu co cart_id thi tim cart theo cart_id va user_id
                     ->where('user_id', $userId) // Kiem tra cart thuoc ve user hien tai
-                    ->first(); // Lay cart neu co
+                    ->first(); // ham first() lay cart dau tien neu co
 
-                if (! $cart) {
+                if (! $cart) { // neu khong tim thay cart thi throw exception
                     throw new Exception("Cart with ID {$cartData['cart_id']} not found or does not belong to user"); // thong bao loi rang cart khong ton tai hoac khong thuoc ve user
                 } // Neu khong tim thay cart thi throw exception
             } else {
@@ -105,8 +105,8 @@ class CartController extends Controller
                 ]);
             }
 
-            $totalAmount = 0; // tong tien ban dau la 0
-            $itemsToAdd = []; // Khoi tao mang luu tru items can them
+            $totalAmount = 0; // khoi tao tong tien ban dau la 0
+            $itemsToAdd = []; // khoi tao mang luu tru cac items can them vao cart
 
             // Xu lay array truyen vao duoi 2 dang items hoac product_id va quantity
             // Neu du lieu truyen vao co items va la mang , bien itemsToAdd se luu tru cac items can them
@@ -118,8 +118,8 @@ class CartController extends Controller
               "quantity": 2
             }
             */
-            if (isset($cartData['items']) && is_array($cartData['items'])) {
-                $itemsToAdd = $cartData['items'];  // gan cac items duoc truyen vao mang itemsToAdd
+            if (isset($cartData['items']) && is_array($cartData['items'])) { // ham is_array() kiem tra xem 'items' co phai la mang hay khong
+                $itemsToAdd = $cartData['items'];  // gan cac items duoc truyen vao mang itemsToAdd, 'items' la gia tri truyen vao tu request truyen vao la mang
             }
             // Xu ly single item neu co product_id va quantity, mang truyen vao se duoc luu tru trong itemsToAdd
             /*
@@ -139,7 +139,7 @@ class CartController extends Controller
                 }
             */
             // neu du lieu truyen vao co product_id va quantity
-            elseif (isset($cartData['product_id']) && isset($cartData['quantity'])) { // $cartData la du lieu truyen vao tu request
+            elseif (isset($cartData['product_id']) && isset($cartData['quantity'])) { // ham isset() kiem tra xem 'product_id' va 'quantity' co ton tai trong mang $cartData hay khong
                 $itemsToAdd[] = [ // them phan tu vao mang itemsToAdd
                     'product_id' => $cartData['product_id'], // gan product_id va quantity tu request vao mang itemsToAdd
                     'quantity' => $cartData['quantity'],
@@ -147,37 +147,38 @@ class CartController extends Controller
             }
 
             // Thêm hoặc cập nhật cart items
-            foreach ($itemsToAdd as $item) { // lap voi moi item trong mang itemsToAdd
-                $product = Product::find($item['product_id']); // tim product theo product_id
+            foreach ($itemsToAdd as $item) { // moi $item trong itemsToAdd se duoc lap qua, la cac cart item can them vao cart
+                $product = Product::find($item['product_id']); // ham find() tim product theo product_id duoc truyen vao tu request, $item la bien luu tru cart item hien tai
 
                 if (! $product) { // neu khong tim thay product thi throw exception
                     throw new Exception("Product with ID {$item['product_id']} not found");
                 }
 
                 // Kiểm tra xem sản phẩm đã có trong cart chưa
-                $cartItem = $cart->items()->where('product_id', $item['product_id'])->first();
+                $cartItem = $cart->items()->where('product_id', $item['product_id'])->first(); // ham first() lay cart item dau tien de kiem tra xem san pham da co trong cart chua
 
                 if ($cartItem) { // $cartitem la bien luu tru cart item
-                    // Nếu đã có thì cập nhật số lượng (cộng dồn)
-                    $cartItem->quantity += $item['quantity']; // cong don so luong
+                    // Neu co roi thi cong don so luong
+                    $cartItem->quantity += $item['quantity']; // So luong cua cart item se bang cong don so luong hien tai voi so luong duoc truyen vao
                     $cartItem->save(); // luu thay doi
                 } else {
-                    // Nếu chưa có thì tạo mới
-                    $cart->items()->create([ // tao moi cart item
+                    // neu chua co thi tao moi
+                    $cart->items()->create([ // ham items() truy cap vao relationship items trong model cart, ham create() tao moi cart item
                         'product_id' => $item['product_id'], // gan product_id
                         'quantity' => $item['quantity'], // gan quantity
                     ]);
                 }
 
                 // Tính tổng tiền: giá sản phẩm * số lượng
-                $itemTotal = $product->price * $item['quantity']; // tonm tien = gia san pham * so luong cong don lai
-                $totalAmount += $itemTotal;
+                $itemTotal = $product->price * $item['quantity']; // tong tien cua cart item se bang gia san pham * so luong duoc truyen vao
+                $totalAmount += $itemTotal; // so tien cua cart se bang cong don voi tong tien cua cart item hien tai
+                Log::info("Added product ID {$item['product_id']} with quantity {$item['quantity']} to cart ID {$cart->cart_id}. Item total: {$itemTotal}. Cart total so far: {$totalAmount}"); // ghi log thong tin san pham duoc them vao
             }
 
             DB::commit(); // luu thay doi neu khong co loi xay ra
 
             // Load lại cart với relationships
-            $cart = Cart::with('items.product')->find($cart->cart_id); // load lai cart voi items va product theo cart_id
+            $cart = Cart::with('items.product')->find($cart->cart_id); // loa lai cart voi relationship items va product, ham find() tim cart theo cart_id
 
             // Tính tổng tiền của toàn bộ cart (bao gồm cả items cũ)
             $cartTotalAmount = 0; // tong tien cua cart ban dau la 0
@@ -321,7 +322,6 @@ class CartController extends Controller
         // Xóa cart
         $cart->delete();
 
-        // Reorder Cart IDs với error handling
         try {
             Cart::reOrderIds();
         } catch (\Exception $reorderException) {
