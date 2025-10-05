@@ -78,7 +78,7 @@ class CartController extends Controller
             $itemsToAdd = $this->prepareItemsData($cartData); // bien $itemsToAdd de luu cac san pham can them vao cart, ham prepareItemsData se chuan hoa du lieu tu cartData
 
             foreach ($itemsToAdd as $item) { // lap qua tung item trong itemsToAdd, item la mot mang chua product_id va quantity
-                $this->addOrUpdateCartItem($cart, $item); // $this la doi tuong hien tai, goi ham addOrUpdateCartItem de them hoac cap nhat item trong cart
+                $this->addCartItem($cart, $item); // $this la doi tuong hien tai, goi ham addCartItem de them item trong cart
             }
 
             DB::commit(); // Neu khong co loi xay ra thi commit
@@ -187,20 +187,20 @@ class CartController extends Controller
     /**
      * Get user ID from request
      */
-    private function getUserId($request)
+    private function getUserId($request) // ham lay id nguoi dung tu request
     {
-        return $request->user_id ?? 1;
+        return $request->user_id ?? 1; // neu request co user_id thi tra ve user_id, neu khong thi tra ve 1
     }
 
     /**
      * Find existing cart or create new one
      */
-    private function findOrCreateCart($cartData, $userId)
+    private function findOrCreateCart($cartData, $userId) // ham tim hoac tao moi cart voi tham so $cartData la du lieu tu request, $userId la id nguoi dung
     {
-        if (isset($cartData['cart_id'])) {
-            $cart = Cart::where('cart_id', $cartData['cart_id'])
-                ->where('user_id', $userId)
-                ->first();
+        if (isset($cartData['cart_id'])) { // neu cartData co phan cart_id
+            $cart = Cart::where('cart_id', $cartData['cart_id']) // tim cart voi cart_id tu cartData
+                ->where('user_id', $userId) // va user_id phai trung voi userId
+                ->first(); // lay cart dau tien tim thay hoac null neu khong tim thay
 
             if (! $cart) {
                 throw new Exception("Cart with ID {$cartData['cart_id']} not found or does not belong to user");
@@ -217,7 +217,7 @@ class CartController extends Controller
     }
 
     /**
-     * Ham chuan hoa du lieu tu cartData, tra ve mang cac item voi product_id va quantity
+     * Ham phan chia 2 truong hop: neu co mang items thi tra ve mang items, neu khong co thi kiem tra product_id va quantity de tao mot mang items moi
      */
     private function prepareItemsData($cartData) // tham so $cartData la du lieu da duoc xac thuc tu request
     {
@@ -225,10 +225,10 @@ class CartController extends Controller
             return $cartData['items']; // tra ve mang items
         }
 
-        if (isset($cartData['product_id']) && isset($cartData['quantity'])) {
+        if (isset($cartData['product_id']) && isset($cartData['quantity'])) { // neu cartData co phan product_id va quantity
             return [[
-                'product_id' => $cartData['product_id'],
-                'quantity' => $cartData['quantity'],
+                'product_id' => $cartData['product_id'], // tra ve product_id tu 'product_id' cua cartData
+                'quantity' => $cartData['quantity'],  // tra ve quantity tu 'quantity' cua cartData
             ]];
         }
 
@@ -236,34 +236,33 @@ class CartController extends Controller
     }
 
     /**
-     * Add or update cart item (for store method)
+     * Ham them item trong cart (for store method)
      */
-    private function addOrUpdateCartItem($cart, $item)
+    private function addCartItem($cart, $item) // tham so $cart la doi tuong cart, $item la mot mang chua product_id va quantity
     {
-        $product = Product::findOrFail($item['product_id']);
-        $cartItem = $cart->items()->where('product_id', $item['product_id'])->first();
+        $product = Product::findOrFail($item['product_id']); // Tim san pham voi product_id tu item, neu khong tim thay se tra ve loi 404
+        $cartItem = $cart->items()->where('product_id', $item['product_id'])->first(); // lay cart item voi product_id tu item, neu khong tim thay se tra ve null
 
-        if ($cartItem) {
-            $cartItem->quantity += $item['quantity'];
-            $cartItem->save();
-        } else {
-            $cart->items()->create([
-                'product_id' => $item['product_id'],
-                'quantity' => $item['quantity'],
+        if ($cartItem) { // neu cartItem ton tai
+            $cartItem->quantity += $item['quantity']; // cong don quantity cua cartItem voi quantity tu item
+            $cartItem->save(); // luu cartItem sau khi cap nhat
+        } else { // neu cartItem khong ton tai
+            $cart->items()->create([  // tao moi cart item voi product_id va quantity tu item
+                'product_id' => $item['product_id'], // product_id tu item
+                'quantity' => $item['quantity'], // quantity tu item
             ]);
         }
 
-        Log::info("Added/Updated product ID {$item['product_id']} in cart ID {$cart->cart_id}");
     }
 
     /**
-     * Update cart item (for update method)
+     * Ham cap nhat item trong cart 
      */
     private function updateCartItem($cart, $item)
     {
-        $product = Product::findOrFail($item['product_id']);
-        $cartItem = $cart->items()->where('product_id', $item['product_id'])->first();
-
+        $product = Product::findOrFail($item['product_id']); // Tim san pham voi product_id tu item, neu khong tim thay se tra ve loi 404
+        $cartItem = $cart->items()->where('product_id', $item['product_id'])->first(); // lay cart item voi product_id tu item, neu khong tim thay se tra ve null
+ 
         if ($cartItem) {
             $cartItem->quantity = $item['quantity'];
             $cartItem->save();
