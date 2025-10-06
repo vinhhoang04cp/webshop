@@ -35,10 +35,10 @@ class ProductRequest extends FormRequest
                 Rule::unique('products')->ignore($productId),
             ],
             'description' => ['nullable', 'string', 'max:2000'],
-            'price' => ['required', 'numeric', 'min:0', 'max:999999.99'],
-            'stock_quantity' => ['nullable', 'integer', 'min:0', 'max:999999'],
+            'price' => ['required', 'numeric', 'min:0', 'max:999999999.99'],
+            'stock_quantity' => ['nullable', 'integer', 'min:0', 'max:999999999'],
             'category_id' => ['required', 'exists:categories,category_id'],
-            'image_url' => ['nullable', 'url', 'max:2048'],
+            'image_url' => ['nullable', 'max:2048'],
         ];
     }
 
