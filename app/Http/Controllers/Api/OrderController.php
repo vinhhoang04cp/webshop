@@ -39,14 +39,31 @@ class OrderController extends Controller
             $items = $orderData['items']; // $items la mang chua cac san pham trong don hang
             unset($orderData['items']); // ham uset de xoa phan items khoi orderData, vi ta se xu ly rieng phan items
 
+            // Kiểm tra stock trước khi tạo order
+            $stockValidation = $this->validateStock($items);
+            if (!$stockValidation['valid']) {
+                DB::rollback();
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Insufficient stock',
+                    'errors' => $stockValidation['errors'],
+                ], 422);
+            }
+
             $itemsWithPrices = $this->calculateItemPrices($items); // $itemsWithPrices la mang chua cac san pham trong don hang, voi gia duoc lay tu database
             // $this la doi tuong hien tai, lam viec voi lop hien tai
             $orderData['total_amount'] = $this->calculateTotalAmount($itemsWithPrices); // $orderData['total_amount'] de luu tong so tien cua don hang, duoc tinh tu ham calculateTotalAmount
             $order = Order::create($orderData); // $order la bien luu don hang moi duoc tao
             $this->createOrderItems($order, $itemsWithPrices); // ham createOrderItems duoc truyen cac tham so la $order va $itemsWithPrices
 
-            Order::reorderIds(); // Goi phuong thuc static reorderIds() de sap xep lai order_id lien tuc tu 1,2,3,...
+            // Cập nhật stock sau khi tạo order thành công
+            $this->updateStock($items);
+
+            // Bỏ reorderIds khỏi transaction để tránh deadlock
             DB::commit(); // Neu khong co loi xay ra thi commit
+
+            // Chạy reorderIds ngoài transaction
+            Order::reorderIds(); // Goi phuong thuc static reorderIds() de sap xep lai order_id lien tuc tu 1,2,3,...
 
             $order = Order::with('items')->find($order->order_id); // with la ham de load quan he items, find() de tim don hang vua tao voi tham so order_id
 
@@ -188,6 +205,44 @@ class OrderController extends Controller
                 'quantity' => $item['quantity'], // gan quantity tu item vao phan quantity trong order item
                 'price' => $item['price'], // gan price tu item vao phan price trong order item, $item['price'] da duoc tinh toan trong ham calculateItemPrices
             ]);
+        }
+    }
+
+    /**
+     * Kiểm tra stock có đủ không trước khi tạo order
+     */
+    private function validateStock($items)
+    {
+        $errors = [];
+        $valid = true;
+
+        foreach ($items as $item) {
+            $product = Product::find($item['product_id']);
+            if (!$product) {
+                $errors[] = "Product with ID {$item['product_id']} not found";
+                $valid = false;
+                continue;
+            }
+
+            if ($product->stock_quantity < $item['quantity']) {
+                $errors[] = "Insufficient stock for product '{$product->name}'. Available: {$product->stock_quantity}, Requested: {$item['quantity']}";
+                $valid = false;
+            }
+        }
+
+        return ['valid' => $valid, 'errors' => $errors];
+    }
+
+    /**
+     * Cập nhật stock sau khi tạo order thành công
+     */
+    private function updateStock($items)
+    {
+        foreach ($items as $item) {
+            $product = Product::find($item['product_id']);
+            if ($product) {
+                $product->decrement('stock_quantity', $item['quantity']);
+            }
         }
     }
 }

@@ -6,18 +6,19 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens; // Thêm dòng này để sử dụng Laravel Sanctum
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasApiTokens; // Thêm HasApiTokens để hỗ trợ Laravel Sanctum
 
     /**
      * The attributes that are mass assignable.
      *
      * @var list<string>
      */
-    protected $fillable = [
+    protected $fillable = [ // Thuộc tính có thể gán hàng loạt
         'name',
         'email',
         'password',
@@ -30,7 +31,7 @@ class User extends Authenticatable
      *
      * @var list<string>
      */
-    protected $hidden = [
+    protected $hidden = [ // Thuộc tính ẩn khi chuyển đổi model thành mảng hoặc JSON
         'password',
         'remember_token',
     ];
@@ -40,7 +41,7 @@ class User extends Authenticatable
      *
      * @return array<string, string>
      */
-    protected function casts(): array
+    protected function casts(): array // Chuyển đổi kiểu dữ liệu cho các thuộc tính
     {
         return [
             'email_verified_at' => 'datetime',
@@ -48,7 +49,7 @@ class User extends Authenticatable
         ];
     }
 
-    public function roles()
+    public function roles() //... Quan hệ nhiều-nhiều với Role thông qua bảng trung gian user_roles
     {
         return $this->belongsToMany(Role::class, 'user_roles', 'user_id', 'role_id');
     }
