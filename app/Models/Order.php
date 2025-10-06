@@ -17,11 +17,55 @@ class Order extends Model
         'user_id',
         'order_date',
         'total_amount',
+        'status',
     ];
 
     protected $casts = [
         'order_date' => 'datetime',
     ];
+
+    // Định nghĩa các trạng thái hợp lệ
+    const STATUS_PENDING = 'pending';
+    const STATUS_PROCESSING = 'processing';
+    const STATUS_SHIPPED = 'shipped';
+    const STATUS_DELIVERED = 'delivered';
+    const STATUS_CANCELLED = 'cancelled';
+
+    // Định nghĩa workflow chuyển trạng thái hợp lệ
+    const STATUS_TRANSITIONS = [
+        self::STATUS_PENDING => [self::STATUS_PROCESSING, self::STATUS_CANCELLED],
+        self::STATUS_PROCESSING => [self::STATUS_SHIPPED, self::STATUS_CANCELLED],
+        self::STATUS_SHIPPED => [self::STATUS_DELIVERED],
+        self::STATUS_DELIVERED => [],
+        self::STATUS_CANCELLED => [],
+    ];
+
+    /**
+     * Kiểm tra xem có thể chuyển sang trạng thái mới không
+     */
+    public function canTransitionTo(string $newStatus): bool
+    {
+        $currentStatus = $this->status ?? self::STATUS_PENDING;
+        
+        if (!isset(self::STATUS_TRANSITIONS[$currentStatus])) {
+            return false;
+        }
+
+        return in_array($newStatus, self::STATUS_TRANSITIONS[$currentStatus]);
+    }
+
+    /**
+     * Chuyển sang trạng thái mới nếu hợp lệ
+     */
+    public function transitionTo(string $newStatus): bool
+    {
+        if (!$this->canTransitionTo($newStatus)) {
+            return false;
+        }
+
+        $this->status = $newStatus;
+        return $this->save();
+    }
 
     public function user()
     {

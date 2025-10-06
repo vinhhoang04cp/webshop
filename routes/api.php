@@ -32,14 +32,14 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () { // boc
     Route::post('/logout', [\App\Http\Controllers\Api\AuthController::class, 'logout']);
 
     // Category management (Admin only)
-    Route::prefix('categories')->group(function () {
+    Route::prefix('categories')->middleware('admin')->group(function () {
         Route::post('/', [CategoryController::class, 'store']);
         Route::put('/{id}', [CategoryController::class, 'update']);
         Route::delete('/{id}', [CategoryController::class, 'destroy']);
     });
 
     // Product management (Admin only)
-    Route::prefix('products')->group(function () {
+    Route::prefix('products')->middleware('admin')->group(function () {
         Route::post('/', [\App\Http\Controllers\Api\ProductController::class, 'store']);
         Route::put('/{id}', [\App\Http\Controllers\Api\ProductController::class, 'update']);
         Route::delete('/{id}', [\App\Http\Controllers\Api\ProductController::class, 'destroy']);
@@ -64,7 +64,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () { // boc
     });
 
     // Product details management (Admin only)
-    Route::prefix('product-details')->group(function () {
+    Route::prefix('product-details')->middleware('admin')->group(function () {
         Route::get('/', [\App\Http\Controllers\Api\ProductDetailController::class, 'index']);
         Route::post('/', [\App\Http\Controllers\Api\ProductDetailController::class, 'store']);
         Route::get('/{id}', [\App\Http\Controllers\Api\ProductDetailController::class, 'show']);
@@ -92,7 +92,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () { // boc
     });
 
     // Inventory management (Admin only)
-    Route::prefix('inventories')->group(function () {
+    Route::prefix('inventories')->middleware('admin')->group(function () {
         Route::get('/', [\App\Http\Controllers\Api\InventoryController::class, 'index']);
         Route::post('/', [\App\Http\Controllers\Api\InventoryController::class, 'store']);
         Route::get('/{id}', [\App\Http\Controllers\Api\InventoryController::class, 'show']);

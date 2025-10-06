@@ -20,7 +20,12 @@ class OrderController extends Controller
     {
         $query = Order::query(); // $query la mot truy van Eloquent khoi tao de lay du lieu tu bang orders
 
-        $this->applyFilters($query, $request); // $this la doi tuong hien tai cua lop, applyFilters la phuong thuc rieng cua lop OrderController de ap dung cac bo loc tren truy van $query dua tren cac tham so trong $request
+        // User thường chỉ xem được order của mình, Admin xem tất cả
+        if (!$request->user()->isAdmin()) {
+            $query->where('user_id', $request->user()->id);
+        } else {
+            $this->applyFilters($query, $request); // $this la doi tuong hien tai cua lop, applyFilters la phuong thuc rieng cua lop OrderController de ap dung cac bo loc tren truy van $query dua tren cac tham so trong $request
+        }
 
         $orders = $query->paginate(10); // paginate(10) phan trang ket qua, moi trang co toi da 10 ban ghi, $orders la ket qua tra ve sau khi ap dung cac bo loc
 
@@ -84,9 +89,17 @@ class OrderController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show($id) // ham show() voi tham so $id la order_id cua don hang can lay
+    public function show(Request $request, $id) // ham show() voi tham so $id la order_id cua don hang can lay
     {
         $order = Order::with('items')->findOrFail($id); // with de load quan he items, findOrFail de tim don hang voi order_id bang $id, neu khong tim thay se tra ve loi 404
+
+        // Kiểm tra ownership: User chỉ xem được order của mình
+        if (!$request->user()->isAdmin() && $order->user_id !== $request->user()->id) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Access denied. You can only access your own orders.',
+            ], 403);
+        }
 
         return new OrderResource($order); // tra ve mot OrderResource chua don hang
     }
@@ -100,7 +113,41 @@ class OrderController extends Controller
 
         try {
             $order = Order::findOrFail($id); // Tim don hang can cap nhat bang order_id, neu khong tim thay se tra ve loi 404
+
+            // Kiểm tra ownership: User chỉ cập nhật được order của mình (hoặc là admin)
+            if (!$request->user()->isAdmin() && $order->user_id !== $request->user()->id) {
+                DB::rollback();
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Access denied. You can only update your own orders.',
+                ], 403);
+            }
+
             $orderData = $request->validated(); // $orderData la bien de luu du lieu tu request dau vao da duoc xac thuc
+            
+            // Kiểm tra và validate status transition nếu có thay đổi status
+            if (isset($orderData['status']) && $orderData['status'] !== $order->status) {
+                // User thường không được thay đổi status, chỉ admin mới được
+                if (!$request->user()->isAdmin()) {
+                    DB::rollback();
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Only admin can change order status.',
+                    ], 403);
+                }
+
+                // Kiểm tra workflow status có hợp lệ không
+                if (!$order->canTransitionTo($orderData['status'])) {
+                    DB::rollback();
+                    return response()->json([
+                        'status' => false,
+                        'message' => "Cannot change status from '{$order->status}' to '{$orderData['status']}'. Invalid status transition.",
+                        'current_status' => $order->status,
+                        'allowed_transitions' => Order::STATUS_TRANSITIONS[$order->status] ?? [],
+                    ], 422);
+                }
+            }
+
             $items = $orderData['items'] ?? []; // $items la bien de luu cac san pham trong don hang, neu khong co thi la mang rong
             unset($orderData['items']); // ham uset de xoa phan items khoi orderData, vi ta se xu ly rieng phan items
 
@@ -134,9 +181,18 @@ class OrderController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         $order = Order::findOrFail($id);
+
+        // Kiểm tra ownership: User chỉ xóa được order của mình (hoặc là admin)
+        if (!$request->user()->isAdmin() && $order->user_id !== $request->user()->id) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Access denied. You can only delete your own orders.',
+            ], 403);
+        }
+
         $order->delete();
 
         Order::reorderIds();
@@ -218,7 +274,11 @@ class OrderController extends Controller
         $valid = true;
 
         foreach ($items as $item) {
-            $product = Product::find($item['product_id']);
+            // Sử dụng lockForUpdate để tránh race condition
+            $product = Product::where('product_id', $item['product_id'])
+                ->lockForUpdate()
+                ->first();
+                
             if (! $product) {
                 $errors[] = "Product with ID {$item['product_id']} not found";
                 $valid = false;
@@ -241,8 +301,12 @@ class OrderController extends Controller
     private function updateStock($items)
     {
         foreach ($items as $item) {
-            $product = Product::find($item['product_id']);
-            if ($product) {
+            // Sử dụng lockForUpdate và kiểm tra lại stock trước khi update
+            $product = Product::where('product_id', $item['product_id'])
+                ->lockForUpdate()
+                ->first();
+                
+            if ($product && $product->stock_quantity >= $item['quantity']) {
                 $product->decrement('stock_quantity', $item['quantity']);
             }
         }

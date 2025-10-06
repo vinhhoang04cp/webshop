@@ -20,9 +20,13 @@ class CartController extends Controller
     {
         $query = Cart::with('items.product'); // $bien $query la mot truy van Eloquent khoi tao de lay du lieu tu bang carts, voi quan he items va product duoc load sang
 
-        if ($request->has('user_id')) {
+        // User thường chỉ xem được cart của mình, Admin xem tất cả
+        if (!$request->user()->isAdmin()) {
+            $query->where('user_id', $request->user()->id);
+        } elseif ($request->has('user_id')) {
             $query->where('user_id', $request->get('user_id'));
         }
+
         if ($request->has('product_id')) {
             $query->where('product_id', $request->get('product_id'));
         }
@@ -105,6 +109,32 @@ class CartController extends Controller
     }
 
     /**
+     * Display the specified resource.
+     */
+    public function show(Request $request, $id)
+    {
+        $cart = Cart::with('items.product')->findOrFail($id);
+
+        // Kiểm tra ownership: User chỉ xem được cart của mình
+        if (!$request->user()->isAdmin() && $cart->user_id !== $request->user()->id) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Access denied. You can only access your own cart.',
+            ], 403);
+        }
+
+        $cartTotals = $this->calculateCartTotals($cart);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Cart retrieved successfully',
+            'data' => new CartResource($cart),
+            'total_amount' => $cartTotals['amount'],
+            'total_items' => $cartTotals['items'],
+        ], 200);
+    }
+
+    /**
      * Update the specified resource in storage.
      */
     public function update(CartRequest $request, $id)
@@ -113,6 +143,16 @@ class CartController extends Controller
         try {
             $cartData = $request->validated(); // Tao bien cartData de luu du lieu tu request
             $cart = Cart::findOrFail($id); // Tim cart can cap nhat bang cart_id, neu khong tim thay se tra ve loi 404
+
+            // Kiểm tra ownership: User chỉ cập nhật được cart của mình
+            if (!$request->user()->isAdmin() && $cart->user_id !== $request->user()->id) {
+                DB::rollback();
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Access denied. You can only update your own cart.',
+                ], 403);
+            }
+
             $userId = $this->getUserId($request); // Tao bien userId de luu id nguoi dung, $this->getUserId() se lay id tu request
 
             $itemsToUpdate = $this->prepareItemsData($cartData); // bien $itemsToUpdate de luu cac san pham can cap nhat trong cart, ham prepareItemsData se chuan hoa du lieu tu cartData
@@ -147,9 +187,18 @@ class CartController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         $cart = Cart::findOrFail($id);
+
+        // Kiểm tra ownership: User chỉ xóa được cart của mình
+        if (!$request->user()->isAdmin() && $cart->user_id !== $request->user()->id) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Access denied. You can only delete your own cart.',
+            ], 403);
+        }
+
         $cart->delete();
 
         try {
@@ -188,7 +237,7 @@ class CartController extends Controller
      */
     private function getUserId($request) // ham lay id nguoi dung tu request
     {
-        return $request->user_id ?? 1; // neu request co user_id thi tra ve user_id, neu khong thi tra ve 1
+        return $request->user()->id; // lay id tu authenticated user
     }
 
     /**
