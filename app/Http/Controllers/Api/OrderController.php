@@ -56,7 +56,9 @@ class OrderController extends Controller
                 ], 422);
             }
 
-            $itemsWithPrices = $this->calculateItemPrices($items); // $itemsWithPrices la mang chua cac san pham trong don hang, voi gia duoc lay tu database
+            $itemsWithPrices = $this->calculateItemPrices($items);
+            
+             // $itemsWithPrices la mang chua cac san pham trong don hang, voi gia duoc lay tu database
             // $this la doi tuong hien tai, lam viec voi lop hien tai
             $orderData['total_amount'] = $this->calculateTotalAmount($itemsWithPrices); // $orderData['total_amount'] de luu tong so tien cua don hang, duoc tinh tu ham calculateTotalAmount
             $order = Order::create($orderData); // $order la bien luu don hang moi duoc tao
