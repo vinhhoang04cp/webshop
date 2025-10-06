@@ -17,13 +17,13 @@ class EnsureUserIsAdmin
     {
         // Kiểm tra user có role admin không
         // Tạm thời comment để không ảnh hưởng logic hiện tại
-        
-        // if (!$request->user() || !$request->user()->hasRole('admin')) {
-        //     return response()->json([
-        //         'status' => false,
-        //         'message' => 'Access denied. Admin role required.',
-        //     ], 403);
-        // }
+
+        if (! $request->user() || ! $request->user()->hasRole('admin')) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Access denied. Admin role required.',
+            ], 403);
+        }
 
         return $next($request);
     }

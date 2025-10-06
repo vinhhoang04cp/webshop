@@ -41,8 +41,9 @@ class OrderController extends Controller
 
             // Kiểm tra stock trước khi tạo order
             $stockValidation = $this->validateStock($items);
-            if (!$stockValidation['valid']) {
+            if (! $stockValidation['valid']) {
                 DB::rollback();
+
                 return response()->json([
                     'status' => false,
                     'message' => 'Insufficient stock',
@@ -218,9 +219,10 @@ class OrderController extends Controller
 
         foreach ($items as $item) {
             $product = Product::find($item['product_id']);
-            if (!$product) {
+            if (! $product) {
                 $errors[] = "Product with ID {$item['product_id']} not found";
                 $valid = false;
+
                 continue;
             }
 

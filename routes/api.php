@@ -4,26 +4,10 @@ use App\Http\Controllers\Api\CategoryController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| is assigned the "api" middleware group. Enjoy building your API!
-|
-*/
+Route::post('/login', [\App\Http\Controllers\Api\AuthController::class, 'login']); // Route dang nhap
+Route::post('/register', [\App\Http\Controllers\Api\AuthController::class, 'register']); // Route dang ky
 
-// ==================================================
-// PUBLIC ROUTES (Không cần authentication)
-// ==================================================
-
-// Authentication routes
-Route::post('/login', [\App\Http\Controllers\Api\AuthController::class, 'login']);
-Route::post('/register', [\App\Http\Controllers\Api\AuthController::class, 'register']);
-
-// Public product routes - Khách có thể xem sản phẩm
+// Public product routes - Khách có thể xem sản phẩm mà không cần đăng nhập
 Route::prefix('products')->middleware('throttle:60,1')->group(function () {
     Route::get('/', [\App\Http\Controllers\Api\ProductController::class, 'index']);
     Route::get('/{id}', [\App\Http\Controllers\Api\ProductController::class, 'show']);
@@ -35,9 +19,7 @@ Route::prefix('categories')->middleware('throttle:60,1')->group(function () {
     Route::get('/{id}', [CategoryController::class, 'show']);
 });
 
-// ==================================================
-// PROTECTED ROUTES (Cần authentication)
-// ==================================================
+// Các route cần authentication
 
 Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () { // boc cac route can authentication vao day
     // 'throttle:60,1' gioi han 60 request/phut , gioi han nay co the thay doi theo yeu cau thuc te

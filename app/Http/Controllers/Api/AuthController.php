@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
@@ -23,14 +22,14 @@ class AuthController extends Controller
 
         $user = User::where('email', $request->email)->first(); // // $user la bien chua thong tin user tim thay theo email , first() lay ban ghi dau tien
 
-        if (!$user || !Hash::check($request->password, $user->password)) { // Kiem tra neu khong tim thay user hoac mat khau khong dung
+        if (! $user || ! Hash::check($request->password, $user->password)) { // Kiem tra neu khong tim thay user hoac mat khau khong dung
             throw ValidationException::withMessages([ // Neu khong dung thi tra ve loi xac thuc
                 'email' => ['The provided credentials are incorrect.'], // Thong bao loi
             ]);
         }
 
         // Xóa tất cả token cũ của user
-        $user->tokens()->delete(); 
+        $user->tokens()->delete();
 
         // Tạo token mới
         $token = $user->createToken('api-token')->plainTextToken; //

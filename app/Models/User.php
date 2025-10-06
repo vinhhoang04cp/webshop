@@ -11,7 +11,7 @@ use Laravel\Sanctum\HasApiTokens; // Thêm dòng này để sử dụng Laravel 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasApiTokens; // Thêm HasApiTokens để hỗ trợ Laravel Sanctum
+    use HasApiTokens, HasFactory, Notifiable; // Thêm HasApiTokens để hỗ trợ Laravel Sanctum
 
     /**
      * The attributes that are mass assignable.
@@ -49,7 +49,7 @@ class User extends Authenticatable
         ];
     }
 
-    public function roles() //... Quan hệ nhiều-nhiều với Role thông qua bảng trung gian user_roles
+    public function roles() // ... Quan hệ nhiều-nhiều với Role thông qua bảng trung gian user_roles
     {
         return $this->belongsToMany(Role::class, 'user_roles', 'user_id', 'role_id');
     }
