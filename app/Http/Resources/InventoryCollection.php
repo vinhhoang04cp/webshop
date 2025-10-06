@@ -16,9 +16,11 @@ class InventoryCollection extends ResourceCollection
     {
         return [
             'data' => InventoryResource::collection($this->collection),
+            'status' => true,
+            'message' => 'Inventory retrieved successfully',
             'meta' => [
                 'total' => $this->total(),
-                'count' => $this->count(),
+                'count' => $this->count(), 
                 'per_page' => $this->perPage(),
                 'current_page' => $this->currentPage(),
                 'total_pages' => $this->lastPage(),
@@ -28,9 +30,6 @@ class InventoryCollection extends ResourceCollection
 
     public function with(Request $request): array
     {
-        return [
-            'status' => true,
-            'message' => 'Inventory retrieved successfully',
-        ];
+        return [];
     }
 }
