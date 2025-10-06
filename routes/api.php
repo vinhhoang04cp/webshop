@@ -80,4 +80,9 @@ Route::prefix('inventories')->group(function () {
     Route::get('/{id}', [\App\Http\Controllers\Api\InventoryController::class, 'show']);
     Route::put('/{id}', [\App\Http\Controllers\Api\InventoryController::class, 'update']);
     Route::delete('/{id}', [\App\Http\Controllers\Api\InventoryController::class, 'destroy']);
+
+    // Additional inventory routes
+    Route::post('/upsert', [\App\Http\Controllers\Api\InventoryController::class, 'upsert']);
+    Route::put('/{id}/update-stock', [\App\Http\Controllers\Api\InventoryController::class, 'updateStock']);
+    Route::get('/low-stock/list', [\App\Http\Controllers\Api\InventoryController::class, 'lowStock']);
 });

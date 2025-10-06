@@ -18,23 +18,7 @@ class InventoryController extends Controller
     {
         $query = Inventory::query()->with('product');
 
-        // Filter by product_id
-        if ($request->has('product_id')) {
-            $query->where('product_id', $request->get('product_id'));
-        }
-        
-        // Filter by current stock range
-        if ($request->has('min_stock')) {
-            $query->where('current_stock', '>=', $request->get('min_stock'));
-        }
-        if ($request->has('max_stock')) {
-            $query->where('current_stock', '<=', $request->get('max_stock'));
-        }
-        
-        // Filter by low stock (current_stock < 10)
-        if ($request->has('low_stock') && $request->get('low_stock') == true) {
-            $query->where('current_stock', '<', 10);
-        }
+        $this->applyFilters($query, $request);
 
         $perPage = $request->get('per_page', 10);
         $inventories = $query->paginate($perPage);
@@ -44,45 +28,33 @@ class InventoryController extends Controller
 
     /**
      * Store a newly created resource in storage.
+     * If inventory exists for the product, it will be updated instead of creating new one.
      */
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'product_id' => 'required|exists:products,product_id|unique:inventory,product_id',
-            'stock_in' => 'required|integer|min:0',
-            'stock_out' => 'integer|min:0',
-            'current_stock' => 'integer|min:0',
-        ]);
-
+        $validator = $this->validateInventoryData($request);
         if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation error',
-                'errors' => $validator->errors()
-            ], 422);
+            return $this->validationErrorResponse($validator);
         }
 
         try {
-            // Calculate current_stock if not provided
-            $data = $request->all();
-            if (!isset($data['current_stock'])) {
-                $data['current_stock'] = ($data['stock_in'] ?? 0) - ($data['stock_out'] ?? 0);
+            $existingInventory = Inventory::where('product_id', $request->product_id)->first();
+            $data = $this->prepareInventoryData($request);
+
+            if ($existingInventory) {
+                $existingInventory->update($data);
+                $existingInventory->load('product');
+
+                return $this->successResponse('Inventory updated successfully', new InventoryResource($existingInventory));
             }
-            
+
             $inventory = Inventory::create($data);
             $inventory->load('product');
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Inventory created successfully',
-                'data' => new InventoryResource($inventory)
-            ], 201);
+
+            return $this->successResponse('Inventory created successfully', new InventoryResource($inventory), 201);
+
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to create inventory',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('Failed to process inventory', $e);
         }
     }
 
@@ -93,16 +65,10 @@ class InventoryController extends Controller
     {
         try {
             $inventory = Inventory::with('product')->where('inventory_id', $id)->firstOrFail();
-            
-            return response()->json([
-                'success' => true,
-                'data' => new InventoryResource($inventory)
-            ], 200);
+
+            return $this->successResponse(null, new InventoryResource($inventory));
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Inventory not found'
-            ], 404);
+            return $this->errorResponse('Inventory not found', null, 404);
         }
     }
 
@@ -113,45 +79,19 @@ class InventoryController extends Controller
     {
         try {
             $inventory = Inventory::where('inventory_id', $id)->firstOrFail();
-
-            $validator = Validator::make($request->all(), [
-                'product_id' => 'sometimes|exists:products,product_id|unique:inventory,product_id,' . $id . ',inventory_id',
-                'stock_in' => 'sometimes|integer|min:0',
-                'stock_out' => 'sometimes|integer|min:0',
-                'current_stock' => 'sometimes|integer|min:0',
-            ]);
+            $validator = $this->validateInventoryData($request, $id);
 
             if ($validator->fails()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Validation error',
-                    'errors' => $validator->errors()
-                ], 422);
+                return $this->validationErrorResponse($validator);
             }
 
-            $data = $request->all();
-            
-            // Recalculate current_stock if stock_in or stock_out is updated
-            if (isset($data['stock_in']) || isset($data['stock_out'])) {
-                $stockIn = $data['stock_in'] ?? $inventory->stock_in;
-                $stockOut = $data['stock_out'] ?? $inventory->stock_out;
-                $data['current_stock'] = $stockIn - $stockOut;
-            }
-            
+            $data = $this->prepareInventoryData($request, $inventory);
             $inventory->update($data);
             $inventory->load('product');
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Inventory updated successfully',
-                'data' => new InventoryResource($inventory)
-            ], 200);
+            return $this->successResponse('Inventory updated successfully', new InventoryResource($inventory));
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to update inventory',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('Failed to update inventory', $e);
         }
     }
 
@@ -164,15 +104,9 @@ class InventoryController extends Controller
             $inventory = Inventory::where('inventory_id', $id)->firstOrFail();
             $inventory->delete();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Inventory deleted successfully'
-            ], 200);
+            return $this->successResponse('Inventory deleted successfully');
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to delete inventory'
-            ], 500);
+            return $this->errorResponse('Failed to delete inventory', $e);
         }
     }
 
@@ -181,56 +115,19 @@ class InventoryController extends Controller
      */
     public function updateStock(Request $request, string $id)
     {
-        $validator = Validator::make($request->all(), [
-            'stock_in' => 'sometimes|integer|min:0',
-            'stock_out' => 'sometimes|integer|min:0',
-            'type' => 'required|in:in,out,adjust'
-        ]);
-
+        $validator = $this->validateStockUpdate($request);
         if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation error',
-                'errors' => $validator->errors()
-            ], 422);
+            return $this->validationErrorResponse($validator);
         }
 
         try {
             $inventory = Inventory::where('inventory_id', $id)->firstOrFail();
-            
-            switch ($request->type) {
-                case 'in':
-                    $inventory->stock_in += $request->stock_in ?? 0;
-                    break;
-                case 'out':
-                    $inventory->stock_out += $request->stock_out ?? 0;
-                    break;
-                case 'adjust':
-                    if ($request->has('stock_in')) {
-                        $inventory->stock_in = $request->stock_in;
-                    }
-                    if ($request->has('stock_out')) {
-                        $inventory->stock_out = $request->stock_out;
-                    }
-                    break;
-            }
-            
-            // Recalculate current stock
-            $inventory->current_stock = $inventory->stock_in - $inventory->stock_out;
-            $inventory->save();
+            $this->processStockUpdate($inventory, $request);
             $inventory->load('product');
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Stock updated successfully',
-                'data' => new InventoryResource($inventory)
-            ], 200);
+            return $this->successResponse('Stock updated successfully', new InventoryResource($inventory));
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to update stock',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('Failed to update stock', $e);
         }
     }
 
@@ -240,11 +137,185 @@ class InventoryController extends Controller
     public function lowStock(Request $request)
     {
         $threshold = $request->get('threshold', 10);
-        
         $inventories = Inventory::with('product')
             ->where('current_stock', '<', $threshold)
             ->paginate($request->get('per_page', 10));
-            
+
         return new InventoryCollection($inventories);
+    }
+
+    /**
+     * Create or update inventory (upsert)
+     */
+    public function upsert(Request $request)
+    {
+        $validator = $this->validateInventoryData($request);
+        if ($validator->fails()) {
+            return $this->validationErrorResponse($validator);
+        }
+
+        try {
+            $data = $this->prepareInventoryData($request);
+            $inventory = Inventory::updateOrCreate(['product_id' => $request->product_id], $data);
+            $inventory->load('product');
+
+            $message = $inventory->wasRecentlyCreated ? 'Inventory created successfully' : 'Inventory updated successfully';
+            $status = $inventory->wasRecentlyCreated ? 201 : 200;
+            $action = $inventory->wasRecentlyCreated ? 'created' : 'updated';
+
+            return $this->successResponse($message, new InventoryResource($inventory), $status, ['action' => $action]);
+        } catch (\Exception $e) {
+            return $this->errorResponse('Failed to process inventory', $e);
+        }
+    }
+
+    /**
+     * Apply filters to inventory query
+     */
+    private function applyFilters($query, Request $request)
+    {
+        if ($request->has('product_id')) {
+            $query->where('product_id', $request->get('product_id'));
+        }
+
+        if ($request->has('min_stock')) {
+            $query->where('current_stock', '>=', $request->get('min_stock'));
+        }
+
+        if ($request->has('max_stock')) {
+            $query->where('current_stock', '<=', $request->get('max_stock'));
+        }
+
+        if ($request->has('low_stock') && $request->get('low_stock') == true) {
+            $query->where('current_stock', '<', 10);
+        }
+    }
+
+    /**
+     * Validate inventory data
+     */
+    private function validateInventoryData(Request $request, $excludeId = null)
+    {
+        $rules = [
+            'product_id' => 'required|exists:products,product_id',
+            'stock_in' => 'required|integer|min:0',
+            'stock_out' => 'integer|min:0',
+            'current_stock' => 'integer|min:0',
+        ];
+
+        // Add unique constraint for update operation
+        if ($excludeId) {
+            $rules['product_id'] = 'sometimes|exists:products,product_id|unique:inventory,product_id,'.$excludeId.',inventory_id';
+            $rules['stock_in'] = 'sometimes|integer|min:0';
+        }
+
+        return Validator::make($request->all(), $rules);
+    }
+
+    /**
+     * Validate stock update data
+     */
+    private function validateStockUpdate(Request $request)
+    {
+        return Validator::make($request->all(), [
+            'stock_in' => 'sometimes|integer|min:0',
+            'stock_out' => 'sometimes|integer|min:0',
+            'type' => 'required|in:in,out,adjust',
+        ]);
+    }
+
+    /**
+     * Prepare inventory data for storage
+     */
+    private function prepareInventoryData(Request $request, $existingInventory = null)
+    {
+        $data = $request->all();
+
+        if (! isset($data['current_stock'])) {
+            if ($existingInventory && (isset($data['stock_in']) || isset($data['stock_out']))) {
+                $stockIn = $data['stock_in'] ?? $existingInventory->stock_in;
+                $stockOut = $data['stock_out'] ?? $existingInventory->stock_out;
+                $data['current_stock'] = $stockIn - $stockOut;
+            } else {
+                $data['current_stock'] = ($data['stock_in'] ?? 0) - ($data['stock_out'] ?? 0);
+            }
+        }
+
+        return $data;
+    }
+
+    /**
+     * Process stock update based on type
+     */
+    private function processStockUpdate($inventory, Request $request)
+    {
+        switch ($request->type) {
+            case 'in':
+                $inventory->stock_in += $request->stock_in ?? 0;
+                break;
+            case 'out':
+                $inventory->stock_out += $request->stock_out ?? 0;
+                break;
+            case 'adjust':
+                if ($request->has('stock_in')) {
+                    $inventory->stock_in = $request->stock_in;
+                }
+                if ($request->has('stock_out')) {
+                    $inventory->stock_out = $request->stock_out;
+                }
+                break;
+        }
+
+        $inventory->current_stock = $inventory->stock_in - $inventory->stock_out;
+        $inventory->save();
+    }
+
+    /**
+     * Return success response
+     */
+    private function successResponse($message = null, $data = null, $status = 200, $extra = [])
+    {
+        $response = array_merge([
+            'success' => true,
+        ], $extra);
+
+        if ($message) {
+            $response['message'] = $message;
+        }
+
+        if ($data) {
+            $response['data'] = $data;
+        }
+
+        return response()->json($response, $status);
+    }
+
+    /**
+     * Return error response
+     */
+    private function errorResponse($message, $exception = null, $status = 500)
+    {
+        $response = [
+            'success' => false,
+            'message' => $message,
+        ];
+
+        if ($exception && config('app.debug')) {
+            $response['error'] = $exception->getMessage();
+        }
+
+        return response()->json($response, $status);
+    }
+
+    /**
+     * Return validation error response
+     */
+    private function validationErrorResponse($validator)
+    {
+        return response()->json([
+            'success' => false,
+            'message' => 'Validation error',
+            'errors' => $validator->errors(),
+        ], 422);
     }
 }

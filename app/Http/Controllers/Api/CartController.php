@@ -10,7 +10,6 @@ use App\Models\Product;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class CartController extends Controller
 {
@@ -156,7 +155,7 @@ class CartController extends Controller
         try {
             Cart::reOrderIds();
         } catch (\Exception $e) {
-            \Log::warning('Failed to reorder Cart IDs after delete: ' . $e->getMessage());
+            \Log::warning('Failed to reorder Cart IDs after delete: '.$e->getMessage());
         }
 
         return response()->json([
@@ -256,13 +255,13 @@ class CartController extends Controller
     }
 
     /**
-     * Ham cap nhat item trong cart 
+     * Ham cap nhat item trong cart
      */
     private function updateCartItem($cart, $item)
     {
         $product = Product::findOrFail($item['product_id']); // Tim san pham voi product_id tu item, neu khong tim thay se tra ve loi 404
         $cartItem = $cart->items()->where('product_id', $item['product_id'])->first(); // lay cart item voi product_id tu item, neu khong tim thay se tra ve null
- 
+
         if ($cartItem) {
             $cartItem->quantity = $item['quantity'];
             $cartItem->save();
