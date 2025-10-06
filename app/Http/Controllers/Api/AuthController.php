@@ -64,7 +64,7 @@ class AuthController extends Controller
         ]);
 
         // Tạo token cho user mới
-        $token = $user->createToken('api-token')->plainTextToken;
+        $token = $user->createToken('api-token')->plainTextToken; // 'api-token' la ten cua token , plainTextToken tra ve token duoi dang chuoi
 
         return response()->json([
             'status' => true,
@@ -77,12 +77,12 @@ class AuthController extends Controller
     /**
      * Đăng xuất và xóa token
      */
-    public function logout(Request $request)
+    public function logout(Request $request) // Ham logout
     {
         // Xóa token hiện tại
-        $request->user()->currentAccessToken()->delete();
+        $request->user()->currentAccessToken()->delete(); // Xoa token hien tai cua user dang dang nhap
 
-        return response()->json([
+        return response()->json([ // Tra ve phan hoi dang dang xuat thanh cong
             'status' => true,
             'message' => 'Logout successful',
         ], 200);
