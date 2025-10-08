@@ -9,7 +9,7 @@ use Illuminate\Database\Seeder;
 
 /**
  * UserRoleSeeder
- * 
+ *
  * Seeder này tạo dữ liệu mẫu cho bảng user_roles
  * Gán role cho các user dựa trên email pattern
  * Giúp test và development có dữ liệu role sẵn sàng
@@ -18,7 +18,7 @@ class UserRoleSeeder extends Seeder
 {
     /**
      * Run the database seeds.
-     * 
+     *
      * Chạy seeder để tạo dữ liệu mẫu user-role assignments
      */
     public function run(): void
@@ -28,7 +28,7 @@ class UserRoleSeeder extends Seeder
         // Cần chạy UserSeeder và RoleSeeder trước seeder này
         $users = User::all();
         $roles = Role::all();
-        
+
         // Tạo instance Faker để generate dữ liệu ngẫu nhiên
         // Dùng để tạo thời gian assigned_at ngẫu nhiên
         $faker = \Faker\Factory::create();
@@ -40,19 +40,19 @@ class UserRoleSeeder extends Seeder
 
             // Bước 3: Gán role dựa trên email pattern
             // Kiểm tra email có chứa từ khóa nào để gán role tương ứng
-            
+
             if (strpos($user->email, 'admin') !== false) {
                 // Nếu email chứa 'admin' (vd: admin@example.com, admin1@test.com)
                 // where('role_name', 'admin') - tìm role có tên là 'admin'
                 // first() - lấy record đầu tiên tìm thấy
                 $adminRole = $roles->where('role_name', 'admin')->first();
                 $roleAssignment[] = $adminRole->role_id; // Thêm admin role_id vào mảng
-                
+
             } elseif (strpos($user->email, 'manager') !== false) {
                 // Nếu email chứa 'manager' (vd: manager@example.com)
                 $managerRole = $roles->where('role_name', 'manager')->first();
                 $roleAssignment[] = $managerRole->role_id; // Thêm manager role_id
-                
+
             } else {
                 // Tất cả user khác (email bình thường) đều được gán role customer
                 // Đây là default role cho user thông thường

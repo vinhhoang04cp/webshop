@@ -26,9 +26,13 @@ class Order extends Model
 
     // Định nghĩa các trạng thái hợp lệ
     const STATUS_PENDING = 'pending';
+
     const STATUS_PROCESSING = 'processing';
+
     const STATUS_SHIPPED = 'shipped';
+
     const STATUS_DELIVERED = 'delivered';
+
     const STATUS_CANCELLED = 'cancelled';
 
     // Định nghĩa workflow chuyển trạng thái hợp lệ
@@ -46,8 +50,8 @@ class Order extends Model
     public function canTransitionTo(string $newStatus): bool
     {
         $currentStatus = $this->status ?? self::STATUS_PENDING;
-        
-        if (!isset(self::STATUS_TRANSITIONS[$currentStatus])) {
+
+        if (! isset(self::STATUS_TRANSITIONS[$currentStatus])) {
             return false;
         }
 
@@ -59,11 +63,12 @@ class Order extends Model
      */
     public function transitionTo(string $newStatus): bool
     {
-        if (!$this->canTransitionTo($newStatus)) {
+        if (! $this->canTransitionTo($newStatus)) {
             return false;
         }
 
         $this->status = $newStatus;
+
         return $this->save();
     }
 

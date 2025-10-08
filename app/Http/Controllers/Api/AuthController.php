@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
 /**
-    * AuthController - xử lý xác thực user qua API
+ * AuthController - xử lý xác thực user qua API
  */
 class AuthController extends Controller
 {

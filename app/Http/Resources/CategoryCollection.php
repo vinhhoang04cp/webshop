@@ -19,6 +19,7 @@ class CategoryCollection extends ResourceCollection
             || $this->resource instanceof \Illuminate\Pagination\Paginator) {
             /** @var \Illuminate\Pagination\LengthAwarePaginator $p */
             $p = $this->resource;
+
             return [
                 'data' => $this->collection,
                 'meta' => [

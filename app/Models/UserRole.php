@@ -7,8 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 
 /**
  * UserRole Model
- * 
- * Đây là model cho bảng pivot 'user_roles' 
+ *
+ * Đây là model cho bảng pivot 'user_roles'
  * Quản lý mối quan hệ Many-to-Many giữa User và Role
  * Một user có thể có nhiều role, một role có thể được gán cho nhiều user
  */
@@ -40,7 +40,7 @@ class UserRole extends Model
     // Định nghĩa các cột có thể được gán giá trị hàng loạt qua create() hoặc fill()
     protected $fillable = [
         'user_id',      // ID của user
-        'role_id',      // ID của role  
+        'role_id',      // ID của role
         'assigned_at',  // Thời gian gán role cho user
     ];
 

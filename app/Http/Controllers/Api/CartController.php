@@ -21,7 +21,7 @@ class CartController extends Controller
         $query = Cart::with('items.product'); // $bien $query la mot truy van Eloquent khoi tao de lay du lieu tu bang carts, voi quan he items va product duoc load sang
 
         // User thường chỉ xem được cart của mình, Admin xem tất cả
-        if (!$request->user()->isAdmin()) {
+        if (! $request->user()->isAdmin()) {
             $query->where('user_id', $request->user()->id);
         } elseif ($request->has('user_id')) {
             $query->where('user_id', $request->get('user_id'));
@@ -116,7 +116,7 @@ class CartController extends Controller
         $cart = Cart::with('items.product')->findOrFail($id);
 
         // Kiểm tra ownership: User chỉ xem được cart của mình
-        if (!$request->user()->isAdmin() && $cart->user_id !== $request->user()->id) {
+        if (! $request->user()->isAdmin() && $cart->user_id !== $request->user()->id) {
             return response()->json([
                 'status' => false,
                 'message' => 'Access denied. You can only access your own cart.',
@@ -145,8 +145,9 @@ class CartController extends Controller
             $cart = Cart::findOrFail($id); // Tim cart can cap nhat bang cart_id, neu khong tim thay se tra ve loi 404
 
             // Kiểm tra ownership: User chỉ cập nhật được cart của mình
-            if (!$request->user()->isAdmin() && $cart->user_id !== $request->user()->id) {
+            if (! $request->user()->isAdmin() && $cart->user_id !== $request->user()->id) {
                 DB::rollback();
+
                 return response()->json([
                     'status' => false,
                     'message' => 'Access denied. You can only update your own cart.',
@@ -192,7 +193,7 @@ class CartController extends Controller
         $cart = Cart::findOrFail($id);
 
         // Kiểm tra ownership: User chỉ xóa được cart của mình
-        if (!$request->user()->isAdmin() && $cart->user_id !== $request->user()->id) {
+        if (! $request->user()->isAdmin() && $cart->user_id !== $request->user()->id) {
             return response()->json([
                 'status' => false,
                 'message' => 'Access denied. You can only delete your own cart.',

@@ -8,7 +8,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 /**
  * EnsureUserIsAdmin Middleware
- * 
+ *
  * Middleware này được sử dụng để bảo vệ các route cần quyền admin
  * Kiểm tra user hiện tại có role 'admin' hay không
  * Nếu không có quyền admin, trả về lỗi 403 Forbidden
@@ -16,8 +16,6 @@ use Symfony\Component\HttpFoundation\Response;
 class EnsureUserIsAdmin
 {
     /**
-     * 
-     * 
      * Xử lý request đến - kiểm tra quyền admin trước khi cho phép truy cập
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next

@@ -18,7 +18,7 @@ class CheckRole
     public function handle(Request $request, Closure $next, ...$roles): Response
     {
         // Kiểm tra user đã đăng nhập chưa
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             return redirect()->route('login')->withErrors([
                 'email' => 'Vui lòng đăng nhập để tiếp tục.',
             ]);
@@ -35,9 +35,10 @@ class CheckRole
             }
         }
 
-        if (!$hasRole) {
+        if (! $hasRole) {
             // User không có quyền, đăng xuất và redirect về login
             Auth::logout();
+
             return redirect()->route('login')->withErrors([
                 'email' => 'Bạn không có quyền truy cập vào khu vực này.',
             ]);

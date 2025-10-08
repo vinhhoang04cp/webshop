@@ -7,8 +7,6 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
@@ -21,6 +19,7 @@ class AuthController extends Controller
             // Neu da dang nhap thi chuyen huong ve dashboard
             return redirect()->route('dashboard');
         }
+
         return view('auth.login');
     }
 
@@ -32,13 +31,14 @@ class AuthController extends Controller
         if (Auth::check()) { // Auth - kiem tra user da dang nhap chua
             return redirect()->route('dashboard'); // Neu da dang nhap thi chuyen huong ve dashboard
         }
+
         return view('auth.register');
     }
 
     /**
      * Xử lý login thông qua web form
      */
-    public function login(Request $request) //(Request $request) la tham so truyen vao ham , duoc gui tu form login
+    public function login(Request $request) // (Request $request) la tham so truyen vao ham , duoc gui tu form login
     {
         $request->validate([ // Validate du lieu dau vao
             'email' => 'required|email', // email bat buoc va phai dung dinh dang email
@@ -49,14 +49,14 @@ class AuthController extends Controller
         $user = User::where('email', $request->email)->first();
 
         // Kiểm tra credentials
-        if (!$user || !Hash::check($request->password, $user->password)) {
+        if (! $user || ! Hash::check($request->password, $user->password)) {
             return back()->withErrors([
                 'email' => 'Thông tin đăng nhập không chính xác.',
             ])->withInput();
         }
 
         // Kiểm tra role - chỉ cho phép admin và manager
-        if (!$user->hasRole('admin') && !$user->hasRole('manager')) {
+        if (! $user->hasRole('admin') && ! $user->hasRole('manager')) {
             return back()->withErrors([
                 'email' => 'Bạn không có quyền truy cập vào hệ thống quản lý.',
             ])->withInput();
@@ -92,7 +92,7 @@ class AuthController extends Controller
 
         // Note: User mới tạo sẽ không có role admin/manager
         // Cần admin phân quyền sau
-        
+
         return redirect()->route('login')->with('success', 'Đăng ký thành công! Vui lòng liên hệ admin để được phân quyền truy cập.');
     }
 
@@ -102,93 +102,8 @@ class AuthController extends Controller
     public function logout()
     {
         Auth::logout();
+
         return redirect()->route('login')->with('success', 'Đăng xuất thành công!');
-    }
-
-    /**
-     * AJAX Login - proxy to API
-     */
-    public function ajaxLogin(Request $request)
-    {
-        try {
-            // Call API login endpoint internally
-            $response = Http::post(url('/api/login'), [
-                'email' => $request->email,
-                'password' => $request->password,
-            ]);
-
-            $data = $response->json();
-
-            if (!$response->successful()) {
-                return response()->json([
-                    'status' => false,
-                    'message' => $data['message'] ?? 'Login failed',
-                    'errors' => $data['errors'] ?? []
-                ], $response->status());
-            }
-
-            // Find user and login via web session
-            $user = User::where('email', $request->email)->first();
-            if ($user && ($user->hasRole('admin') || $user->hasRole('manager'))) {
-                Auth::login($user);
-                return response()->json([
-                    'status' => true,
-                    'message' => 'Đăng nhập thành công!',
-                    'redirect' => route('dashboard')
-                ]);
-            }
-
-            return response()->json([
-                'status' => false,
-                'message' => 'Bạn không có quyền truy cập vào hệ thống quản lý.'
-            ], 403);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Lỗi server'
-            ], 500);
-        }
-    }
-
-    /**
-     * AJAX Register - proxy to API
-     */
-    public function ajaxRegister(Request $request)
-    {
-        try {
-            // Call API register endpoint internally
-            $response = Http::post(url('/api/register'), [
-                'name' => $request->name,
-                'email' => $request->email,
-                'password' => $request->password,
-                'password_confirmation' => $request->password_confirmation,
-                'phone' => $request->phone,
-                'address' => $request->address,
-            ]);
-
-            $data = $response->json();
-
-            if (!$response->successful()) {
-                return response()->json([
-                    'status' => false,
-                    'message' => $data['message'] ?? 'Registration failed',
-                    'errors' => $data['errors'] ?? []
-                ], $response->status());
-            }
-
-            return response()->json([
-                'status' => true,
-                'message' => 'Đăng ký thành công! Vui lòng liên hệ admin để được phân quyền truy cập.',
-                'redirect' => route('login')
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Lỗi server'
-            ], 500);
-        }
     }
 
     /**
@@ -197,10 +112,11 @@ class AuthController extends Controller
     public function dashboard()
     {
         $user = Auth::user();
-        
+
         // Double check role
-        if (!$user->hasRole('admin') && !$user->hasRole('manager')) {
+        if (! $user->hasRole('admin') && ! $user->hasRole('manager')) {
             Auth::logout();
+
             return redirect()->route('login')->withErrors([
                 'email' => 'Bạn không có quyền truy cập.',
             ]);
