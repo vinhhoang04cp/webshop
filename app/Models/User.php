@@ -79,4 +79,20 @@ class User extends Authenticatable
     {
         return $this->hasRole('admin');
     }
+
+    /**
+     * Kiểm tra user có phải manager không
+     */
+    public function isManager(): bool
+    {
+        return $this->hasRole('manager');
+    }
+
+    /**
+     * Kiểm tra user có quyền truy cập dashboard (admin hoặc manager)
+     */
+    public function canAccessDashboard(): bool
+    {
+        return $this->isAdmin() || $this->isManager();
+    }
 }
