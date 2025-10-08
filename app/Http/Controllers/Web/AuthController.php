@@ -106,6 +106,92 @@ class AuthController extends Controller
     }
 
     /**
+     * AJAX Login - proxy to API
+     */
+    public function ajaxLogin(Request $request)
+    {
+        try {
+            // Call API login endpoint internally
+            $response = Http::post(url('/api/login'), [
+                'email' => $request->email,
+                'password' => $request->password,
+            ]);
+
+            $data = $response->json();
+
+            if (!$response->successful()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => $data['message'] ?? 'Login failed',
+                    'errors' => $data['errors'] ?? []
+                ], $response->status());
+            }
+
+            // Find user and login via web session
+            $user = User::where('email', $request->email)->first();
+            if ($user && ($user->hasRole('admin') || $user->hasRole('manager'))) {
+                Auth::login($user);
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Đăng nhập thành công!',
+                    'redirect' => route('dashboard')
+                ]);
+            }
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Bạn không có quyền truy cập vào hệ thống quản lý.'
+            ], 403);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Lỗi server'
+            ], 500);
+        }
+    }
+
+    /**
+     * AJAX Register - proxy to API
+     */
+    public function ajaxRegister(Request $request)
+    {
+        try {
+            // Call API register endpoint internally
+            $response = Http::post(url('/api/register'), [
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => $request->password,
+                'password_confirmation' => $request->password_confirmation,
+                'phone' => $request->phone,
+                'address' => $request->address,
+            ]);
+
+            $data = $response->json();
+
+            if (!$response->successful()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => $data['message'] ?? 'Registration failed',
+                    'errors' => $data['errors'] ?? []
+                ], $response->status());
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Đăng ký thành công! Vui lòng liên hệ admin để được phân quyền truy cập.',
+                'redirect' => route('login')
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Lỗi server'
+            ], 500);
+        }
+    }
+
+    /**
      * Hiển thị dashboard
      */
     public function dashboard()
