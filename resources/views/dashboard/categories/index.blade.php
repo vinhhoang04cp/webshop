@@ -77,9 +77,9 @@
             @section('scripts')
             <script>
                 (function(){
-                    const apiBase = '/api/categories';
+                    const apiBase = '/api/categories'; // Goi den API danh muc
                     // For write operations use web proxy routes (use same-origin session auth)
-                    const webBase = '/dashboard/categories';
+                    const webBase = '/dashboard/categories'; 
                     const tableBody = document.querySelector('#categoriesTable tbody');
                     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
