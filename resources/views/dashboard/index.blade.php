@@ -6,7 +6,7 @@
 <div class="container-fluid p-0">
     <div class="row g-0">
         <!-- Sidebar -->
-        <div class="col-md-3 col-lg-2 dashboard-sidebar">
+        <div class="col-md-3 col-lg-2 dashboard-sidebar"> <!-- col-md-3: chiem 3/12 kich thuoc tren man hinh -->
             <div class="text-center text-white mb-4 p-3">
                 <h4><i class="fas fa-shield-alt"></i> WebShop</h4>
                 <small>Admin Panel</small>
@@ -37,8 +37,8 @@
                 <a class="nav-link" href="#settings">
                     <i class="fas fa-cog me-2"></i> Cài đặt
                 </a>
-                
-                <form method="POST" action="{{ route('logout') }}" class="mx-3 mt-3">
+
+                <form method="POST" action="{{ route('logout') }}" class="mx-3 mt-3"> <!-- Logout Form, gui http POST request, route logout tu controller -->
                     @csrf
                     <button type="submit" class="btn btn-outline-light btn-sm w-100">
                         <i class="fas fa-sign-out-alt me-2"></i> Đăng xuất
@@ -57,7 +57,7 @@
                 </div>
                 <div class="d-flex align-items-center">
                     <span class="badge bg-primary me-2">
-                        {{ $user->hasRole('admin') ? 'Admin' : 'Manager' }}
+                        {{ $user->hasRole('admin') ? 'Admin' : 'Manager' }} 
                     </span>
                     <div class="dropdown">
                         <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
@@ -94,7 +94,7 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between">
                                 <div>
-                                    <h4 class="card-title">150</h4>
+                                    <h4 class="card-title">{{ number_format($productsCount) }}</h4>
                                     <p class="card-text">Sản phẩm</p>
                                 </div>
                                 <div class="align-self-center">
@@ -110,7 +110,7 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between">
                                 <div>
-                                    <h4 class="card-title">89</h4>
+                                    <h4 class="card-title">{{ number_format($ordersCount) }}</h4>
                                     <p class="card-text">Đơn hàng</p>
                                 </div>
                                 <div class="align-self-center">
@@ -126,7 +126,7 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between">
                                 <div>
-                                    <h4 class="card-title">234</h4>
+                                    <h4 class="card-title">{{ number_format($usersCount) }}</h4>
                                     <p class="card-text">Khách hàng</p>
                                 </div>
                                 <div class="align-self-center">
@@ -142,7 +142,7 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between">
                                 <div>
-                                    <h4 class="card-title">₫12.5M</h4>
+                                    <h4 class="card-title">₫{{ number_format($totalRevenue) }}</h4>
                                     <p class="card-text">Doanh thu</p>
                                 </div>
                                 <div class="align-self-center">
@@ -175,27 +175,48 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr>
-                                            <td>#001</td>
-                                            <td>Nguyễn Văn A</td>
-                                            <td><span class="badge bg-warning">Chờ xử lý</span></td>
-                                            <td>₫500,000</td>
-                                            <td>08/10/2025</td>
-                                        </tr>
-                                        <tr>
-                                            <td>#002</td>
-                                            <td>Trần Thị B</td>
-                                            <td><span class="badge bg-success">Hoàn thành</span></td>
-                                            <td>₫750,000</td>
-                                            <td>07/10/2025</td>
-                                        </tr>
-                                        <tr>
-                                            <td>#003</td>
-                                            <td>Lê Văn C</td>
-                                            <td><span class="badge bg-info">Đang giao</span></td>
-                                            <td>₫320,000</td>
-                                            <td>07/10/2025</td>
-                                        </tr>
+                                            @forelse($recentOrders as $order)
+                                            <tr>
+                                                <td>#{{ $order->order_id }}</td>
+                                                <td>{{ optional($order->user)->name ?? 'Khách vãng lai' }}</td>
+                                                <td>
+                                                    @php
+                                                        $statusLabel = 'secondary';
+                                                        switch ($order->status) {
+                                                            case \App\Models\Order::STATUS_PENDING:
+                                                                $statusLabel = 'warning';
+                                                                $statusText = 'Chờ xử lý';
+                                                                break;
+                                                            case \App\Models\Order::STATUS_PROCESSING:
+                                                                $statusLabel = 'primary';
+                                                                $statusText = 'Đang xử lý';
+                                                                break;
+                                                            case \App\Models\Order::STATUS_SHIPPED:
+                                                                $statusLabel = 'info';
+                                                                $statusText = 'Đang giao';
+                                                                break;
+                                                            case \App\Models\Order::STATUS_DELIVERED:
+                                                                $statusLabel = 'success';
+                                                                $statusText = 'Hoàn thành';
+                                                                break;
+                                                            case \App\Models\Order::STATUS_CANCELLED:
+                                                                $statusLabel = 'danger';
+                                                                $statusText = 'Đã huỷ';
+                                                                break;
+                                                            default:
+                                                                $statusText = ucfirst($order->status ?? 'unknown');
+                                                        }
+                                                    @endphp
+                                                    <span class="badge bg-{{ $statusLabel }}">{{ $statusText }}</span>
+                                                </td>
+                                                <td>₫{{ number_format($order->total_amount) }}</td>
+                                                <td>{{ optional($order->order_date)->format('d/m/Y') ?? '-' }}</td>
+                                            </tr>
+                                            @empty
+                                            <tr>
+                                                <td colspan="5" class="text-center">Không có đơn hàng nào gần đây.</td>
+                                            </tr>
+                                            @endforelse
                                     </tbody>
                                 </table>
                             </div>

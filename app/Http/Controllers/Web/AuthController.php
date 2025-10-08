@@ -120,6 +120,27 @@ class AuthController extends Controller
             ]);
         }
 
-        return view('dashboard.index', compact('user'));
+        // Statistics for dashboard
+        $productsCount = \App\Models\Product::count();
+        $ordersCount = \App\Models\Order::count();
+        $usersCount = \App\Models\User::count();
+
+        // Total revenue (sum of total_amount in orders). Use 0 if null
+        $totalRevenue = \App\Models\Order::sum('total_amount') ?? 0;
+
+        // Recent orders (latest 5)
+        $recentOrders = \App\Models\Order::with('user')
+            ->orderBy('order_date', 'desc')
+            ->limit(5)
+            ->get();
+
+        return view('dashboard.index', compact(
+            'user',
+            'productsCount',
+            'ordersCount',
+            'usersCount',
+            'totalRevenue',
+            'recentOrders'
+        ));
     }
 }
