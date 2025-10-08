@@ -84,25 +84,3 @@
     </div>
 </div>
 @endsection
-
-@section('scripts')
-<script>
-    // Form validation và UX improvements
-    document.addEventListener('DOMContentLoaded', function() {
-        const form = document.querySelector('form');
-        const submitBtn = form.querySelector('button[type="submit"]');
-        const originalText = submitBtn.innerHTML;
-
-        form.addEventListener('submit', function() {
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang đăng nhập...';
-        });
-
-        // Reset button nếu có lỗi
-        @if ($errors->any())
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = originalText;
-        @endif
-    });
-</script>
-@endsection
