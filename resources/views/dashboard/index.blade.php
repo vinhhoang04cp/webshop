@@ -6,77 +6,52 @@
 <div class="container-fluid p-0">
     <div class="row g-0">
         <!-- Sidebar -->
-        <div class="col-md-3 col-lg-2 dashboard-sidebar"> <!-- col-md-3: chiem 3/12 kich thuoc tren man hinh -->
-            <div class="text-center text-white mb-4 p-3">
-                <h4><i class="fas fa-shield-alt"></i> WebShop</h4>
-                <small>Admin Panel</small>
+        <div class="col-md-3 col-lg-2 dashboard-sidebar d-flex flex-column">
+            <div class="sidebar-header">
+                <h3><i class="fas fa-shield-alt"></i> WebShop</h3>
+                <small class="text-muted" style="color: #9ca3af !important;">Admin Panel</small>
             </div>
             
-            <nav class="nav flex-column"> <!-- flex-column: chuyen cac item thanh cot doc -->
-                <a class="nav-link active" href="{{ route('dashboard') }}"> <!-- route('dashboard'): tra ve url cua route dashboard -->
-                    <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+            <nav class="nav flex-column sidebar-menu">
+                <a class="nav-link active" href="{{ route('dashboard') }}">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
                 </a>
-                <a class="nav-link" href="#products"> <!-- href="#products": lien ket den phan san pham tren trang -->
-                    <i class="fas fa-box me-2"></i> Sản phẩm <!-- fas fa-box: icon hop -->
+                <a class="nav-link" href="#products">
+                    <i class="fas fa-box"></i> Sản phẩm
                 </a>
                 <a class="nav-link" href="{{ route('dashboard.categories.index') }}">
-                    <i class="fas fa-tags me-2"></i> Danh mục <!-- fas fa-tags: icon the loai -->
+                    <i class="fas fa-tags"></i> Danh mục
                 </a>
                 <a class="nav-link" href="#orders">
-                    <i class="fas fa-shopping-cart me-2"></i> Đơn hàng <!-- fas fa-shopping-cart: icon gio hang -->
+                    <i class="fas fa-shopping-cart"></i> Đơn hàng
                 </a>
                 <a class="nav-link" href="#users">
-                    <i class="fas fa-users me-2"></i> Người dùng <!-- fas fa-users: icon nhieu nguoi -->
+                    <i class="fas fa-users"></i> Người dùng
                 </a>
                 <a class="nav-link" href="#reports">
-                    <i class="fas fa-chart-bar me-2"></i> Báo cáo <!-- fas fa-chart-bar: icon bieu do -->
+                    <i class="fas fa-chart-bar"></i> Báo cáo
                 </a>
-                
-                <hr class="text-white mx-3">
-                
-                <a class="nav-link" href="#settings">
-                    <i class="fas fa-cog me-2"></i> Cài đặt <!-- fas fa-cog: icon cai dat -->
-                </a>
-
-                <form method="POST" action="{{ route('logout') }}" class="mx-3 mt-3"> <!-- Logout Form, gui http POST request, route logout tu controller -->
+            </nav>
+            
+            <div class="user-info mt-auto">
+                <div class="user-name">{{ $user->name }}</div>
+                <div class="user-role">{{ $user->hasRole('admin') ? 'Administrator' : 'Manager' }}</div>
+                <form method="POST" action="{{ route('logout') }}" class="mt-3">
                     @csrf
                     <button type="submit" class="btn btn-outline-light btn-sm w-100">
                         <i class="fas fa-sign-out-alt me-2"></i> Đăng xuất
                     </button>
                 </form>
-            </nav>
+            </div>
         </div>
 
         <!-- Main Content -->
         <div class="col-md-9 col-lg-10 dashboard-content">
             <!-- Header -->
-            <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="dashboard-header">
                 <div>
-                    <h2 class="mb-1">Dashboard</h2>
-                    <p class="text-muted mb-0">Welcome Back!</p>
-                </div>
-                <div class="d-flex align-items-center"> <!-- align-items-center: can giua theo chieu doc -->
-                    <span class="badge bg-primary me-2"> <!-- me-2: margin-end 2 -->
-                        {{ $user->hasRole('admin') ? 'Admin' : 'Manager' }} 
-                    </span>
-                    <div class="dropdown">
-                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-user-circle me-1"></i> {{ $user->name }}
-                        </button>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#profile"><i class="fas fa-user me-2"></i>Hồ sơ</a></li>
-                            <li><a class="dropdown-item" href="#settings"><i class="fas fa-cog me-2"></i>Cài đặt</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <form method="POST" action="{{ route('logout') }}">
-                                    @csrf
-                                    <button type="submit" class="dropdown-item">
-                                        <i class="fas fa-sign-out-alt me-2"></i>Đăng xuất
-                                    </button>
-                                </form>
-                            </li>
-                        </ul>
-                    </div>
+                    <h2>Tổng quan hệ thống</h2>
+                    <p class="text-muted mb-0">Chào mừng trở lại, {{ $user->name }}!</p>
                 </div>
             </div>
 
@@ -88,39 +63,51 @@
             @endif
 
             <!-- Stats Cards -->
-            <div class="row g-4 mb-4"> <!-- $statCards la mang chua du lieu cho cac the thong ke -->
+            <div class="row g-4 mb-4">
                 @php
                     $statCards = [ 
-                        ['value' => $productsCount, 'label' => 'Sản phẩm', 'bg' => 'primary', 'icon' => 'fa-box'],
-                        ['value' => $ordersCount, 'label' => 'Đơn hàng', 'bg' => 'success', 'icon' => 'fa-shopping-cart'],
-                        ['value' => $usersCount, 'label' => 'Khách hàng', 'bg' => 'warning', 'icon' => 'fa-users'],
-                        ['value' => $totalRevenue, 'label' => 'Doanh thu', 'bg' => 'info', 'icon' => 'fa-chart-line', 'is_currency' => true],
+                        ['value' => $productsCount, 'label' => 'Sản phẩm', 'icon' => 'fa-box', 'gradient' => 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'],
+                        ['value' => $ordersCount, 'label' => 'Đơn hàng', 'icon' => 'fa-shopping-cart', 'gradient' => 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)'],
+                        ['value' => $usersCount, 'label' => 'Khách hàng', 'icon' => 'fa-users', 'gradient' => 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'],
+                        ['value' => number_format($totalRevenue) . ' đ', 'label' => 'Doanh thu', 'icon' => 'fa-chart-line', 'gradient' => 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)'],
                     ];
                 @endphp
 
-                @foreach ($statCards as $card)
-                    <div class="col-md-3">
-                        <div class="card text-white bg-{{ $card['bg'] }}">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between">
-                                    <div>
-                                        <h4 class="card-title">
-                                            @if(!empty($card['is_currency']))
-                                                ₫{{ number_format($card['value']) }}
-                                            @else
-                                                {{ number_format($card['value']) }}
-                                            @endif
-                                        </h4>
-                                        <p class="card-text">{{ $card['label'] }}</p>
-                                    </div>
-                                    <div class="align-self-center">
-                                        <i class="fas {{ $card['icon'] }} fa-2x"></i>
-                                    </div>
-                                </div>
+                                @foreach ($statCards as $card)
+                    <div class="col-md-6 col-lg-3">
+                        <div class="stat-card" style="background: {{ $card['gradient'] }};">
+                            <div class="stat-icon">
+                                <i class="fas {{ $card['icon'] }}"></i>
                             </div>
+                            <h3>{{ $card['value'] }}</h3>
+                            <p>{{ $card['label'] }}</p>
                         </div>
                     </div>
                 @endforeach
+            </div>
+
+            <!-- Recent Activities -->
+            <div class="row g-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="fas fa-shopping-cart me-2"></i>Đơn hàng gần đây</h5>
+                            <a href="#orders" class="btn btn-sm btn-outline-primary">
+                                Xem tất cả <i class="fas fa-arrow-right ms-1"></i>
+                            </a>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Mã đơn</th>
+                                            <th>Khách hàng</th>
+                                            <th>Trạng thái</th>
+                                            <th>Tổng tiền</th>
+                                            <th>Ngày tạo</th>
+                                        </tr>
+                                    </thead>
             </div>
 
             <!-- Recent Activities -->
@@ -156,18 +143,21 @@
 
                                             @forelse($recentOrders as $order)
                                             <tr>
-                                                <td>#{{ $order->order_id }}</td>
+                                                <td><strong>#{{ $order->order_id }}</strong></td>
                                                 <td>{{ optional($order->user)->name ?? 'Khách vãng lai' }}</td>
                                                 <td>
                                                         @php $s = $statusMap[$order->status] ?? null; @endphp
-                                                        <span class="badge bg-{{ $s['label'] ?? 'secondary' }}">{{ $s['text'] ?? ucfirst($order->status ?? 'unknown') }}</span>
+                                                        <span class="badge bg-{{ $s['label'] ?? 'secondary' }} rounded-pill">{{ $s['text'] ?? ucfirst($order->status ?? 'unknown') }}</span>
                                                 </td>
-                                                <td>₫{{ number_format($order->total_amount) }}</td>
-                                                <td>{{ optional($order->order_date)->format('d/m/Y') ?? '-' }}</td>
+                                                <td><strong>{{ number_format($order->total_amount) }} đ</strong></td>
+                                                <td class="text-muted">{{ optional($order->order_date)->format('d/m/Y H:i') ?? '-' }}</td>
                                             </tr>
                                             @empty
                                             <tr>
-                                                <td colspan="5" class="text-center">Không có đơn hàng nào gần đây.</td>
+                                                <td colspan="5" class="text-center py-4 text-muted">
+                                                    <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+                                                    Không có đơn hàng nào gần đây
+                                                </td>
                                             </tr>
                                             @endforelse
                                     </tbody>
