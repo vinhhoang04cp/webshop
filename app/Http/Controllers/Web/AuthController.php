@@ -124,35 +124,20 @@ class AuthController extends Controller
         }
 
         try {
-            // Lấy token để gọi API
-            $token = $user->createToken('web-access')->plainTextToken;
-
-            // Gọi các API để lấy thống kê
-            $productsResponse = Http::get(url('/api/products'));
-            $ordersResponse = Http::withToken($token)->get(url('/api/orders'));
-            
-            $productsCount = $productsResponse->successful() ? count($productsResponse->json()) : 0;
-            $ordersCount = $ordersResponse->successful() ? count($ordersResponse->json()) : 0;
+            // Truy vấn trực tiếp database thay vì gọi API
+            $productsCount = \App\Models\Product::count();
+            $ordersCount = \App\Models\Order::count();
+            $usersCount = \App\Models\User::count();
             
             // Tính tổng doanh thu từ orders
-            $totalRevenue = 0;
-            $recentOrders = [];
+            $totalRevenue = \App\Models\Order::where('status', '!=', 'cancelled')->sum('total_amount');
             
-            if ($ordersResponse->successful()) {
-                $orders = $ordersResponse->json();
-                
-                // Tính tổng revenue
-                $totalRevenue = array_sum(array_column($orders, 'total_amount'));
-                
-                // Lấy 5 orders gần nhất (sort by order_date desc)
-                usort($orders, function($a, $b) {
-                    return strtotime($b['order_date']) - strtotime($a['order_date']);
-                });
-                $recentOrders = array_slice($orders, 0, 5);
-            }
-
-            // Count users (có thể cần API riêng hoặc dùng model trực tiếp)
-            $usersCount = \App\Models\User::count();
+            // Lấy 5 orders gần nhất với user relationship
+            $recentOrders = \App\Models\Order::with('user')
+                ->orderBy('order_date', 'desc')
+                ->limit(5)
+                ->get()
+                ->toArray();
 
             return view('dashboard.index', compact(
                 'user',
@@ -163,7 +148,7 @@ class AuthController extends Controller
                 'recentOrders'
             ));
         } catch (\Exception $e) {
-            // Fallback to zero values nếu API lỗi
+            // Fallback to zero values nếu có lỗi
             return view('dashboard.index', [
                 'user' => $user,
                 'productsCount' => 0,

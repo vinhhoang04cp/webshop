@@ -18,7 +18,7 @@ class OrderController extends Controller
      */
     public function index(Request $request) // (Request $request) la tham so truyen tu client qua URL den controller
     {
-        $query = Order::query(); // $query la mot truy van Eloquent khoi tao de lay du lieu tu bang orders
+        $query = Order::with('user'); // Load user relationship
 
         // User thường chỉ xem được order của mình, Admin xem tất cả
         if (! $request->user()->isAdmin()) {

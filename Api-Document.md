@@ -1210,6 +1210,5 @@ public function test_non_admin_cannot_create_category()
 
 ---
 
-**Người viết**: GitHub Copilot  
-**Ngày tạo**: 6/10/2025  
-**Phiên bản**: 1.0
+**Người viết**: Vinh Hoang 2004
+**Ngày tạo**: 6/10/2025

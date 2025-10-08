@@ -159,10 +159,10 @@
                                                 @foreach($recentOrders as $order)
                                                 <tr>
                                                     <td><strong>#{{ $order['order_id'] ?? $order['id'] }}</strong></td>
-                                                    <td>{{ $order['user']['name'] ?? $order['user_name'] ?? 'Khách vãng lai' }}</td>
+                                                    <td>{{ $order['user']['name'] ?? 'Khách vãng lai' }}</td>
                                                     <td>
                                                         @php 
-                                                            $status = $order['status'] ?? 'unknown';
+                                                            $status = $order['status'] ?? 'pending';
                                                             $s = $statusMap[$status] ?? null; 
                                                         @endphp
                                                         <span class="badge bg-{{ $s['label'] ?? 'secondary' }} rounded-pill">{{ $s['text'] ?? ucfirst($status) }}</span>
