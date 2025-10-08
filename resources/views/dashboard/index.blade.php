@@ -12,30 +12,30 @@
                 <small>Admin Panel</small>
             </div>
             
-            <nav class="nav flex-column">
-                <a class="nav-link active" href="{{ route('dashboard') }}">
+            <nav class="nav flex-column"> <!-- flex-column: chuyen cac item thanh cot doc -->
+                <a class="nav-link active" href="{{ route('dashboard') }}"> <!-- route('dashboard'): tra ve url cua route dashboard -->
                     <i class="fas fa-tachometer-alt me-2"></i> Dashboard
                 </a>
-                <a class="nav-link" href="#products">
-                    <i class="fas fa-box me-2"></i> Sản phẩm
+                <a class="nav-link" href="#products"> <!-- href="#products": lien ket den phan san pham tren trang -->
+                    <i class="fas fa-box me-2"></i> Sản phẩm <!-- fas fa-box: icon hop -->
                 </a>
                 <a class="nav-link" href="#categories">
-                    <i class="fas fa-tags me-2"></i> Danh mục
+                    <i class="fas fa-tags me-2"></i> Danh mục <!-- fas fa-tags: icon the loai -->
                 </a>
                 <a class="nav-link" href="#orders">
-                    <i class="fas fa-shopping-cart me-2"></i> Đơn hàng
+                    <i class="fas fa-shopping-cart me-2"></i> Đơn hàng <!-- fas fa-shopping-cart: icon gio hang -->
                 </a>
                 <a class="nav-link" href="#users">
-                    <i class="fas fa-users me-2"></i> Người dùng
+                    <i class="fas fa-users me-2"></i> Người dùng <!-- fas fa-users: icon nhieu nguoi -->
                 </a>
                 <a class="nav-link" href="#reports">
-                    <i class="fas fa-chart-bar me-2"></i> Báo cáo
+                    <i class="fas fa-chart-bar me-2"></i> Báo cáo <!-- fas fa-chart-bar: icon bieu do -->
                 </a>
                 
                 <hr class="text-white mx-3">
                 
                 <a class="nav-link" href="#settings">
-                    <i class="fas fa-cog me-2"></i> Cài đặt
+                    <i class="fas fa-cog me-2"></i> Cài đặt <!-- fas fa-cog: icon cai dat -->
                 </a>
 
                 <form method="POST" action="{{ route('logout') }}" class="mx-3 mt-3"> <!-- Logout Form, gui http POST request, route logout tu controller -->
@@ -53,10 +53,10 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h2 class="mb-1">Dashboard</h2>
-                    <p class="text-muted mb-0">Chào mừng quay trở lại, {{ $user->name }}!</p>
+                    <p class="text-muted mb-0">Welcome Back!</p>
                 </div>
-                <div class="d-flex align-items-center">
-                    <span class="badge bg-primary me-2">
+                <div class="d-flex align-items-center"> <!-- align-items-center: can giua theo chieu doc -->
+                    <span class="badge bg-primary me-2"> <!-- me-2: margin-end 2 -->
                         {{ $user->hasRole('admin') ? 'Admin' : 'Manager' }} 
                     </span>
                     <div class="dropdown">
@@ -88,70 +88,39 @@
             @endif
 
             <!-- Stats Cards -->
-            <div class="row g-4 mb-4">
-                <div class="col-md-3">
-                    <div class="card text-white bg-primary">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <h4 class="card-title">{{ number_format($productsCount) }}</h4>
-                                    <p class="card-text">Sản phẩm</p>
-                                </div>
-                                <div class="align-self-center">
-                                    <i class="fas fa-box fa-2x"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-md-3">
-                    <div class="card text-white bg-success">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <h4 class="card-title">{{ number_format($ordersCount) }}</h4>
-                                    <p class="card-text">Đơn hàng</p>
-                                </div>
-                                <div class="align-self-center">
-                                    <i class="fas fa-shopping-cart fa-2x"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-md-3">
-                    <div class="card text-white bg-warning">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <h4 class="card-title">{{ number_format($usersCount) }}</h4>
-                                    <p class="card-text">Khách hàng</p>
-                                </div>
-                                <div class="align-self-center">
-                                    <i class="fas fa-users fa-2x"></i>
+            <div class="row g-4 mb-4"> <!-- $statCards la mang chua du lieu cho cac the thong ke -->
+                @php
+                    $statCards = [ 
+                        ['value' => $productsCount, 'label' => 'Sản phẩm', 'bg' => 'primary', 'icon' => 'fa-box'],
+                        ['value' => $ordersCount, 'label' => 'Đơn hàng', 'bg' => 'success', 'icon' => 'fa-shopping-cart'],
+                        ['value' => $usersCount, 'label' => 'Khách hàng', 'bg' => 'warning', 'icon' => 'fa-users'],
+                        ['value' => $totalRevenue, 'label' => 'Doanh thu', 'bg' => 'info', 'icon' => 'fa-chart-line', 'is_currency' => true],
+                    ];
+                @endphp
+
+                @foreach ($statCards as $card)
+                    <div class="col-md-3">
+                        <div class="card text-white bg-{{ $card['bg'] }}">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h4 class="card-title">
+                                            @if(!empty($card['is_currency']))
+                                                ₫{{ number_format($card['value']) }}
+                                            @else
+                                                {{ number_format($card['value']) }}
+                                            @endif
+                                        </h4>
+                                        <p class="card-text">{{ $card['label'] }}</p>
+                                    </div>
+                                    <div class="align-self-center">
+                                        <i class="fas {{ $card['icon'] }} fa-2x"></i>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                
-                <div class="col-md-3">
-                    <div class="card text-white bg-info">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <h4 class="card-title">₫{{ number_format($totalRevenue) }}</h4>
-                                    <p class="card-text">Doanh thu</p>
-                                </div>
-                                <div class="align-self-center">
-                                    <i class="fas fa-chart-line fa-2x"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                @endforeach
             </div>
 
             <!-- Recent Activities -->
@@ -175,39 +144,23 @@
                                         </tr>
                                     </thead>
                                     <tbody>
+                                            @php
+                                                $statusMap = [
+                                                    \App\Models\Order::STATUS_PENDING => ['label' => 'warning', 'text' => 'Chờ xử lý'],
+                                                    \App\Models\Order::STATUS_PROCESSING => ['label' => 'primary', 'text' => 'Đang xử lý'],
+                                                    \App\Models\Order::STATUS_SHIPPED => ['label' => 'info', 'text' => 'Đang giao'],
+                                                    \App\Models\Order::STATUS_DELIVERED => ['label' => 'success', 'text' => 'Hoàn thành'],
+                                                    \App\Models\Order::STATUS_CANCELLED => ['label' => 'danger', 'text' => 'Đã huỷ'],
+                                                ];
+                                            @endphp
+
                                             @forelse($recentOrders as $order)
                                             <tr>
                                                 <td>#{{ $order->order_id }}</td>
                                                 <td>{{ optional($order->user)->name ?? 'Khách vãng lai' }}</td>
                                                 <td>
-                                                    @php
-                                                        $statusLabel = 'secondary';
-                                                        switch ($order->status) {
-                                                            case \App\Models\Order::STATUS_PENDING:
-                                                                $statusLabel = 'warning';
-                                                                $statusText = 'Chờ xử lý';
-                                                                break;
-                                                            case \App\Models\Order::STATUS_PROCESSING:
-                                                                $statusLabel = 'primary';
-                                                                $statusText = 'Đang xử lý';
-                                                                break;
-                                                            case \App\Models\Order::STATUS_SHIPPED:
-                                                                $statusLabel = 'info';
-                                                                $statusText = 'Đang giao';
-                                                                break;
-                                                            case \App\Models\Order::STATUS_DELIVERED:
-                                                                $statusLabel = 'success';
-                                                                $statusText = 'Hoàn thành';
-                                                                break;
-                                                            case \App\Models\Order::STATUS_CANCELLED:
-                                                                $statusLabel = 'danger';
-                                                                $statusText = 'Đã huỷ';
-                                                                break;
-                                                            default:
-                                                                $statusText = ucfirst($order->status ?? 'unknown');
-                                                        }
-                                                    @endphp
-                                                    <span class="badge bg-{{ $statusLabel }}">{{ $statusText }}</span>
+                                                        @php $s = $statusMap[$order->status] ?? null; @endphp
+                                                        <span class="badge bg-{{ $s['label'] ?? 'secondary' }}">{{ $s['text'] ?? ucfirst($order->status ?? 'unknown') }}</span>
                                                 </td>
                                                 <td>₫{{ number_format($order->total_amount) }}</td>
                                                 <td>{{ optional($order->order_date)->format('d/m/Y') ?? '-' }}</td>
@@ -271,33 +224,3 @@
 </div>
 @endsection
 
-@section('scripts')
-<script>
-    // Dashboard interactions
-    document.addEventListener('DOMContentLoaded', function() {
-        // Auto-dismiss alerts after 5 seconds
-        const alerts = document.querySelectorAll('.alert');
-        alerts.forEach(alert => {
-            setTimeout(() => {
-                if (alert && !alert.classList.contains('show')) return;
-                const bsAlert = new bootstrap.Alert(alert);
-                bsAlert.close();
-            }, 5000);
-        });
-
-        // Add active state to sidebar links
-        const sidebarLinks = document.querySelectorAll('.nav-link');
-        sidebarLinks.forEach(link => {
-            link.addEventListener('click', function(e) {
-                if (this.getAttribute('href').startsWith('#')) {
-                    e.preventDefault();
-                    // Remove active class from all links
-                    sidebarLinks.forEach(l => l.classList.remove('active'));
-                    // Add active class to clicked link
-                    this.classList.add('active');
-                }
-            });
-        });
-    });
-</script>
-@endsection
