@@ -285,18 +285,18 @@
             font-size: 1.8rem;
         }
         
-        /* Cards */
+        /* Cards - Modified to prevent conflicts */
         .card {
             border: none;
             border-radius: 16px;
             box-shadow: var(--box-shadow);
-            transition: all 0.3s ease;
+            transition: box-shadow 0.3s ease;
             background: white;
         }
         
         .card:hover {
             box-shadow: var(--box-shadow-lg);
-            transform: translateY(-2px);
+            /* Removed transform to prevent modal conflicts */
         }
         
         .card-header {
@@ -378,6 +378,38 @@
             background: #f9fafb;
         }
         
+        /* Fix modal flickering issue */
+        .modal {
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .modal.show {
+            pointer-events: auto;
+            z-index: 1055;
+        }
+        
+        .modal-backdrop {
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .modal-backdrop.show {
+            pointer-events: auto;
+            z-index: 1050;
+        }
+        
+        /* Prevent table hover from interfering */
+        .table-hover tbody tr {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .table-hover tbody tr:hover {
+            background: #f9fafb;
+            z-index: 1;
+        }
+        
         /* Pagination */
         .pagination {
             margin: 0;
@@ -410,11 +442,31 @@
             border-color: #e5e7eb;
         }
         
-        /* Modals */
+        /* Modals - Complete fix for flickering */
+        .modal {
+            display: none !important;
+            pointer-events: none;
+            opacity: 0;
+            visibility: hidden;
+            transition: none !important;
+        }
+        
+        .modal.show {
+            display: block !important;
+            pointer-events: auto;
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .modal.show .modal-dialog {
+            transform: none !important;
+        }
+        
         .modal-content {
             border: none;
             border-radius: 16px;
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+            will-change: auto;
         }
         
         .modal-header {
@@ -434,6 +486,26 @@
         .modal-footer {
             border-top: 1px solid #f3f4f6;
             padding: 16px 24px;
+        }
+        
+        /* Ensure buttons work properly */
+        button[data-bs-target] {
+            cursor: pointer;
+            user-select: none;
+            transition: opacity 0.2s ease;
+        }
+        
+        button[data-bs-target]:hover {
+            opacity: 0.8;
+        }
+        
+        /* Prevent any accidental triggers */
+        .modal-backdrop {
+            display: none !important;
+        }
+        
+        .modal.show + .modal-backdrop {
+            display: block !important;
         }
         
         /* Badges */
@@ -487,6 +559,78 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Custom JS -->
     <script src="{{ asset('js/auth.js') }}"></script>
+    
+    <!-- Fix modal flickering - Complete solution -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Disable all automatic Bootstrap modal triggers
+            const modalButtons = document.querySelectorAll('button[data-bs-toggle="modal"]');
+            
+            modalButtons.forEach(button => {
+                // Remove Bootstrap's automatic modal trigger
+                button.removeAttribute('data-bs-toggle');
+                
+                // Add manual click handler
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const targetModalId = button.getAttribute('data-bs-target');
+                    const targetModal = document.querySelector(targetModalId);
+                    
+                    if (targetModal) {
+                        // Ensure modal is properly hidden first
+                        targetModal.style.display = 'none';
+                        targetModal.classList.remove('show');
+                        
+                        // Small delay then show modal
+                        setTimeout(() => {
+                            const modal = new bootstrap.Modal(targetModal, {
+                                backdrop: true,
+                                keyboard: true,
+                                focus: true
+                            });
+                            modal.show();
+                        }, 10);
+                    }
+                });
+                
+                // Prevent any hover effects on modal buttons
+                button.addEventListener('mouseenter', function(e) {
+                    e.stopPropagation();
+                });
+                
+                button.addEventListener('mouseleave', function(e) {
+                    e.stopPropagation();
+                });
+            });
+            
+            // Force hide all modals on page load
+            const allModals = document.querySelectorAll('.modal');
+            allModals.forEach(modal => {
+                modal.style.display = 'none';
+                modal.classList.remove('show');
+                modal.setAttribute('aria-hidden', 'true');
+            });
+            
+            // Prevent any automatic modal triggers
+            document.addEventListener('mousemove', function(e) {
+                // Hide any accidentally shown modals
+                const visibleModals = document.querySelectorAll('.modal.show');
+                visibleModals.forEach(modal => {
+                    if (!modal.querySelector('.modal-dialog:hover')) {
+                        // Only hide if mouse is not over the modal content
+                        const rect = modal.getBoundingClientRect();
+                        if (e.clientX < rect.left || e.clientX > rect.right || 
+                            e.clientY < rect.top || e.clientY > rect.bottom) {
+                            // Mouse is outside modal, but don't auto-hide
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+    
     @yield('scripts')
 </body>
 </html>
