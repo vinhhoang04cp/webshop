@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
-use App\Models\Category;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 
 class CategoryController extends Controller
 {
@@ -13,16 +13,45 @@ class CategoryController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Category::query();
-        
-        // Search by name
-        if ($request->has('search') && $request->search) {
-            $query->where('name', 'like', '%' . $request->search . '%');
+        try {
+            // Gọi API để lấy danh sách categories
+            $response = Http::get(url('/api/categories'));
+            
+            if ($response->successful()) {
+                $apiData = $response->json();
+                
+                // API trả về cấu trúc phức tạp với nested data
+                $categories = $apiData['data']['data'] ?? [];
+                
+                // Nếu có search, filter dữ liệu
+                if ($request->has('search') && $request->search) {
+                    $searchTerm = strtolower($request->search);
+                    $categories = array_filter($categories, function($category) use ($searchTerm) {
+                        return str_contains(strtolower($category['name']), $searchTerm);
+                    });
+                }
+                
+                // Pagination thủ công (đơn giản)
+                $perPage = 10;
+                $currentPage = $request->get('page', 1);
+                $offset = ($currentPage - 1) * $perPage;
+                $paginatedCategories = array_slice($categories, $offset, $perPage);
+                
+                return view('dashboard.categories.index', compact('paginatedCategories', 'categories'));
+            } else {
+                return view('dashboard.categories.index', [
+                    'paginatedCategories' => [],
+                    'categories' => [],
+                    'error' => 'Không thể tải danh sách danh mục'
+                ]);
+            }
+        } catch (\Exception $e) {
+            return view('dashboard.categories.index', [
+                'paginatedCategories' => [],
+                'categories' => [],
+                'error' => 'Lỗi kết nối API: ' . $e->getMessage()
+            ]);
         }
-        
-        $categories = $query->orderBy('name')->paginate(10);
-
-        return view('dashboard.categories.index', compact('categories'));
     }
 
     /**
@@ -31,17 +60,33 @@ class CategoryController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:150|unique:categories,name',
+            'name' => 'required|string|max:150',
             'description' => 'nullable|string',
         ]);
 
-        Category::create([
-            'name' => $request->name,
-            'description' => $request->description,
-        ]);
+        try {
+            // Lấy token của user hiện tại (nếu dùng Sanctum)
+            $user = auth()->user();
+            $token = $user->createToken('web-access')->plainTextToken;
+            
+            // Gọi API để tạo category
+            $response = Http::withToken($token)->post(url('/api/categories'), [
+                'name' => $request->name,
+                'description' => $request->description,
+            ]);
 
-        return redirect()->route('dashboard.categories.index')
-            ->with('success', 'Danh mục đã được tạo thành công!');
+            if ($response->successful()) {
+                return redirect()->route('dashboard.categories.index')
+                    ->with('success', 'Danh mục đã được tạo thành công!');
+            } else {
+                $error = $response->json()['message'] ?? 'Không thể tạo danh mục';
+                return redirect()->route('dashboard.categories.index')
+                    ->with('error', $error);
+            }
+        } catch (\Exception $e) {
+            return redirect()->route('dashboard.categories.index')
+                ->with('error', 'Lỗi kết nối API: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -49,20 +94,34 @@ class CategoryController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $category = Category::findOrFail($id);
-        
         $request->validate([
-            'name' => 'required|string|max:150|unique:categories,name,' . $id . ',category_id',
+            'name' => 'required|string|max:150',
             'description' => 'nullable|string',
         ]);
 
-        $category->update([
-            'name' => $request->name,
-            'description' => $request->description,
-        ]);
+        try {
+            // Lấy token của user hiện tại
+            $user = auth()->user();
+            $token = $user->createToken('web-access')->plainTextToken;
+            
+            // Gọi API để cập nhật category
+            $response = Http::withToken($token)->put(url('/api/categories/' . $id), [
+                'name' => $request->name,
+                'description' => $request->description,
+            ]);
 
-        return redirect()->route('dashboard.categories.index')
-            ->with('success', 'Danh mục đã được cập nhật thành công!');
+            if ($response->successful()) {
+                return redirect()->route('dashboard.categories.index')
+                    ->with('success', 'Danh mục đã được cập nhật thành công!');
+            } else {
+                $error = $response->json()['message'] ?? 'Không thể cập nhật danh mục';
+                return redirect()->route('dashboard.categories.index')
+                    ->with('error', $error);
+            }
+        } catch (\Exception $e) {
+            return redirect()->route('dashboard.categories.index')
+                ->with('error', 'Lỗi kết nối API: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -70,10 +129,25 @@ class CategoryController extends Controller
      */
     public function destroy($id)
     {
-        $category = Category::findOrFail($id);
-        $category->delete();
+        try {
+            // Lấy token của user hiện tại
+            $user = auth()->user();
+            $token = $user->createToken('web-access')->plainTextToken;
+            
+            // Gọi API để xóa category
+            $response = Http::withToken($token)->delete(url('/api/categories/' . $id));
 
-        return redirect()->route('dashboard.categories.index')
-            ->with('success', 'Danh mục đã được xóa thành công!');
+            if ($response->successful()) {
+                return redirect()->route('dashboard.categories.index')
+                    ->with('success', 'Danh mục đã được xóa thành công!');
+            } else {
+                $error = $response->json()['message'] ?? 'Không thể xóa danh mục';
+                return redirect()->route('dashboard.categories.index')
+                    ->with('error', $error);
+            }
+        } catch (\Exception $e) {
+            return redirect()->route('dashboard.categories.index')
+                ->with('error', 'Lỗi kết nối API: ' . $e->getMessage());
+        }
     }
 }

@@ -16,7 +16,7 @@
                 <a class="nav-link" href="{{ route('dashboard') }}">
                     <i class="fas fa-tachometer-alt"></i> Dashboard
                 </a>
-                <a class="nav-link" href="#products">
+                <a class="nav-link" href="{{ route('dashboard.products.index') }}">
                     <i class="fas fa-box"></i> Sản phẩm
                 </a>
                 <a class="nav-link active" href="{{ route('dashboard.categories.index') }}">
@@ -108,106 +108,119 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @forelse($categories as $category)
+                                @if(isset($error))
                                     <tr>
-                                        <td><strong>{{ $category->category_id }}</strong></td>
-                                        <td>{{ $category->name }}</td>
-                                        <td class="text-muted">{{ $category->description ?: '-' }}</td>
-                                        <td class="text-center">
-                                            <button class="btn btn-sm btn-outline-secondary" 
-                                                    data-bs-toggle="modal" 
-                                                    data-bs-target="#editCategoryModal{{ $category->category_id }}"
-                                                    title="Sửa">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-outline-danger" 
-                                                    data-bs-toggle="modal" 
-                                                    data-bs-target="#deleteCategoryModal{{ $category->category_id }}"
-                                                    title="Xóa">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
+                                        <td colspan="4" class="text-center py-4 text-danger">
+                                            <i class="fas fa-exclamation-triangle fa-2x mb-2 d-block"></i>
+                                            {{ $error }}
                                         </td>
                                     </tr>
-
-                                    <!-- Edit Modal for each category -->
-                                    <div class="modal fade" id="editCategoryModal{{ $category->category_id }}" tabindex="-1">
-                                        <div class="modal-dialog">
-                                            <div class="modal-content">
-                                                <form method="POST" action="{{ route('dashboard.categories.update', $category->category_id) }}">
-                                                    @csrf
-                                                    @method('PUT')
-                                                    <div class="modal-header">
-                                                        <h5 class="modal-title">Sửa danh mục</h5>
-                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                                    </div>
-                                                    <div class="modal-body">
-                                                        <div class="mb-3">
-                                                            <label for="editName{{ $category->category_id }}" class="form-label">Tên</label>
-                                                            <input type="text" 
-                                                                   class="form-control @error('name') is-invalid @enderror" 
-                                                                   id="editName{{ $category->category_id }}" 
-                                                                   name="name" 
-                                                                   value="{{ old('name', $category->name) }}" 
-                                                                   required 
-                                                                   maxlength="150">
-                                                            @error('name')
-                                                                <div class="invalid-feedback">{{ $message }}</div>
-                                                            @enderror
-                                                        </div>
-                                                        <div class="mb-3">
-                                                            <label for="editDescription{{ $category->category_id }}" class="form-label">Mô tả</label>
-                                                            <textarea class="form-control" 
-                                                                      id="editDescription{{ $category->category_id }}" 
-                                                                      name="description">{{ old('description', $category->description) }}</textarea>
-                                                        </div>
-                                                    </div>
-                                                    <div class="modal-footer">
-                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                                                        <button type="submit" class="btn btn-primary">Cập nhật</button>
-                                                    </div>
-                                                </form>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Delete Modal for each category -->
-                                    <div class="modal fade" id="deleteCategoryModal{{ $category->category_id }}" tabindex="-1">
-                                        <div class="modal-dialog">
-                                            <div class="modal-content">
-                                                <form method="POST" action="{{ route('dashboard.categories.destroy', $category->category_id) }}">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <div class="modal-header">
-                                                        <h5 class="modal-title">Xóa danh mục</h5>
-                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                                    </div>
-                                                    <div class="modal-body">
-                                                        <p>Bạn có chắc chắn muốn xóa danh mục <strong>{{ $category->name }}</strong>?</p>
-                                                    </div>
-                                                    <div class="modal-footer">
-                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                                                        <button type="submit" class="btn btn-danger">Xóa</button>
-                                                    </div>
-                                                </form>
-                                            </div>
-                                        </div>
-                                    </div>
-                                @empty
+                                @elseif(empty($paginatedCategories))
                                     <tr>
                                         <td colspan="4" class="text-center py-4 text-muted">
                                             <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
                                             Không có danh mục nào
                                         </td>
                                     </tr>
-                                @endforelse
+                                @else
+                                    @foreach($paginatedCategories as $category)
+                                        <tr>
+                                            <td><strong>{{ $category['id'] }}</strong></td>
+                                            <td>{{ $category['name'] }}</td>
+                                            <td class="text-muted">{{ $category['description'] ?: '-' }}</td>
+                                            <td class="text-center">
+                                                <button class="btn btn-sm btn-outline-secondary" 
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#editCategoryModal{{ $category['id'] }}"
+                                                        title="Sửa">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-danger" 
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#deleteCategoryModal{{ $category['id'] }}"
+                                                        title="Xóa">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+
+                                        <!-- Edit Modal for each category -->
+                                        <div class="modal fade" id="editCategoryModal{{ $category['id'] }}" tabindex="-1">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <form method="POST" action="{{ route('dashboard.categories.update', $category['id']) }}">
+                                                        @csrf
+                                                        @method('PUT')
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title">Sửa danh mục</h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <div class="mb-3">
+                                                                <label for="editName{{ $category['id'] }}" class="form-label">Tên</label>
+                                                                <input type="text" 
+                                                                       class="form-control @error('name') is-invalid @enderror" 
+                                                                       id="editName{{ $category['id'] }}" 
+                                                                       name="name" 
+                                                                       value="{{ old('name', $category['name']) }}" 
+                                                                       required 
+                                                                       maxlength="150">
+                                                                @error('name')
+                                                                    <div class="invalid-feedback">{{ $message }}</div>
+                                                                @enderror
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label for="editDescription{{ $category['id'] }}" class="form-label">Mô tả</label>
+                                                                <textarea class="form-control" 
+                                                                          id="editDescription{{ $category['id'] }}" 
+                                                                          name="description">{{ old('description', $category['description']) }}</textarea>
+                                                            </div>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                                                            <button type="submit" class="btn btn-primary">Cập nhật</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Delete Modal for each category -->
+                                        <div class="modal fade" id="deleteCategoryModal{{ $category['id'] }}" tabindex="-1">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <form method="POST" action="{{ route('dashboard.categories.destroy', $category['id']) }}">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title">Xóa danh mục</h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <p>Bạn có chắc chắn muốn xóa danh mục <strong>{{ $category['name'] }}</strong>?</p>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                                                            <button type="submit" class="btn btn-danger">Xóa</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                @endif
                             </tbody>
                         </table>
                     </div>
                     
-                    <!-- Pagination -->
-                    @if($categories->hasPages())
+                    <!-- Simple pagination info -->
+                    @if(!empty($paginatedCategories))
                     <div class="d-flex justify-content-center mt-4 mb-3">
-                        {{ $categories->appends(['search' => request('search')])->links() }}
+                        <nav aria-label="Pagination">
+                            <span class="text-muted">
+                                Hiển thị {{ count($paginatedCategories) }} / {{ count($categories ?? []) }} danh mục
+                            </span>
+                        </nav>
                     </div>
                     @endif
                 </div>

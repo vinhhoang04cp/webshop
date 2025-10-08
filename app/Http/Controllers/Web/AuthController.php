@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 
 class AuthController extends Controller
 {
@@ -122,27 +123,56 @@ class AuthController extends Controller
             ]);
         }
 
-        // Statistics for dashboard
-        $productsCount = \App\Models\Product::count();
-        $ordersCount = \App\Models\Order::count();
-        $usersCount = \App\Models\User::count();
+        try {
+            // Lấy token để gọi API
+            $token = $user->createToken('web-access')->plainTextToken;
 
-        // Total revenue (sum of total_amount in orders). Use 0 if null
-        $totalRevenue = \App\Models\Order::sum('total_amount') ?? 0;
+            // Gọi các API để lấy thống kê
+            $productsResponse = Http::get(url('/api/products'));
+            $ordersResponse = Http::withToken($token)->get(url('/api/orders'));
+            
+            $productsCount = $productsResponse->successful() ? count($productsResponse->json()) : 0;
+            $ordersCount = $ordersResponse->successful() ? count($ordersResponse->json()) : 0;
+            
+            // Tính tổng doanh thu từ orders
+            $totalRevenue = 0;
+            $recentOrders = [];
+            
+            if ($ordersResponse->successful()) {
+                $orders = $ordersResponse->json();
+                
+                // Tính tổng revenue
+                $totalRevenue = array_sum(array_column($orders, 'total_amount'));
+                
+                // Lấy 5 orders gần nhất (sort by order_date desc)
+                usort($orders, function($a, $b) {
+                    return strtotime($b['order_date']) - strtotime($a['order_date']);
+                });
+                $recentOrders = array_slice($orders, 0, 5);
+            }
 
-        // Recent orders (latest 5)
-        $recentOrders = \App\Models\Order::with('user')
-            ->orderBy('order_date', 'desc')
-            ->limit(5)
-            ->get();
+            // Count users (có thể cần API riêng hoặc dùng model trực tiếp)
+            $usersCount = \App\Models\User::count();
 
-        return view('dashboard.index', compact(
-            'user',
-            'productsCount',
-            'ordersCount',
-            'usersCount',
-            'totalRevenue',
-            'recentOrders'
-        ));
+            return view('dashboard.index', compact(
+                'user',
+                'productsCount',
+                'ordersCount',
+                'usersCount',
+                'totalRevenue',
+                'recentOrders'
+            ));
+        } catch (\Exception $e) {
+            // Fallback to zero values nếu API lỗi
+            return view('dashboard.index', [
+                'user' => $user,
+                'productsCount' => 0,
+                'ordersCount' => 0,
+                'usersCount' => 0,
+                'totalRevenue' => 0,
+                'recentOrders' => [],
+                'error' => 'Không thể tải dữ liệu dashboard: ' . $e->getMessage()
+            ]);
+        }
     }
 }

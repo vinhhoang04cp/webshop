@@ -16,7 +16,7 @@
                 <a class="nav-link active" href="{{ route('dashboard') }}">
                     <i class="fas fa-tachometer-alt"></i> Dashboard
                 </a>
-                <a class="nav-link" href="#products">
+                <a class="nav-link" href="{{ route('dashboard.products.index') }}">
                     <i class="fas fa-box"></i> Sản phẩm
                 </a>
                 <a class="nav-link" href="{{ route('dashboard.categories.index') }}">
@@ -141,25 +141,37 @@
                                                 ];
                                             @endphp
 
-                                            @forelse($recentOrders as $order)
-                                            <tr>
-                                                <td><strong>#{{ $order->order_id }}</strong></td>
-                                                <td>{{ optional($order->user)->name ?? 'Khách vãng lai' }}</td>
-                                                <td>
-                                                        @php $s = $statusMap[$order->status] ?? null; @endphp
-                                                        <span class="badge bg-{{ $s['label'] ?? 'secondary' }} rounded-pill">{{ $s['text'] ?? ucfirst($order->status ?? 'unknown') }}</span>
-                                                </td>
-                                                <td><strong>{{ number_format($order->total_amount) }} đ</strong></td>
-                                                <td class="text-muted">{{ optional($order->order_date)->format('d/m/Y H:i') ?? '-' }}</td>
-                                            </tr>
-                                            @empty
-                                            <tr>
-                                                <td colspan="5" class="text-center py-4 text-muted">
-                                                    <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
-                                                    Không có đơn hàng nào gần đây
-                                                </td>
-                                            </tr>
-                                            @endforelse
+                                            @if(isset($error))
+                                                <tr>
+                                                    <td colspan="5" class="text-center py-4 text-danger">
+                                                        <i class="fas fa-exclamation-triangle fa-2x mb-2 d-block"></i>
+                                                        {{ $error }}
+                                                    </td>
+                                                </tr>
+                                            @elseif(empty($recentOrders))
+                                                <tr>
+                                                    <td colspan="5" class="text-center py-4 text-muted">
+                                                        <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+                                                        Không có đơn hàng nào gần đây
+                                                    </td>
+                                                </tr>
+                                            @else
+                                                @foreach($recentOrders as $order)
+                                                <tr>
+                                                    <td><strong>#{{ $order['order_id'] ?? $order['id'] }}</strong></td>
+                                                    <td>{{ $order['user']['name'] ?? $order['user_name'] ?? 'Khách vãng lai' }}</td>
+                                                    <td>
+                                                        @php 
+                                                            $status = $order['status'] ?? 'unknown';
+                                                            $s = $statusMap[$status] ?? null; 
+                                                        @endphp
+                                                        <span class="badge bg-{{ $s['label'] ?? 'secondary' }} rounded-pill">{{ $s['text'] ?? ucfirst($status) }}</span>
+                                                    </td>
+                                                    <td><strong>{{ number_format($order['total_amount'] ?? 0) }} đ</strong></td>
+                                                    <td class="text-muted">{{ isset($order['order_date']) ? \Carbon\Carbon::parse($order['order_date'])->format('d/m/Y H:i') : '-' }}</td>
+                                                </tr>
+                                                @endforeach
+                                            @endif
                                     </tbody>
                                 </table>
                             </div>

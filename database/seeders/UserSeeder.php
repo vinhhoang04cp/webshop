@@ -14,7 +14,7 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         // Tạo admin user
-        User::updateOrCreate(
+        $adminUser = User::updateOrCreate(
             ['email' => 'admin@webshop.com'],
             [
                 'name' => 'Admin User',
@@ -24,8 +24,14 @@ class UserSeeder extends Seeder
             ]
         );
 
+        // Gán role admin cho user
+        $adminRole = \App\Models\Role::where('role_name', 'admin')->first();
+        if ($adminRole && !$adminUser->roles()->where('user_roles.role_id', $adminRole->role_id)->exists()) {
+            $adminUser->roles()->attach($adminRole->role_id, ['assigned_at' => now()]);
+        }
+
         // Tạo manager user
-        User::updateOrCreate(
+        $managerUser = User::updateOrCreate(
             ['email' => 'manager@webshop.com'],
             [
                 'name' => 'Manager User',
@@ -34,6 +40,12 @@ class UserSeeder extends Seeder
                 'address' => '456 Manager Ave, Ho Chi Minh City',
             ]
         );
+
+        // Gán role manager cho user
+        $managerRole = \App\Models\Role::where('role_name', 'manager')->first();
+        if ($managerRole && !$managerUser->roles()->where('user_roles.role_id', $managerRole->role_id)->exists()) {
+            $managerUser->roles()->attach($managerRole->role_id, ['assigned_at' => now()]);
+        }
 
         // Tạo test user
         User::updateOrCreate(
