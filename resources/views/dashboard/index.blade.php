@@ -19,7 +19,7 @@
                 <a class="nav-link" href="#products"> <!-- href="#products": lien ket den phan san pham tren trang -->
                     <i class="fas fa-box me-2"></i> Sản phẩm <!-- fas fa-box: icon hop -->
                 </a>
-                <a class="nav-link" href="#categories">
+                    <a class="nav-link" href="{{ route('dashboard.categories') }}">
                     <i class="fas fa-tags me-2"></i> Danh mục <!-- fas fa-tags: icon the loai -->
                 </a>
                 <a class="nav-link" href="#orders">

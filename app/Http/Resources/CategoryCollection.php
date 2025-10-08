@@ -14,6 +14,22 @@ class CategoryCollection extends ResourceCollection
      */
     public function toArray(Request $request): array // Tra ve mot mang chua toan bo danh muc
     {
+        // If the resource is a paginator, include pagination metadata
+        if ($this->resource instanceof \Illuminate\Pagination\LengthAwarePaginator
+            || $this->resource instanceof \Illuminate\Pagination\Paginator) {
+            /** @var \Illuminate\Pagination\LengthAwarePaginator $p */
+            $p = $this->resource;
+            return [
+                'data' => $this->collection,
+                'meta' => [
+                    'total' => $p->total(),
+                    'per_page' => $p->perPage(),
+                    'current_page' => $p->currentPage(),
+                    'last_page' => $p->lastPage(),
+                ],
+            ];
+        }
+
         return [
             'data' => $this->collection,
             'meta' => [
