@@ -213,14 +213,251 @@
                         </table>
                     </div>
                     
-                    <!-- Simple pagination info -->
-                    @if(!empty($paginatedCategories))
-                    <div class="d-flex justify-content-center mt-4 mb-3">
-                        <nav aria-label="Pagination">
-                            <span class="text-muted">
-                                Hiển thị {{ count($paginatedCategories) }} / {{ count($categories ?? []) }} danh mục
-                            </span>
-                        </nav>
+                    <!-- Detailed pagination info and controls -->
+                    @if(!empty($paginatedCategories) && isset($paginationInfo))
+                    <div class="border-top px-3 py-3">
+                        <!-- Pagination Info -->
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="text-muted">
+                                <small>
+                                    Hiển thị {{ $paginationInfo['startItem'] }}-{{ $paginationInfo['endItem'] }} trong tổng số {{ $paginationInfo['totalItems'] }} danh mục
+                                    @if(request('search'))
+                                        (tìm kiếm: "{{ request('search') }}")
+                                    @endif
+                                </small>
+                            </div>
+                            
+                            <!-- Pagination Controls -->
+                            @if($paginationInfo['totalPages'] > 1)
+                            <nav aria-label="Category pagination">
+                                <ul class="pagination pagination-sm mb-0">
+                                    <!-- Previous Button -->
+                                    <li class="page-item {{ $paginationInfo['currentPage'] <= 1 ? 'disabled' : '' }}">
+                                        <a class="page-link" href="{{ request()->fullUrlWithQuery(['page' => $paginationInfo['currentPage'] - 1]) }}" 
+                                           aria-label="Previous">
+                                            <span aria-hidden="true">&laquo;</span>
+                                        </a>
+                                    </li>
+                                    
+                                    <!-- Page Numbers -->
+                                    @php
+                                        $currentPage = $paginationInfo['currentPage'];
+                                        $totalPages = $paginationInfo['totalPages'];
+                                        $start = max(1, $currentPage - 2);
+                                        $end = min($totalPages, $currentPage + 2);
+                                        
+                                        // Ensure we show at least 5 pages if available
+                                        if ($end - $start < 4) {
+                                            if ($start == 1) {
+                                                $end = min($totalPages, $start + 4);
+                                            } else {
+                                                $start = max(1, $end - 4);
+                                            }
+                                        }
+                                    @endphp
+                                    
+                                    <!-- First page if not in range -->
+                                    @if($start > 1)
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ request()->fullUrlWithQuery(['page' => 1]) }}">1</a>
+                                        </li>
+                                        @if($start > 2)
+                                            <li class="page-item disabled">
+                                                <span class="page-link">...</span>
+                                            </li>
+                                        @endif
+                                    @endif
+                                    
+                                    <!-- Page range -->
+                                    @for($i = $start; $i <= $end; $i++)
+                                        <li class="page-item {{ $i == $currentPage ? 'active' : '' }}">
+                                            @if($i == $currentPage)
+                                                <span class="page-link">{{ $i }}</span>
+                                            @else
+                                                <a class="page-link" href="{{ request()->fullUrlWithQuery(['page' => $i]) }}">{{ $i }}</a>
+                                            @endif
+                                        </li>
+                                    @endfor
+                                    
+                                    <!-- Last page if not in range -->
+                                    @if($end < $totalPages)
+                                        @if($end < $totalPages - 1)
+                                            <li class="page-item disabled">
+                                                <span class="page-link">...</span>
+                                            </li>
+                                        @endif
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ request()->fullUrlWithQuery(['page' => $totalPages]) }}">{{ $totalPages }}</a>
+                                        </li>
+                                    @endif
+                                    
+                                    <!-- Next Button -->
+                                    <li class="page-item {{ $paginationInfo['currentPage'] >= $totalPages ? 'disabled' : '' }}">
+                                        <a class="page-link" href="{{ request()->fullUrlWithQuery(['page' => $paginationInfo['currentPage'] + 1]) }}" 
+                                           aria-label="Next">
+                                            <span aria-hidden="true">&raquo;</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </nav>
+                            @endif
+                        </div>
+                        
+                        <!-- Quick page navigation for large datasets -->
+                        @if($paginationInfo['totalPages'] > 10)
+                        <div class="mt-3 text-center">
+                            <small class="text-muted">
+                                Trang {{ $paginationInfo['currentPage'] }} / {{ $paginationInfo['totalPages'] }}
+                                | 
+                                <select class="form-select form-select-sm d-inline-block" style="width: auto;" 
+                                        onchange="window.location.href='{{ request()->fullUrlWithQuery(['page' => '']) }}' + this.value">
+                                    @for($i = 1; $i <= $paginationInfo['totalPages']; $i++)
+                                        <option value="{{ $i }}" {{ $i == $paginationInfo['currentPage'] ? 'selected' : '' }}>
+                                            Trang {{ $i }}
+                                        </option>
+                                    @endfor
+                                </select>
+                            </small>
+                        </div>
+                        @elseif($paginationInfo['totalPages'] > 1)
+                        <div class="mt-2 text-center">
+                            <small class="text-muted">
+                                Trang {{ $paginationInfo['currentPage'] }} / {{ $paginationInfo['totalPages'] }}
+                            </small>
+                        </div>
+                        @endif
+                        
+                        <!-- Items per page info -->
+                        @if($paginationInfo['totalItems'] > 10)
+                        <div class="mt-2 text-center">
+                            <small class="text-muted">
+                                {{ $paginationInfo['perPage'] }} danh mục mỗi trang
+                            </small>
+                        </div>
+                        @endif
+                    </div>
+                    @elseif(!empty($paginatedCategories))
+                    <!-- Fallback for old pagination format -->
+                    @php
+                        $perPage = 10;
+                        $totalItems = count($categories ?? []);
+                        $currentPage = request('page', 1);
+                        $totalPages = ceil($totalItems / $perPage);
+                        $startItem = ($currentPage - 1) * $perPage + 1;
+                        $endItem = min($currentPage * $perPage, $totalItems);
+                    @endphp
+                    
+                    <div class="border-top px-3 py-3">
+                        <!-- Pagination Info -->
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="text-muted">
+                                <small>
+                                    Hiển thị {{ $startItem }}-{{ $endItem }} trong tổng số {{ $totalItems }} danh mục
+                                    @if(request('search'))
+                                        (đã lọc từ {{ count($categories) }} kết quả)
+                                    @endif
+                                </small>
+                            </div>
+                            
+                            <!-- Pagination Controls -->
+                            @if($totalPages > 1)
+                            <nav aria-label="Category pagination">
+                                <ul class="pagination pagination-sm mb-0">
+                                    <!-- Previous Button -->
+                                    <li class="page-item {{ $currentPage <= 1 ? 'disabled' : '' }}">
+                                        <a class="page-link" href="{{ request()->fullUrlWithQuery(['page' => $currentPage - 1]) }}" 
+                                           aria-label="Previous">
+                                            <span aria-hidden="true">&laquo;</span>
+                                        </a>
+                                    </li>
+                                    
+                                    <!-- Page Numbers -->
+                                    @php
+                                        $start = max(1, $currentPage - 2);
+                                        $end = min($totalPages, $currentPage + 2);
+                                        
+                                        // Ensure we show at least 5 pages if available
+                                        if ($end - $start < 4) {
+                                            if ($start == 1) {
+                                                $end = min($totalPages, $start + 4);
+                                            } else {
+                                                $start = max(1, $end - 4);
+                                            }
+                                        }
+                                    @endphp
+                                    
+                                    <!-- First page if not in range -->
+                                    @if($start > 1)
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ request()->fullUrlWithQuery(['page' => 1]) }}">1</a>
+                                        </li>
+                                        @if($start > 2)
+                                            <li class="page-item disabled">
+                                                <span class="page-link">...</span>
+                                            </li>
+                                        @endif
+                                    @endif
+                                    
+                                    <!-- Page range -->
+                                    @for($i = $start; $i <= $end; $i++)
+                                        <li class="page-item {{ $i == $currentPage ? 'active' : '' }}">
+                                            @if($i == $currentPage)
+                                                <span class="page-link">{{ $i }}</span>
+                                            @else
+                                                <a class="page-link" href="{{ request()->fullUrlWithQuery(['page' => $i]) }}">{{ $i }}</a>
+                                            @endif
+                                        </li>
+                                    @endfor
+                                    
+                                    <!-- Last page if not in range -->
+                                    @if($end < $totalPages)
+                                        @if($end < $totalPages - 1)
+                                            <li class="page-item disabled">
+                                                <span class="page-link">...</span>
+                                            </li>
+                                        @endif
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ request()->fullUrlWithQuery(['page' => $totalPages]) }}">{{ $totalPages }}</a>
+                                        </li>
+                                    @endif
+                                    
+                                    <!-- Next Button -->
+                                    <li class="page-item {{ $currentPage >= $totalPages ? 'disabled' : '' }}">
+                                        <a class="page-link" href="{{ request()->fullUrlWithQuery(['page' => $currentPage + 1]) }}" 
+                                           aria-label="Next">
+                                            <span aria-hidden="true">&raquo;</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </nav>
+                            @endif
+                        </div>
+                        
+                        <!-- Quick page navigation -->
+                        @if($totalPages > 1)
+                        <div class="mt-3 text-center">
+                            <small class="text-muted">
+                                Trang {{ $currentPage }} / {{ $totalPages }}
+                                @if($totalPages > 10)
+                                    | 
+                                    <select class="form-select form-select-sm d-inline-block" style="width: auto;" 
+                                            onchange="window.location.href='{{ request()->fullUrlWithQuery(['page' => '']) }}' + this.value">
+                                        @for($i = 1; $i <= $totalPages; $i++)
+                                            <option value="{{ $i }}" {{ $i == $currentPage ? 'selected' : '' }}>
+                                                Trang {{ $i }}
+                                            </option>
+                                        @endfor
+                                    </select>
+                                @endif
+                            </small>
+                        </div>
+                        @endif
+                    </div>
+                    @else
+                    <div class="border-top px-3 py-3">
+                        <div class="text-muted text-center">
+                            <small>Không có danh mục nào để hiển thị</small>
+                        </div>
                     </div>
                     @endif
                 </div>

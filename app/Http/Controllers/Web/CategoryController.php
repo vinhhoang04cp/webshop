@@ -4,25 +4,25 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Http; // Thu vien HTTP client dung de goi API
 
 class CategoryController extends Controller
 {
     /**
      * Display a listing of categories for admin UI.
      */
-    public function index(Request $request)
+    public function index(Request $request) // (Request $request) la tham so truyen tu client qua URL den controller
     {
         try {
             // Gọi API để lấy danh sách categories
-            $response = Http::get(url('/api/categories'));
+            $response = Http::get(url('/api/categories')); // Gọi API nội bộ, không cần token
             
-            if ($response->successful()) {
-                $apiData = $response->json();
+            if ($response->successful()) { // Kiểm tra nếu API trả về thành công (status code 200)
+                $apiData = $response->json(); // $apiData la du lieu tra ve tu API voi dang mang
                 
                 // API trả về cấu trúc phức tạp với nested data
-                $categories = $apiData['data']['data'] ?? [];
-                
+                $categories = $apiData['data']['data'] ?? []; // ['data']['data'] la mang chua danh sach categories tra ve tu API
+                // Lấy mảng categories từ cấu trúc phức tạp
                 // Nếu có search, filter dữ liệu
                 if ($request->has('search') && $request->search) {
                     $searchTerm = strtolower($request->search);
@@ -31,17 +31,43 @@ class CategoryController extends Controller
                     });
                 }
                 
-                // Pagination thủ công (đơn giản)
+                // Pagination thủ công với thông tin chi tiết
                 $perPage = 10;
-                $currentPage = $request->get('page', 1);
+                $currentPage = max(1, (int) $request->get('page', 1));
+                $totalItems = count($categories);
+                $totalPages = ceil($totalItems / $perPage);
+                
+                // Ensure current page doesn't exceed total pages
+                $currentPage = min($currentPage, max(1, $totalPages));
+                
                 $offset = ($currentPage - 1) * $perPage;
                 $paginatedCategories = array_slice($categories, $offset, $perPage);
                 
-                return view('dashboard.categories.index', compact('paginatedCategories', 'categories'));
+                // Additional pagination info
+                $paginationInfo = [
+                    'currentPage' => $currentPage,
+                    'perPage' => $perPage,
+                    'totalItems' => $totalItems,
+                    'totalPages' => $totalPages,
+                    'hasMorePages' => $currentPage < $totalPages,
+                    'startItem' => $totalItems > 0 ? $offset + 1 : 0,
+                    'endItem' => min($offset + $perPage, $totalItems)
+                ];
+                
+                return view('dashboard.categories.index', compact('paginatedCategories', 'categories', 'paginationInfo'));
             } else {
                 return view('dashboard.categories.index', [
                     'paginatedCategories' => [],
                     'categories' => [],
+                    'paginationInfo' => [
+                        'currentPage' => 1,
+                        'perPage' => 10,
+                        'totalItems' => 0,
+                        'totalPages' => 0,
+                        'hasMorePages' => false,
+                        'startItem' => 0,
+                        'endItem' => 0
+                    ],
                     'error' => 'Không thể tải danh sách danh mục'
                 ]);
             }
@@ -49,6 +75,15 @@ class CategoryController extends Controller
             return view('dashboard.categories.index', [
                 'paginatedCategories' => [],
                 'categories' => [],
+                'paginationInfo' => [
+                    'currentPage' => 1,
+                    'perPage' => 10,
+                    'totalItems' => 0,
+                    'totalPages' => 0,
+                    'hasMorePages' => false,
+                    'startItem' => 0,
+                    'endItem' => 0
+                ],
                 'error' => 'Lỗi kết nối API: ' . $e->getMessage()
             ]);
         }
