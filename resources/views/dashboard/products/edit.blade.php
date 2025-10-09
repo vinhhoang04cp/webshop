@@ -50,7 +50,7 @@
             <div class="dashboard-header">
                 <div>
                     <h2>Chỉnh sửa sản phẩm</h2>
-                    <p class="text-muted mb-0">Cập nhật thông tin sản phẩm "{{ $product['name'] }}"</p>
+                    <p class="text-muted mb-0">Cập nhật thông tin sản phẩm "{{ $product->name }}"</p>
                 </div>
             </div>
 
@@ -73,7 +73,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <h5 class="mb-0"><i class="fas fa-edit me-2"></i>Chỉnh sửa thông tin sản phẩm</h5>
                         <div>
-                            <a href="{{ route('dashboard.products.show', $product['id']) }}" class="btn btn-outline-info me-2">
+                            <a href="{{ route('dashboard.products.show', $product->product_id) }}" class="btn btn-outline-info me-2">
                                 <i class="fas fa-eye me-2"></i>Xem chi tiết
                             </a>
                             <a href="{{ route('dashboard.products.index') }}" class="btn btn-outline-secondary">
@@ -83,7 +83,7 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <form method="POST" action="{{ route('dashboard.products.update', $product['id']) }}">
+                    <form method="POST" action="{{ route('dashboard.products.update', $product->product_id) }}">
                         @csrf
                         @method('PUT')
                         <div class="row">
@@ -94,7 +94,7 @@
                                            class="form-control @error('name') is-invalid @enderror" 
                                            id="name" 
                                            name="name" 
-                                           value="{{ old('name', $product['name']) }}" 
+                                           value="{{ old('name', $product->name) }}" 
                                            required 
                                            maxlength="255"
                                            placeholder="Nhập tên sản phẩm">
@@ -109,7 +109,7 @@
                                               id="description" 
                                               name="description"
                                               rows="4"
-                                              placeholder="Nhập mô tả chi tiết về sản phẩm">{{ old('description', $product['description']) }}</textarea>
+                                              placeholder="Nhập mô tả chi tiết về sản phẩm">{{ old('description', $product->description) }}</textarea>
                                     @error('description')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -121,7 +121,7 @@
                                            class="form-control @error('image_url') is-invalid @enderror" 
                                            id="image_url" 
                                            name="image_url" 
-                                           value="{{ old('image_url', $product['image_url']) }}"
+                                           value="{{ old('image_url', $product->image_url) }}"
                                            placeholder="https://example.com/image.jpg">
                                     @error('image_url')
                                         <div class="invalid-feedback">{{ $message }}</div>
@@ -138,7 +138,7 @@
                                                class="form-control @error('price') is-invalid @enderror" 
                                                id="price" 
                                                name="price" 
-                                               value="{{ old('price', $product['price']) }}" 
+                                               value="{{ old('price', $product->price) }}" 
                                                required 
                                                min="0"
                                                step="1000"
@@ -158,9 +158,9 @@
                                             required>
                                         <option value="">Chọn danh mục</option>
                                         @foreach($categories as $category)
-                                            <option value="{{ $category['id'] }}" 
-                                                    {{ old('category_id', $product['category_id']) == $category['id'] ? 'selected' : '' }}>
-                                                {{ $category['name'] }}
+                                            <option value="{{ $category->category_id }}" 
+                                                    {{ old('category_id', $product->category_id) == $category->category_id ? 'selected' : '' }}>
+                                                {{ $category->name }}
                                             </option>
                                         @endforeach
                                     </select>
@@ -174,11 +174,11 @@
                                     <label class="form-label">Xem trước hình ảnh</label>
                                     <div class="border rounded p-3 text-center bg-light">
                                         <img id="image-preview" 
-                                             src="{{ $product['image_url'] }}" 
+                                             src="{{ $product->image_url }}" 
                                              alt="Preview" 
                                              class="img-fluid rounded"
-                                             style="max-height: 200px; {{ $product['image_url'] ? '' : 'display: none;' }}">
-                                        <div id="no-image" class="text-muted" style="{{ $product['image_url'] ? 'display: none;' : '' }}">
+                                             style="max-height: 200px; {{ $product->image_url ? '' : 'display: none;' }}">
+                                        <div id="no-image" class="text-muted" style="{{ $product->image_url ? 'display: none;' : '' }}">
                                             <i class="fas fa-image fa-3x mb-2"></i>
                                             <p>Nhập URL để xem trước</p>
                                         </div>
@@ -190,9 +190,9 @@
                                     <div class="card-body">
                                         <h6 class="card-title">Thông tin</h6>
                                         <small class="text-muted">
-                                            <strong>ID:</strong> {{ $product['id'] }}<br>
-                                            <strong>Tạo lúc:</strong> {{ isset($product['created_at']) ? \Carbon\Carbon::parse($product['created_at'])->format('d/m/Y H:i') : 'N/A' }}<br>
-                                            <strong>Cập nhật:</strong> {{ isset($product['updated_at']) ? \Carbon\Carbon::parse($product['updated_at'])->format('d/m/Y H:i') : 'N/A' }}
+                                            <strong>ID:</strong> {{ $product->product_id }}<br>
+                                            <strong>Tạo lúc:</strong> {{ $product->created_at ? $product->created_at->format('d/m/Y H:i') : 'N/A' }}<br>
+                                            <strong>Cập nhật:</strong> {{ $product->updated_at ? $product->updated_at->format('d/m/Y H:i') : 'N/A' }}
                                         </small>
                                     </div>
                                 </div>

@@ -142,11 +142,11 @@
                                 @else
                                     @foreach($paginatedProducts as $product)
                                         <tr>
-                                            <td><strong>{{ $product['id'] }}</strong></td>
+                                            <td><strong>{{ $product->product_id }}</strong></td>
                                             <td>
-                                                @if(isset($product['image_url']) && $product['image_url'])
-                                                    <img src="{{ $product['image_url'] }}" 
-                                                         alt="{{ $product['name'] }}" 
+                                                @if($product->image_url)
+                                                    <img src="{{ $product->image_url }}" 
+                                                         alt="{{ $product->name }}" 
                                                          class="rounded" 
                                                          style="width: 60px; height: 60px; object-fit: cover;"
                                                          onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
@@ -163,39 +163,39 @@
                                             </td>
                                             <td>
                                                 <div>
-                                                    <strong>{{ $product['name'] }}</strong>
-                                                    @if(isset($product['description']) && $product['description'])
-                                                        <br><small class="text-muted">{{ Str::limit($product['description'], 50) }}</small>
+                                                    <strong>{{ $product->name }}</strong>
+                                                    @if($product->description)
+                                                        <br><small class="text-muted">{{ Str::limit($product->description, 50) }}</small>
                                                     @endif
                                                 </div>
                                             </td>
                                             <td>
                                                 <span class="text-primary fw-bold">
-                                                    {{ number_format($product['price'], 0, ',', '.') }} VNĐ
+                                                    {{ number_format($product->price, 0, ',', '.') }} VNĐ
                                                 </span>
                                             </td>
                                             <td>
-                                                @if(isset($product['category']) && $product['category'])
-                                                    <span class="badge bg-secondary">{{ $product['category']['name'] }}</span>
+                                                @if($product->category)
+                                                    <span class="badge bg-secondary">{{ $product->category->name }}</span>
                                                 @else
                                                     <span class="text-muted">-</span>
                                                 @endif
                                             </td>
                                             <td class="text-center">
                                                 <div class="btn-group" role="group">
-                                                    <a href="{{ route('dashboard.products.show', $product['id']) }}" 
+                                                    <a href="{{ route('dashboard.products.show', $product->product_id) }}" 
                                                        class="btn btn-sm btn-outline-info"
                                                        title="Xem chi tiết">
                                                         <i class="fas fa-eye"></i>
                                                     </a>
-                                                    <a href="{{ route('dashboard.products.edit', $product['id']) }}" 
+                                                    <a href="{{ route('dashboard.products.edit', $product->product_id) }}" 
                                                        class="btn btn-sm btn-outline-secondary"
                                                        title="Chỉnh sửa">
                                                         <i class="fas fa-edit"></i>
                                                     </a>
                                                     <button class="btn btn-sm btn-outline-danger" 
                                                             data-bs-toggle="modal" 
-                                                            data-bs-target="#deleteProductModal{{ $product['id'] }}"
+                                                            data-bs-target="#deleteProductModal{{ $product->product_id }}"
                                                             title="Xóa">
                                                         <i class="fas fa-trash"></i>
                                                     </button>
@@ -204,10 +204,10 @@
                                         </tr>
 
                                         <!-- Delete Modal for each product -->
-                                        <div class="modal fade" id="deleteProductModal{{ $product['id'] }}" tabindex="-1">
+                                        <div class="modal fade" id="deleteProductModal{{ $product->product_id }}" tabindex="-1">
                                             <div class="modal-dialog">
                                                 <div class="modal-content">
-                                                    <form method="POST" action="{{ route('dashboard.products.destroy', $product['id']) }}">
+                                                    <form method="POST" action="{{ route('dashboard.products.destroy', $product->product_id) }}">
                                                         @csrf
                                                         @method('DELETE')
                                                         <div class="modal-header">
@@ -223,14 +223,14 @@
                                                                 <strong>Cảnh báo:</strong> Hành động này không thể hoàn tác!
                                                             </div>
                                                             
-                                                            <p>Bạn có chắc chắn muốn xóa sản phẩm <strong>"{{ $product['name'] }}"</strong>?</p>
+                                                            <p>Bạn có chắc chắn muốn xóa sản phẩm <strong>"{{ $product->name }}"</strong>?</p>
                                                             
                                                             <div class="bg-light p-3 rounded">
                                                                 <div class="row">
                                                                     <div class="col-3">
-                                                                        @if(isset($product['image_url']) && $product['image_url'])
-                                                                            <img src="{{ $product['image_url'] }}" 
-                                                                                 alt="{{ $product['name'] }}" 
+                                                                        @if($product->image_url)
+                                                                            <img src="{{ $product->image_url }}" 
+                                                                                 alt="{{ $product->name }}" 
                                                                                  class="img-fluid rounded">
                                                                         @else
                                                                             <div class="bg-secondary rounded d-flex align-items-center justify-content-center text-white" 
@@ -241,10 +241,10 @@
                                                                     </div>
                                                                     <div class="col-9">
                                                                         <small class="text-muted">
-                                                                            <strong>ID:</strong> #{{ $product['id'] }}<br>
-                                                                            <strong>Tên:</strong> {{ $product['name'] }}<br>
-                                                                            <strong>Giá:</strong> {{ number_format($product['price'], 0, ',', '.') }} VNĐ<br>
-                                                                            <strong>Danh mục:</strong> {{ $product['category']['name'] ?? 'N/A' }}
+                                                                            <strong>ID:</strong> #{{ $product->product_id }}<br>
+                                                                            <strong>Tên:</strong> {{ $product->name }}<br>
+                                                                            <strong>Giá:</strong> {{ number_format($product->price, 0, ',', '.') }} VNĐ<br>
+                                                                            <strong>Danh mục:</strong> {{ $product->category->name ?? 'N/A' }}
                                                                         </small>
                                                                     </div>
                                                                 </div>

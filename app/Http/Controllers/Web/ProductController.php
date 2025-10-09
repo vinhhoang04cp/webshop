@@ -3,8 +3,9 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Models\Product;
+use App\Models\Category;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 
 class ProductController extends Controller
 {
@@ -14,52 +15,41 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         try {
-            // Gọi API để lấy danh sách products
-            $response = Http::get(url('/api/products'));
+            // Tạo query builder cho products với relationship category
+            $query = Product::with('category');
             
-            if ($response->successful()) {
-                $responseData = $response->json();
-                $products = $responseData['data']['data'] ?? [];
-                
-                // Nếu có search, filter dữ liệu
-                if ($request->has('search') && $request->search) {
-                    $searchTerm = strtolower($request->search);
-                    $products = array_filter($products, function($product) use ($searchTerm) {
-                        return str_contains(strtolower($product['name']), $searchTerm) ||
-                               str_contains(strtolower($product['description'] ?? ''), $searchTerm);
-                    });
-                }
-                
-                // Pagination thủ công
-                $perPage = 12;
-                $currentPage = $request->get('page', 1);
-                $offset = ($currentPage - 1) * $perPage;
-                $paginatedProducts = array_slice($products, $offset, $perPage);
-                
-                // Lấy danh sách categories cho dropdown
-                $categoriesResponse = Http::get(url('/api/categories'));
-                $categoriesData = $categoriesResponse->json();
-                $categories = $categoriesData['data']['data'] ?? [];
-                
-                return view('dashboard.products.index', compact(
-                    'paginatedProducts', 
-                    'products', 
-                    'categories'
-                ));
-            } else {
-                return view('dashboard.products.index', [
-                    'paginatedProducts' => [],
-                    'products' => [],
-                    'categories' => [],
-                    'error' => 'Không thể tải danh sách sản phẩm'
-                ]);
+            // Nếu có search, filter dữ liệu
+            if ($request->has('search') && $request->search) {
+                $searchTerm = $request->search;
+                $query->where(function($q) use ($searchTerm) {
+                    $q->where('name', 'like', '%' . $searchTerm . '%')
+                      ->orWhere('description', 'like', '%' . $searchTerm . '%');
+                });
             }
+            
+            // Pagination
+            $perPage = 12;
+            $products = $query->paginate($perPage);
+            
+            // Lấy tất cả products cho search (nếu cần)
+            $allProducts = Product::all();
+            
+            // Lấy danh sách categories cho dropdown
+            $categories = Category::all();
+            
+            return view('dashboard.products.index', [
+                'paginatedProducts' => $products->items(),
+                'products' => $allProducts,
+                'categories' => $categories,
+                'pagination' => $products
+            ]);
+            
         } catch (\Exception $e) {
             return view('dashboard.products.index', [
                 'paginatedProducts' => [],
                 'products' => [],
                 'categories' => [],
-                'error' => 'Lỗi kết nối API: ' . $e->getMessage()
+                'error' => 'Lỗi khi tải danh sách sản phẩm: ' . $e->getMessage()
             ]);
         }
     }
@@ -71,9 +61,7 @@ class ProductController extends Controller
     {
         try {
             // Lấy danh sách categories cho dropdown
-            $response = Http::get(url('/api/categories'));
-            $responseData = $response->json();
-            $categories = $responseData['data']['data'] ?? [];
+            $categories = Category::all();
             
             return view('dashboard.products.create', compact('categories'));
         } catch (\Exception $e) {
@@ -91,36 +79,28 @@ class ProductController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
-            'category_id' => 'required|integer',
+            'category_id' => 'required|integer|exists:categories,category_id',
             'image_url' => 'nullable|url',
+            'stock_quantity' => 'nullable|integer|min:0',
         ]);
 
         try {
-            // Lấy token của user hiện tại
-            $user = auth()->user();
-            $token = $user->createToken('web-access')->plainTextToken;
-            
-            // Gọi API để tạo product
-            $response = Http::withToken($token)->post(url('/api/products'), [
+            // Tạo product mới sử dụng Eloquent
+            $product = Product::create([
                 'name' => $request->name,
                 'description' => $request->description,
                 'price' => $request->price,
                 'category_id' => $request->category_id,
                 'image_url' => $request->image_url,
+                'stock_quantity' => $request->stock_quantity ?? 0,
             ]);
 
-            if ($response->successful()) {
-                return redirect()->route('dashboard.products.index')
-                    ->with('success', 'Sản phẩm đã được tạo thành công!');
-            } else {
-                $error = $response->json()['message'] ?? 'Không thể tạo sản phẩm';
-                return redirect()->route('dashboard.products.create')
-                    ->with('error', $error)
-                    ->withInput();
-            }
+            return redirect()->route('dashboard.products.index')
+                ->with('success', 'Sản phẩm đã được tạo thành công!');
+                
         } catch (\Exception $e) {
             return redirect()->route('dashboard.products.create')
-                ->with('error', 'Lỗi kết nối API: ' . $e->getMessage())
+                ->with('error', 'Lỗi khi tạo sản phẩm: ' . $e->getMessage())
                 ->withInput();
         }
     }
@@ -131,20 +111,14 @@ class ProductController extends Controller
     public function show($id)
     {
         try {
-            // Gọi API để lấy chi tiết product
-            $response = Http::get(url('/api/products/' . $id));
+            // Lấy product với relationship category
+            $product = Product::with('category')->findOrFail($id);
             
-            if ($response->successful()) {
-                $responseData = $response->json();
-                $product = $responseData['data'] ?? $responseData;
-                return view('dashboard.products.show', compact('product'));
-            } else {
-                return redirect()->route('dashboard.products.index')
-                    ->with('error', 'Không tìm thấy sản phẩm');
-            }
+            return view('dashboard.products.show', compact('product'));
+            
         } catch (\Exception $e) {
             return redirect()->route('dashboard.products.index')
-                ->with('error', 'Lỗi kết nối API: ' . $e->getMessage());
+                ->with('error', 'Không tìm thấy sản phẩm hoặc lỗi: ' . $e->getMessage());
         }
     }
 
@@ -155,25 +129,16 @@ class ProductController extends Controller
     {
         try {
             // Lấy thông tin product
-            $productResponse = Http::get(url('/api/products/' . $id));
-            
-            if (!$productResponse->successful()) {
-                return redirect()->route('dashboard.products.index')
-                    ->with('error', 'Không tìm thấy sản phẩm');
-            }
-            
-            $productData = $productResponse->json();
-            $product = $productData['data'] ?? $productData;
+            $product = Product::findOrFail($id);
             
             // Lấy danh sách categories
-            $categoriesResponse = Http::get(url('/api/categories'));
-            $categoriesData = $categoriesResponse->json();
-            $categories = $categoriesData['data']['data'] ?? [];
+            $categories = Category::all();
             
             return view('dashboard.products.edit', compact('product', 'categories'));
+            
         } catch (\Exception $e) {
             return redirect()->route('dashboard.products.index')
-                ->with('error', 'Lỗi kết nối API: ' . $e->getMessage());
+                ->with('error', 'Không tìm thấy sản phẩm hoặc lỗi: ' . $e->getMessage());
         }
     }
 
@@ -186,36 +151,30 @@ class ProductController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
-            'category_id' => 'required|integer',
+            'category_id' => 'required|integer|exists:categories,category_id',
             'image_url' => 'nullable|url',
+            'stock_quantity' => 'nullable|integer|min:0',
         ]);
 
         try {
-            // Lấy token của user hiện tại
-            $user = auth()->user();
-            $token = $user->createToken('web-access')->plainTextToken;
+            // Tìm và cập nhật product
+            $product = Product::findOrFail($id);
             
-            // Gọi API để cập nhật product
-            $response = Http::withToken($token)->put(url('/api/products/' . $id), [
+            $product->update([
                 'name' => $request->name,
                 'description' => $request->description,
                 'price' => $request->price,
                 'category_id' => $request->category_id,
                 'image_url' => $request->image_url,
+                'stock_quantity' => $request->stock_quantity ?? $product->stock_quantity,
             ]);
 
-            if ($response->successful()) {
-                return redirect()->route('dashboard.products.index')
-                    ->with('success', 'Sản phẩm đã được cập nhật thành công!');
-            } else {
-                $error = $response->json()['message'] ?? 'Không thể cập nhật sản phẩm';
-                return redirect()->route('dashboard.products.edit', $id)
-                    ->with('error', $error)
-                    ->withInput();
-            }
+            return redirect()->route('dashboard.products.index')
+                ->with('success', 'Sản phẩm đã được cập nhật thành công!');
+                
         } catch (\Exception $e) {
             return redirect()->route('dashboard.products.edit', $id)
-                ->with('error', 'Lỗi kết nối API: ' . $e->getMessage())
+                ->with('error', 'Lỗi khi cập nhật sản phẩm: ' . $e->getMessage())
                 ->withInput();
         }
     }
@@ -226,24 +185,16 @@ class ProductController extends Controller
     public function destroy($id)
     {
         try {
-            // Lấy token của user hiện tại
-            $user = auth()->user();
-            $token = $user->createToken('web-access')->plainTextToken;
-            
-            // Gọi API để xóa product
-            $response = Http::withToken($token)->delete(url('/api/products/' . $id));
+            // Tìm và xóa product
+            $product = Product::findOrFail($id);
+            $product->delete();
 
-            if ($response->successful()) {
-                return redirect()->route('dashboard.products.index')
-                    ->with('success', 'Sản phẩm đã được xóa thành công!');
-            } else {
-                $error = $response->json()['message'] ?? 'Không thể xóa sản phẩm';
-                return redirect()->route('dashboard.products.index')
-                    ->with('error', $error);
-            }
+            return redirect()->route('dashboard.products.index')
+                ->with('success', 'Sản phẩm đã được xóa thành công!');
+                
         } catch (\Exception $e) {
             return redirect()->route('dashboard.products.index')
-                ->with('error', 'Lỗi kết nối API: ' . $e->getMessage());
+                ->with('error', 'Lỗi khi xóa sản phẩm: ' . $e->getMessage());
         }
     }
 }

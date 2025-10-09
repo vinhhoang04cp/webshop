@@ -50,7 +50,7 @@
             <div class="dashboard-header">
                 <div>
                     <h2>Chi tiết sản phẩm</h2>
-                    <p class="text-muted mb-0">Thông tin chi tiết về "{{ $product['name'] }}"</p>
+                    <p class="text-muted mb-0">Thông tin chi tiết về "{{ $product->name }}"</p>
                 </div>
             </div>
 
@@ -76,7 +76,7 @@
                             <div class="d-flex justify-content-between align-items-center">
                                 <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Thông tin sản phẩm</h5>
                                 <div>
-                                    <a href="{{ route('dashboard.products.edit', $product['id']) }}" class="btn btn-outline-primary me-2">
+                                    <a href="{{ route('dashboard.products.edit', $product->product_id) }}" class="btn btn-outline-primary me-2">
                                         <i class="fas fa-edit me-2"></i>Chỉnh sửa
                                     </a>
                                     <a href="{{ route('dashboard.products.index') }}" class="btn btn-outline-secondary">
@@ -88,24 +88,24 @@
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-md-6">
-                                    <h3>{{ $product['name'] }}</h3>
-                                    <p class="text-muted mb-3">ID: #{{ $product['id'] }}</p>
+                                    <h3>{{ $product->name }}</h3>
+                                    <p class="text-muted mb-3">ID: #{{ $product->product_id }}</p>
                                     
                                     <div class="mb-3">
-                                        <h5 class="text-primary">{{ number_format($product['price'], 0, ',', '.') }} VNĐ</h5>
+                                        <h5 class="text-primary">{{ number_format($product->price, 0, ',', '.') }} VNĐ</h5>
                                     </div>
 
-                                    @if($product['description'])
+                                    @if($product->description)
                                     <div class="mb-3">
                                         <h6>Mô tả:</h6>
-                                        <p class="text-muted">{{ $product['description'] }}</p>
+                                        <p class="text-muted">{{ $product->description }}</p>
                                     </div>
                                     @endif
 
                                     <div class="row">
                                         <div class="col-sm-6">
                                             <strong>Danh mục:</strong><br>
-                                            <span class="badge bg-secondary">{{ $product['category']['name'] ?? 'Chưa có danh mục' }}</span>
+                                            <span class="badge bg-secondary">{{ $product->category->name ?? 'Chưa có danh mục' }}</span>
                                         </div>
                                         <div class="col-sm-6">
                                             <strong>Trạng thái:</strong><br>
@@ -115,10 +115,10 @@
                                 </div>
 
                                 <div class="col-md-6">
-                                    @if($product['image_url'])
+                                    @if($product->image_url)
                                     <div class="text-center">
-                                        <img src="{{ $product['image_url'] }}" 
-                                             alt="{{ $product['name'] }}" 
+                                        <img src="{{ $product->image_url }}" 
+                                             alt="{{ $product->name }}" 
                                              class="img-fluid rounded border"
                                              style="max-height: 300px;"
                                              onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
@@ -149,15 +149,15 @@
                         <div class="card-body">
                             <small>
                                 <strong>Ngày tạo:</strong><br>
-                                {{ isset($product['created_at']) ? \Carbon\Carbon::parse($product['created_at'])->format('d/m/Y H:i:s') : 'N/A' }}<br><br>
+                                {{ $product->created_at ? $product->created_at->format('d/m/Y H:i:s') : 'N/A' }}<br><br>
                                 
                                 <strong>Cập nhật lần cuối:</strong><br>
-                                {{ isset($product['updated_at']) ? \Carbon\Carbon::parse($product['updated_at'])->format('d/m/Y H:i:s') : 'N/A' }}<br><br>
+                                {{ $product->updated_at ? $product->updated_at->format('d/m/Y H:i:s') : 'N/A' }}<br><br>
 
-                                @if(isset($product['image_url']) && $product['image_url'])
+                                @if($product->image_url)
                                 <strong>URL hình ảnh:</strong><br>
-                                <a href="{{ $product['image_url'] }}" target="_blank" class="text-truncate d-block" style="max-width: 200px;">
-                                    {{ $product['image_url'] }}
+                                <a href="{{ $product->image_url }}" target="_blank" class="text-truncate d-block" style="max-width: 200px;">
+                                    {{ $product->image_url }}
                                 </a>
                                 @endif
                             </small>
@@ -171,7 +171,7 @@
                         </div>
                         <div class="card-body">
                             <div class="d-grid gap-2">
-                                <a href="{{ route('dashboard.products.edit', $product['id']) }}" class="btn btn-outline-primary">
+                                <a href="{{ route('dashboard.products.edit', $product->product_id) }}" class="btn btn-outline-primary">
                                     <i class="fas fa-edit me-2"></i>Chỉnh sửa sản phẩm
                                 </a>
                                 
@@ -203,7 +203,7 @@
 <div class="modal fade" id="deleteProductModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <form method="POST" action="{{ route('dashboard.products.destroy', $product['id']) }}">
+            <form method="POST" action="{{ route('dashboard.products.destroy', $product->product_id) }}">
                 @csrf
                 @method('DELETE')
                 <div class="modal-header">
@@ -219,15 +219,15 @@
                         <strong>Cảnh báo:</strong> Hành động này không thể hoàn tác!
                     </div>
                     
-                    <p>Bạn có chắc chắn muốn xóa sản phẩm <strong>"{{ $product['name'] }}"</strong>?</p>
+                    <p>Bạn có chắc chắn muốn xóa sản phẩm <strong>"{{ $product->name }}"</strong>?</p>
                     
                     <div class="bg-light p-3 rounded">
                         <small class="text-muted">
                             <strong>Thông tin sản phẩm sẽ bị xóa:</strong><br>
-                            • ID: #{{ $product['id'] }}<br>
-                            • Tên: {{ $product['name'] }}<br>
-                            • Giá: {{ number_format($product['price'], 0, ',', '.') }} VNĐ<br>
-                            • Danh mục: {{ $product['category']['name'] ?? 'N/A' }}
+                            • ID: #{{ $product->product_id }}<br>
+                            • Tên: {{ $product->name }}<br>
+                            • Giá: {{ number_format($product->price, 0, ',', '.') }} VNĐ<br>
+                            • Danh mục: {{ $product->category->name ?? 'N/A' }}
                         </small>
                     </div>
                 </div>
