@@ -88,7 +88,7 @@
 
             <!-- Recent Activities -->
             <div class="row g-4">
-                <div class="col-12">
+                <div class="col-lg-8">
                     <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="mb-0"><i class="fas fa-shopping-cart me-2"></i>Đơn hàng gần đây</h5>
@@ -99,28 +99,6 @@
                         <div class="card-body p-0">
                             <div class="table-responsive">
                                 <table class="table table-hover mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th>Mã đơn</th>
-                                            <th>Khách hàng</th>
-                                            <th>Trạng thái</th>
-                                            <th>Tổng tiền</th>
-                                            <th>Ngày tạo</th>
-                                        </tr>
-                                    </thead>
-            </div>
-
-            <!-- Recent Activities -->
-            <div class="row g-4">
-                <div class="col-lg-8">
-                    <div class="card">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <h5 class="card-title mb-0">Đơn hàng gần đây</h5>
-                            <a href="#orders" class="btn btn-sm btn-outline-primary">Xem tất cả</a>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-hover">
                                     <thead>
                                         <tr>
                                             <th>Mã đơn</th>
@@ -182,7 +160,7 @@
                 <div class="col-lg-4">
                     <div class="card">
                         <div class="card-header">
-                            <h5 class="card-title mb-0">Hoạt động hệ thống</h5>
+                            <h5 class="card-title mb-0"><i class="fas fa-bell me-2"></i>Hoạt động hệ thống</h5>
                         </div>
                         <div class="card-body">
                             <div class="d-flex align-items-center mb-3">
@@ -190,10 +168,10 @@
                                     <i class="fas fa-user-plus text-success"></i>
                                 </div>
                                 <div class="flex-grow-1 ms-3">
-                                    <h6 class="mb-1">Người dùng mới</h6>
+                                    <h6 class="mb-1 fw-semibold">Người dùng mới</h6>
                                     <p class="mb-0 text-muted small">5 người dùng mới đăng ký</p>
                                 </div>
-                                <small class="text-muted">2h trước</small>
+                                <small class="text-muted fw-medium">2h trước</small>
                             </div>
                             
                             <div class="d-flex align-items-center mb-3">
@@ -201,21 +179,21 @@
                                     <i class="fas fa-box text-primary"></i>
                                 </div>
                                 <div class="flex-grow-1 ms-3">
-                                    <h6 class="mb-1">Sản phẩm mới</h6>
+                                    <h6 class="mb-1 fw-semibold">Sản phẩm mới</h6>
                                     <p class="mb-0 text-muted small">3 sản phẩm được thêm</p>
                                 </div>
-                                <small class="text-muted">4h trước</small>
+                                <small class="text-muted fw-medium">4h trước</small>
                             </div>
                             
-                            <div class="d-flex align-items-center">
+                            <div class="d-flex align-items-center mb-0">
                                 <div class="flex-shrink-0">
                                     <i class="fas fa-chart-line text-warning"></i>
                                 </div>
                                 <div class="flex-grow-1 ms-3">
-                                    <h6 class="mb-1">Báo cáo tuần</h6>
+                                    <h6 class="mb-1 fw-semibold">Báo cáo tuần</h6>
                                     <p class="mb-0 text-muted small">Báo cáo doanh thu tuần đã sẵn sàng</p>
                                 </div>
-                                <small class="text-muted">1 ngày trước</small>
+                                <small class="text-muted fw-medium">1 ngày trước</small>
                             </div>
                         </div>
                     </div>
