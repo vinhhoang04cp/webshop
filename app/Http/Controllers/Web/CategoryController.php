@@ -14,14 +14,32 @@ class CategoryController extends Controller
     public function index(Request $request) // (Request $request) la tham so truyen tu client qua URL den controller
     {
         try {
-            // Gọi API để lấy danh sách categories
-            $response = Http::get(url('/api/categories')); // Gọi API nội bộ, không cần token
+            // Lấy tất cả danh mục từ tất cả các trang của API
+            $allCategories = [];
+            $currentPage = 1;
             
-            if ($response->successful()) { // Kiểm tra nếu API trả về thành công (status code 200)
-                $apiData = $response->json(); // $apiData la du lieu tra ve tu API voi dang mang
+            do {
+                // Gọi API để lấy danh sách categories theo từng trang
+                $response = Http::get(url('/api/categories'), ['page' => $currentPage]);
                 
-                // API trả về cấu trúc phức tạp với nested data
-                $categories = $apiData['data']['data'] ?? []; // ['data']['data'] la mang chua danh sach categories tra ve tu API
+                if (!$response->successful()) {
+                    break;
+                }
+                
+                $apiData = $response->json();
+                $pageCategories = $apiData['data']['data'] ?? [];
+                $allCategories = array_merge($allCategories, $pageCategories);
+                
+                // Kiểm tra xem có trang tiếp theo không
+                $hasNextPage = isset($apiData['meta']['current_page']) && 
+                              isset($apiData['meta']['last_page']) && 
+                              $apiData['meta']['current_page'] < $apiData['meta']['last_page'];
+                
+                $currentPage++;
+            } while ($hasNextPage);
+            
+            if (!empty($allCategories)) { // Kiểm tra nếu có dữ liệu danh mục
+                $categories = $allCategories; // Sử dụng tất cả danh mục đã lấy được
                 // Lấy mảng categories từ cấu trúc phức tạp
                 // Nếu có search, filter dữ liệu
                 if ($request->has('search') && $request->search) {
