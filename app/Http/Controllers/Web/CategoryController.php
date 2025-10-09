@@ -16,27 +16,27 @@ class CategoryController extends Controller
         try {
             // Lấy danh sách categories với search
             $query = Category::query();
-            
+
             // Nếu có search, filter dữ liệu
             if ($request->has('search') && $request->search) {
                 $searchTerm = $request->search;
                 $query->where('name', 'LIKE', "%{$searchTerm}%");
             }
-            
+
             // Pagination
             $perPage = 10;
             $categories = $query->paginate($perPage);
-            
+
             // Lấy tất cả categories để truyền vào view (nếu cần)
             $allCategories = Category::all();
-            
+
             return view('dashboard.categories.index', compact('categories', 'allCategories'));
-            
+
         } catch (\Exception $e) {
             return view('dashboard.categories.index', [
                 'categories' => collect()->paginate(10),
                 'allCategories' => collect(),
-                'error' => 'Lỗi khi tải danh sách danh mục: ' . $e->getMessage()
+                'error' => 'Lỗi khi tải danh sách danh mục: '.$e->getMessage(),
             ]);
         }
     }
@@ -68,10 +68,10 @@ class CategoryController extends Controller
 
             return redirect()->route('dashboard.categories.index')
                 ->with('success', 'Danh mục đã được tạo thành công!');
-                
+
         } catch (\Exception $e) {
             return redirect()->route('dashboard.categories.index')
-                ->with('error', 'Lỗi khi tạo danh mục: ' . $e->getMessage());
+                ->with('error', 'Lỗi khi tạo danh mục: '.$e->getMessage());
         }
     }
 
@@ -82,10 +82,11 @@ class CategoryController extends Controller
     {
         try {
             $category = Category::with('products')->findOrFail($id);
+
             return view('dashboard.categories.show', compact('category'));
         } catch (\Exception $e) {
             return redirect()->route('dashboard.categories.index')
-                ->with('error', 'Lỗi khi tải chi tiết danh mục: ' . $e->getMessage());
+                ->with('error', 'Lỗi khi tải chi tiết danh mục: '.$e->getMessage());
         }
     }
 
@@ -96,10 +97,11 @@ class CategoryController extends Controller
     {
         try {
             $category = Category::findOrFail($id);
+
             return view('dashboard.categories.edit', compact('category'));
         } catch (\Exception $e) {
             return redirect()->route('dashboard.categories.index')
-                ->with('error', 'Lỗi khi tải form chỉnh sửa: ' . $e->getMessage());
+                ->with('error', 'Lỗi khi tải form chỉnh sửa: '.$e->getMessage());
         }
     }
 
@@ -109,7 +111,7 @@ class CategoryController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'name' => 'required|string|max:150|unique:categories,name,' . $id . ',category_id',
+            'name' => 'required|string|max:150|unique:categories,name,'.$id.',category_id',
             'description' => 'nullable|string',
         ]);
 
@@ -123,10 +125,10 @@ class CategoryController extends Controller
 
             return redirect()->route('dashboard.categories.index')
                 ->with('success', 'Danh mục đã được cập nhật thành công!');
-                
+
         } catch (\Exception $e) {
             return redirect()->route('dashboard.categories.index')
-                ->with('error', 'Lỗi khi cập nhật danh mục: ' . $e->getMessage());
+                ->with('error', 'Lỗi khi cập nhật danh mục: '.$e->getMessage());
         }
     }
 
@@ -142,10 +144,10 @@ class CategoryController extends Controller
 
             return redirect()->route('dashboard.categories.index')
                 ->with('success', 'Danh mục đã được xóa thành công!');
-                
+
         } catch (\Exception $e) {
             return redirect()->route('dashboard.categories.index')
-                ->with('error', 'Lỗi khi xóa danh mục: ' . $e->getMessage());
+                ->with('error', 'Lỗi khi xóa danh mục: '.$e->getMessage());
         }
     }
 }

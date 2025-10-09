@@ -20,7 +20,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 // Protected Dashboard Routes
 Route::middleware(['auth', 'role:admin,manager'])->group(function () {
     Route::get('/dashboard', [AuthController::class, 'dashboard'])->name('dashboard');
-    
+
     // Categories CRUD (using Web Controller with Http facade to call API)
     Route::get('/dashboard/categories', [\App\Http\Controllers\Web\CategoryController::class, 'index'])
         ->name('dashboard.categories.index');
@@ -36,7 +36,7 @@ Route::middleware(['auth', 'role:admin,manager'])->group(function () {
         ->name('dashboard.categories.update')->middleware('role:admin');
     Route::delete('/dashboard/categories/{id}', [\App\Http\Controllers\Web\CategoryController::class, 'destroy'])
         ->name('dashboard.categories.destroy')->middleware('role:admin');
-    
+
     // Products CRUD (using Web Controller with Http facade to call API)
     Route::get('/dashboard/products', [\App\Http\Controllers\Web\ProductController::class, 'index'])
         ->name('dashboard.products.index');
@@ -52,7 +52,7 @@ Route::middleware(['auth', 'role:admin,manager'])->group(function () {
         ->name('dashboard.products.update')->middleware('role:admin');
     Route::delete('/dashboard/products/{id}', [\App\Http\Controllers\Web\ProductController::class, 'destroy'])
         ->name('dashboard.products.destroy')->middleware('role:admin');
-    
+
     // Các route dashboard khác sẽ được thêm vào đây
     // Route::get('/dashboard/orders', [OrderController::class, 'index'])->name('dashboard.orders');
     // Route::get('/dashboard/users', [UserController::class, 'index'])->name('dashboard.users');

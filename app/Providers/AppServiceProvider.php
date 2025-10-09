@@ -23,7 +23,7 @@ class AppServiceProvider extends ServiceProvider
     {
         // Remove data wrapping for API resources
         JsonResource::withoutWrapping();
-        
+
         // Use Bootstrap for pagination
         Paginator::useBootstrapFive();
     }

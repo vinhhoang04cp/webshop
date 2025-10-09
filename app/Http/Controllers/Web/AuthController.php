@@ -7,7 +7,6 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Http;
 
 class AuthController extends Controller
 {
@@ -128,10 +127,10 @@ class AuthController extends Controller
             $productsCount = \App\Models\Product::count();
             $ordersCount = \App\Models\Order::count();
             $usersCount = \App\Models\User::count();
-            
+
             // Tính tổng doanh thu từ orders
             $totalRevenue = \App\Models\Order::where('status', '!=', 'cancelled')->sum('total_amount');
-            
+
             // Lấy 5 orders gần nhất với user relationship
             $recentOrders = \App\Models\Order::with('user')
                 ->orderBy('order_date', 'desc')
@@ -156,7 +155,7 @@ class AuthController extends Controller
                 'usersCount' => 0,
                 'totalRevenue' => 0,
                 'recentOrders' => [],
-                'error' => 'Không thể tải dữ liệu dashboard: ' . $e->getMessage()
+                'error' => 'Không thể tải dữ liệu dashboard: '.$e->getMessage(),
             ]);
         }
     }

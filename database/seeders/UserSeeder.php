@@ -26,7 +26,7 @@ class UserSeeder extends Seeder
 
         // Gán role admin cho user
         $adminRole = \App\Models\Role::where('role_name', 'admin')->first();
-        if ($adminRole && !$adminUser->roles()->where('user_roles.role_id', $adminRole->role_id)->exists()) {
+        if ($adminRole && ! $adminUser->roles()->where('user_roles.role_id', $adminRole->role_id)->exists()) {
             $adminUser->roles()->attach($adminRole->role_id, ['assigned_at' => now()]);
         }
 
@@ -43,7 +43,7 @@ class UserSeeder extends Seeder
 
         // Gán role manager cho user
         $managerRole = \App\Models\Role::where('role_name', 'manager')->first();
-        if ($managerRole && !$managerUser->roles()->where('user_roles.role_id', $managerRole->role_id)->exists()) {
+        if ($managerRole && ! $managerUser->roles()->where('user_roles.role_id', $managerRole->role_id)->exists()) {
             $managerUser->roles()->attach($managerRole->role_id, ['assigned_at' => now()]);
         }
 
