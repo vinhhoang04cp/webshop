@@ -75,9 +75,9 @@
                             <h5 class="mb-0"><i class="fas fa-list me-2"></i>Danh sách danh mục</h5>
                         </div>
                         <div class="col-md-6 text-end">
-                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+                            <a href="{{ route('dashboard.categories.create') }}" class="btn btn-primary">
                                 <i class="fas fa-plus me-2"></i>Thêm danh mục
-                            </button>
+                            </a>
                         </div>
                     </div>
                     <div class="row mt-3">
@@ -129,12 +129,16 @@
                                             <td>{{ $category->name }}</td>
                                             <td class="text-muted">{{ $category->description ?: '-' }}</td>
                                             <td class="text-center">
-                                                <button class="btn btn-sm btn-outline-secondary" 
-                                                        data-bs-toggle="modal" 
-                                                        data-bs-target="#editCategoryModal{{ $category->category_id }}"
-                                                        title="Sửa">
+                                                <a href="{{ route('dashboard.categories.show', $category->category_id) }}" 
+                                                   class="btn btn-sm btn-outline-info"
+                                                   title="Xem">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="{{ route('dashboard.categories.edit', $category->category_id) }}" 
+                                                   class="btn btn-sm btn-outline-secondary"
+                                                   title="Sửa">
                                                     <i class="fas fa-edit"></i>
-                                                </button>
+                                                </a>
                                                 <button class="btn btn-sm btn-outline-danger" 
                                                         data-bs-toggle="modal" 
                                                         data-bs-target="#deleteCategoryModal{{ $category->category_id }}"
@@ -143,47 +147,6 @@
                                                 </button>
                                             </td>
                                         </tr>
-
-                                        <!-- Edit Modal for each category -->
-                                        <div class="modal fade" id="editCategoryModal{{ $category->category_id }}" tabindex="-1">
-                                            <div class="modal-dialog">
-                                                <div class="modal-content">
-                                                    <form method="POST" action="{{ route('dashboard.categories.update', $category->category_id) }}">
-                                                        @csrf
-                                                        @method('PUT')
-                                                        <div class="modal-header">
-                                                            <h5 class="modal-title">Sửa danh mục</h5>
-                                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                                        </div>
-                                                        <div class="modal-body">
-                                                            <div class="mb-3">
-                                                                <label for="editName{{ $category->category_id }}" class="form-label">Tên</label>
-                                                                <input type="text" 
-                                                                       class="form-control @error('name') is-invalid @enderror" 
-                                                                       id="editName{{ $category->category_id }}" 
-                                                                       name="name" 
-                                                                       value="{{ old('name', $category->name) }}" 
-                                                                       required 
-                                                                       maxlength="150">
-                                                                @error('name')
-                                                                    <div class="invalid-feedback">{{ $message }}</div>
-                                                                @enderror
-                                                            </div>
-                                                            <div class="mb-3">
-                                                                <label for="editDescription{{ $category->category_id }}" class="form-label">Mô tả</label>
-                                                                <textarea class="form-control" 
-                                                                          id="editDescription{{ $category->category_id }}" 
-                                                                          name="description">{{ old('description', $category->description) }}</textarea>
-                                                            </div>
-                                                        </div>
-                                                        <div class="modal-footer">
-                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                                                            <button type="submit" class="btn btn-primary">Cập nhật</button>
-                                                        </div>
-                                                    </form>
-                                                </div>
-                                            </div>
-                                        </div>
 
                                         <!-- Delete Modal for each category -->
                                         <div class="modal fade" id="deleteCategoryModal{{ $category->category_id }}" tabindex="-1">
@@ -232,49 +195,6 @@
                         </div>
                     </div>
                     @endif
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-            <!-- Add Category Modal -->
-            <div class="modal fade" id="addCategoryModal" tabindex="-1">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <form method="POST" action="{{ route('dashboard.categories.store') }}">
-                            @csrf
-                            <div class="modal-header">
-                                <h5 class="modal-title">Thêm danh mục</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="mb-3">
-                                    <label for="name" class="form-label">Tên</label>
-                                    <input type="text" 
-                                           class="form-control @error('name') is-invalid @enderror" 
-                                           id="name" 
-                                           name="name" 
-                                           value="{{ old('name') }}" 
-                                           required 
-                                           maxlength="150">
-                                    @error('name')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                <div class="mb-3">
-                                    <label for="description" class="form-label">Mô tả</label>
-                                    <textarea class="form-control" 
-                                              id="description" 
-                                              name="description">{{ old('description') }}</textarea>
-                                </div>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                                <button type="submit" class="btn btn-primary">Lưu</button>
-                            </div>
-                        </form>
-                    </div>
                 </div>
             </div>
         </div>

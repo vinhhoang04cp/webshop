@@ -42,6 +42,14 @@ class CategoryController extends Controller
     }
 
     /**
+     * Show the form for creating a new category.
+     */
+    public function create()
+    {
+        return view('dashboard.categories.create');
+    }
+
+    /**
      * Store a newly created category.
      */
     public function store(Request $request)
@@ -64,6 +72,34 @@ class CategoryController extends Controller
         } catch (\Exception $e) {
             return redirect()->route('dashboard.categories.index')
                 ->with('error', 'Lỗi khi tạo danh mục: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Display the specified category.
+     */
+    public function show($id)
+    {
+        try {
+            $category = Category::with('products')->findOrFail($id);
+            return view('dashboard.categories.show', compact('category'));
+        } catch (\Exception $e) {
+            return redirect()->route('dashboard.categories.index')
+                ->with('error', 'Lỗi khi tải chi tiết danh mục: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Show the form for editing the specified category.
+     */
+    public function edit($id)
+    {
+        try {
+            $category = Category::findOrFail($id);
+            return view('dashboard.categories.edit', compact('category'));
+        } catch (\Exception $e) {
+            return redirect()->route('dashboard.categories.index')
+                ->with('error', 'Lỗi khi tải form chỉnh sửa: ' . $e->getMessage());
         }
     }
 

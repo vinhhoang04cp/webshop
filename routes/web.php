@@ -24,8 +24,14 @@ Route::middleware(['auth', 'role:admin,manager'])->group(function () {
     // Categories CRUD (using Web Controller with Http facade to call API)
     Route::get('/dashboard/categories', [\App\Http\Controllers\Web\CategoryController::class, 'index'])
         ->name('dashboard.categories.index');
+    Route::get('/dashboard/categories/create', [\App\Http\Controllers\Web\CategoryController::class, 'create'])
+        ->name('dashboard.categories.create')->middleware('role:admin');
     Route::post('/dashboard/categories', [\App\Http\Controllers\Web\CategoryController::class, 'store'])
         ->name('dashboard.categories.store')->middleware('role:admin');
+    Route::get('/dashboard/categories/{id}', [\App\Http\Controllers\Web\CategoryController::class, 'show'])
+        ->name('dashboard.categories.show');
+    Route::get('/dashboard/categories/{id}/edit', [\App\Http\Controllers\Web\CategoryController::class, 'edit'])
+        ->name('dashboard.categories.edit')->middleware('role:admin');
     Route::put('/dashboard/categories/{id}', [\App\Http\Controllers\Web\CategoryController::class, 'update'])
         ->name('dashboard.categories.update')->middleware('role:admin');
     Route::delete('/dashboard/categories/{id}', [\App\Http\Controllers\Web\CategoryController::class, 'destroy'])
