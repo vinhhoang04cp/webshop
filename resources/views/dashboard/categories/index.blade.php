@@ -115,7 +115,7 @@
                                             {{ $error }}
                                         </td>
                                     </tr>
-                                @elseif(empty($paginatedCategories))
+                                @elseif($categories->isEmpty())
                                     <tr>
                                         <td colspan="4" class="text-center py-4 text-muted">
                                             <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
@@ -123,21 +123,21 @@
                                         </td>
                                     </tr>
                                 @else
-                                    @foreach($paginatedCategories as $category)
+                                    @foreach($categories as $category)
                                         <tr>
-                                            <td><strong>{{ $category['id'] }}</strong></td>
-                                            <td>{{ $category['name'] }}</td>
-                                            <td class="text-muted">{{ $category['description'] ?: '-' }}</td>
+                                            <td><strong>{{ $category->category_id }}</strong></td>
+                                            <td>{{ $category->name }}</td>
+                                            <td class="text-muted">{{ $category->description ?: '-' }}</td>
                                             <td class="text-center">
                                                 <button class="btn btn-sm btn-outline-secondary" 
                                                         data-bs-toggle="modal" 
-                                                        data-bs-target="#editCategoryModal{{ $category['id'] }}"
+                                                        data-bs-target="#editCategoryModal{{ $category->category_id }}"
                                                         title="Sửa">
                                                     <i class="fas fa-edit"></i>
                                                 </button>
                                                 <button class="btn btn-sm btn-outline-danger" 
                                                         data-bs-toggle="modal" 
-                                                        data-bs-target="#deleteCategoryModal{{ $category['id'] }}"
+                                                        data-bs-target="#deleteCategoryModal{{ $category->category_id }}"
                                                         title="Xóa">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
@@ -145,10 +145,10 @@
                                         </tr>
 
                                         <!-- Edit Modal for each category -->
-                                        <div class="modal fade" id="editCategoryModal{{ $category['id'] }}" tabindex="-1">
+                                        <div class="modal fade" id="editCategoryModal{{ $category->category_id }}" tabindex="-1">
                                             <div class="modal-dialog">
                                                 <div class="modal-content">
-                                                    <form method="POST" action="{{ route('dashboard.categories.update', $category['id']) }}">
+                                                    <form method="POST" action="{{ route('dashboard.categories.update', $category->category_id) }}">
                                                         @csrf
                                                         @method('PUT')
                                                         <div class="modal-header">
@@ -157,12 +157,12 @@
                                                         </div>
                                                         <div class="modal-body">
                                                             <div class="mb-3">
-                                                                <label for="editName{{ $category['id'] }}" class="form-label">Tên</label>
+                                                                <label for="editName{{ $category->category_id }}" class="form-label">Tên</label>
                                                                 <input type="text" 
                                                                        class="form-control @error('name') is-invalid @enderror" 
-                                                                       id="editName{{ $category['id'] }}" 
+                                                                       id="editName{{ $category->category_id }}" 
                                                                        name="name" 
-                                                                       value="{{ old('name', $category['name']) }}" 
+                                                                       value="{{ old('name', $category->name) }}" 
                                                                        required 
                                                                        maxlength="150">
                                                                 @error('name')
@@ -170,10 +170,10 @@
                                                                 @enderror
                                                             </div>
                                                             <div class="mb-3">
-                                                                <label for="editDescription{{ $category['id'] }}" class="form-label">Mô tả</label>
+                                                                <label for="editDescription{{ $category->category_id }}" class="form-label">Mô tả</label>
                                                                 <textarea class="form-control" 
-                                                                          id="editDescription{{ $category['id'] }}" 
-                                                                          name="description">{{ old('description', $category['description']) }}</textarea>
+                                                                          id="editDescription{{ $category->category_id }}" 
+                                                                          name="description">{{ old('description', $category->description) }}</textarea>
                                                             </div>
                                                         </div>
                                                         <div class="modal-footer">
@@ -186,10 +186,10 @@
                                         </div>
 
                                         <!-- Delete Modal for each category -->
-                                        <div class="modal fade" id="deleteCategoryModal{{ $category['id'] }}" tabindex="-1">
+                                        <div class="modal fade" id="deleteCategoryModal{{ $category->category_id }}" tabindex="-1">
                                             <div class="modal-dialog">
                                                 <div class="modal-content">
-                                                    <form method="POST" action="{{ route('dashboard.categories.destroy', $category['id']) }}">
+                                                    <form method="POST" action="{{ route('dashboard.categories.destroy', $category->category_id) }}">
                                                         @csrf
                                                         @method('DELETE')
                                                         <div class="modal-header">
@@ -197,7 +197,7 @@
                                                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                                         </div>
                                                         <div class="modal-body">
-                                                            <p>Bạn có chắc chắn muốn xóa danh mục <strong>{{ $category['name'] }}</strong>?</p>
+                                                            <p>Bạn có chắc chắn muốn xóa danh mục <strong>{{ $category->name }}</strong>?</p>
                                                         </div>
                                                         <div class="modal-footer">
                                                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
@@ -213,250 +213,22 @@
                         </table>
                     </div>
                     
-                    <!-- Detailed pagination info and controls -->
-                    @if(!empty($paginatedCategories) && isset($paginationInfo))
+                    <!-- Laravel Pagination -->
+                    @if($categories->hasPages())
                     <div class="border-top px-3 py-3">
-                        <!-- Pagination Info -->
                         <div class="d-flex justify-content-between align-items-center">
                             <div class="text-muted">
                                 <small>
-                                    Hiển thị {{ $paginationInfo['startItem'] }}-{{ $paginationInfo['endItem'] }} trong tổng số {{ $paginationInfo['totalItems'] }} danh mục
+                                    Hiển thị {{ $categories->firstItem() }}-{{ $categories->lastItem() }} 
+                                    trong tổng số {{ $categories->total() }} danh mục
                                     @if(request('search'))
                                         (tìm kiếm: "{{ request('search') }}")
                                     @endif
                                 </small>
                             </div>
-                            
-                            <!-- Pagination Controls -->
-                            @if($paginationInfo['totalPages'] > 1)
-                            <nav aria-label="Category pagination">
-                                <ul class="pagination pagination-sm mb-0">
-                                    <!-- Previous Button -->
-                                    <li class="page-item {{ $paginationInfo['currentPage'] <= 1 ? 'disabled' : '' }}">
-                                        <a class="page-link" href="{{ request()->fullUrlWithQuery(['page' => $paginationInfo['currentPage'] - 1]) }}" 
-                                           aria-label="Previous">
-                                            <span aria-hidden="true">&laquo;</span>
-                                        </a>
-                                    </li>
-                                    
-                                    <!-- Page Numbers -->
-                                    @php
-                                        $currentPage = $paginationInfo['currentPage'];
-                                        $totalPages = $paginationInfo['totalPages'];
-                                        $start = max(1, $currentPage - 2);
-                                        $end = min($totalPages, $currentPage + 2);
-                                        
-                                        // Ensure we show at least 5 pages if available
-                                        if ($end - $start < 4) {
-                                            if ($start == 1) {
-                                                $end = min($totalPages, $start + 4);
-                                            } else {
-                                                $start = max(1, $end - 4);
-                                            }
-                                        }
-                                    @endphp
-                                    
-                                    <!-- First page if not in range -->
-                                    @if($start > 1)
-                                        <li class="page-item">
-                                            <a class="page-link" href="{{ request()->fullUrlWithQuery(['page' => 1]) }}">1</a>
-                                        </li>
-                                        @if($start > 2)
-                                            <li class="page-item disabled">
-                                                <span class="page-link">...</span>
-                                            </li>
-                                        @endif
-                                    @endif
-                                    
-                                    <!-- Page range -->
-                                    @for($i = $start; $i <= $end; $i++)
-                                        <li class="page-item {{ $i == $currentPage ? 'active' : '' }}">
-                                            @if($i == $currentPage)
-                                                <span class="page-link">{{ $i }}</span>
-                                            @else
-                                                <a class="page-link" href="{{ request()->fullUrlWithQuery(['page' => $i]) }}">{{ $i }}</a>
-                                            @endif
-                                        </li>
-                                    @endfor
-                                    
-                                    <!-- Last page if not in range -->
-                                    @if($end < $totalPages)
-                                        @if($end < $totalPages - 1)
-                                            <li class="page-item disabled">
-                                                <span class="page-link">...</span>
-                                            </li>
-                                        @endif
-                                        <li class="page-item">
-                                            <a class="page-link" href="{{ request()->fullUrlWithQuery(['page' => $totalPages]) }}">{{ $totalPages }}</a>
-                                        </li>
-                                    @endif
-                                    
-                                    <!-- Next Button -->
-                                    <li class="page-item {{ $paginationInfo['currentPage'] >= $totalPages ? 'disabled' : '' }}">
-                                        <a class="page-link" href="{{ request()->fullUrlWithQuery(['page' => $paginationInfo['currentPage'] + 1]) }}" 
-                                           aria-label="Next">
-                                            <span aria-hidden="true">&raquo;</span>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </nav>
-                            @endif
-                        </div>
-                        
-                        <!-- Quick page navigation for large datasets -->
-                        @if($paginationInfo['totalPages'] > 10)
-                        <div class="mt-3 text-center">
-                            <small class="text-muted">
-                                Trang {{ $paginationInfo['currentPage'] }} / {{ $paginationInfo['totalPages'] }}
-                                | 
-                                <select class="form-select form-select-sm d-inline-block" style="width: auto;" 
-                                        onchange="window.location.href='{{ request()->fullUrlWithQuery(['page' => '']) }}' + this.value">
-                                    @for($i = 1; $i <= $paginationInfo['totalPages']; $i++)
-                                        <option value="{{ $i }}" {{ $i == $paginationInfo['currentPage'] ? 'selected' : '' }}>
-                                            Trang {{ $i }}
-                                        </option>
-                                    @endfor
-                                </select>
-                            </small>
-                        </div>
-                        @elseif($paginationInfo['totalPages'] > 1)
-                        <div class="mt-2 text-center">
-                            <small class="text-muted">
-                                Trang {{ $paginationInfo['currentPage'] }} / {{ $paginationInfo['totalPages'] }}
-                            </small>
-                        </div>
-                        @endif
-                        
-                        <!-- Items per page info -->
-                        @if($paginationInfo['totalItems'] > 10)
-                        <div class="mt-2 text-center">
-                            <small class="text-muted">
-                                {{ $paginationInfo['perPage'] }} danh mục mỗi trang
-                            </small>
-                        </div>
-                        @endif
-                    </div>
-                    @elseif(!empty($paginatedCategories))
-                    <!-- Fallback for old pagination format -->
-                    @php
-                        $perPage = 10;
-                        $totalItems = count($categories ?? []);
-                        $currentPage = request('page', 1);
-                        $totalPages = ceil($totalItems / $perPage);
-                        $startItem = ($currentPage - 1) * $perPage + 1;
-                        $endItem = min($currentPage * $perPage, $totalItems);
-                    @endphp
-                    
-                    <div class="border-top px-3 py-3">
-                        <!-- Pagination Info -->
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div class="text-muted">
-                                <small>
-                                    Hiển thị {{ $startItem }}-{{ $endItem }} trong tổng số {{ $totalItems }} danh mục
-                                    @if(request('search'))
-                                        (đã lọc từ {{ count($categories) }} kết quả)
-                                    @endif
-                                </small>
+                            <div>
+                                {{ $categories->appends(request()->query())->links('pagination::bootstrap-4') }}
                             </div>
-                            
-                            <!-- Pagination Controls -->
-                            @if($totalPages > 1)
-                            <nav aria-label="Category pagination">
-                                <ul class="pagination pagination-sm mb-0">
-                                    <!-- Previous Button -->
-                                    <li class="page-item {{ $currentPage <= 1 ? 'disabled' : '' }}">
-                                        <a class="page-link" href="{{ request()->fullUrlWithQuery(['page' => $currentPage - 1]) }}" 
-                                           aria-label="Previous">
-                                            <span aria-hidden="true">&laquo;</span>
-                                        </a>
-                                    </li>
-                                    
-                                    <!-- Page Numbers -->
-                                    @php
-                                        $start = max(1, $currentPage - 2);
-                                        $end = min($totalPages, $currentPage + 2);
-                                        
-                                        // Ensure we show at least 5 pages if available
-                                        if ($end - $start < 4) {
-                                            if ($start == 1) {
-                                                $end = min($totalPages, $start + 4);
-                                            } else {
-                                                $start = max(1, $end - 4);
-                                            }
-                                        }
-                                    @endphp
-                                    
-                                    <!-- First page if not in range -->
-                                    @if($start > 1)
-                                        <li class="page-item">
-                                            <a class="page-link" href="{{ request()->fullUrlWithQuery(['page' => 1]) }}">1</a>
-                                        </li>
-                                        @if($start > 2)
-                                            <li class="page-item disabled">
-                                                <span class="page-link">...</span>
-                                            </li>
-                                        @endif
-                                    @endif
-                                    
-                                    <!-- Page range -->
-                                    @for($i = $start; $i <= $end; $i++)
-                                        <li class="page-item {{ $i == $currentPage ? 'active' : '' }}">
-                                            @if($i == $currentPage)
-                                                <span class="page-link">{{ $i }}</span>
-                                            @else
-                                                <a class="page-link" href="{{ request()->fullUrlWithQuery(['page' => $i]) }}">{{ $i }}</a>
-                                            @endif
-                                        </li>
-                                    @endfor
-                                    
-                                    <!-- Last page if not in range -->
-                                    @if($end < $totalPages)
-                                        @if($end < $totalPages - 1)
-                                            <li class="page-item disabled">
-                                                <span class="page-link">...</span>
-                                            </li>
-                                        @endif
-                                        <li class="page-item">
-                                            <a class="page-link" href="{{ request()->fullUrlWithQuery(['page' => $totalPages]) }}">{{ $totalPages }}</a>
-                                        </li>
-                                    @endif
-                                    
-                                    <!-- Next Button -->
-                                    <li class="page-item {{ $currentPage >= $totalPages ? 'disabled' : '' }}">
-                                        <a class="page-link" href="{{ request()->fullUrlWithQuery(['page' => $currentPage + 1]) }}" 
-                                           aria-label="Next">
-                                            <span aria-hidden="true">&raquo;</span>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </nav>
-                            @endif
-                        </div>
-                        
-                        <!-- Quick page navigation -->
-                        @if($totalPages > 1)
-                        <div class="mt-3 text-center">
-                            <small class="text-muted">
-                                Trang {{ $currentPage }} / {{ $totalPages }}
-                                @if($totalPages > 10)
-                                    | 
-                                    <select class="form-select form-select-sm d-inline-block" style="width: auto;" 
-                                            onchange="window.location.href='{{ request()->fullUrlWithQuery(['page' => '']) }}' + this.value">
-                                        @for($i = 1; $i <= $totalPages; $i++)
-                                            <option value="{{ $i }}" {{ $i == $currentPage ? 'selected' : '' }}>
-                                                Trang {{ $i }}
-                                            </option>
-                                        @endfor
-                                    </select>
-                                @endif
-                            </small>
-                        </div>
-                        @endif
-                    </div>
-                    @else
-                    <div class="border-top px-3 py-3">
-                        <div class="text-muted text-center">
-                            <small>Không có danh mục nào để hiển thị</small>
                         </div>
                     </div>
                     @endif
