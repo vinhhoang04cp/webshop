@@ -18,7 +18,8 @@ class ProductController extends Controller
             $response = Http::get(url('/api/products'));
             
             if ($response->successful()) {
-                $products = $response->json();
+                $responseData = $response->json();
+                $products = $responseData['data']['data'] ?? [];
                 
                 // Nếu có search, filter dữ liệu
                 if ($request->has('search') && $request->search) {
@@ -37,7 +38,8 @@ class ProductController extends Controller
                 
                 // Lấy danh sách categories cho dropdown
                 $categoriesResponse = Http::get(url('/api/categories'));
-                $categories = $categoriesResponse->successful() ? $categoriesResponse->json() : [];
+                $categoriesData = $categoriesResponse->json();
+                $categories = $categoriesData['data']['data'] ?? [];
                 
                 return view('dashboard.products.index', compact(
                     'paginatedProducts', 
@@ -70,7 +72,8 @@ class ProductController extends Controller
         try {
             // Lấy danh sách categories cho dropdown
             $response = Http::get(url('/api/categories'));
-            $categories = $response->successful() ? $response->json() : [];
+            $responseData = $response->json();
+            $categories = $responseData['data']['data'] ?? [];
             
             return view('dashboard.products.create', compact('categories'));
         } catch (\Exception $e) {
@@ -132,7 +135,8 @@ class ProductController extends Controller
             $response = Http::get(url('/api/products/' . $id));
             
             if ($response->successful()) {
-                $product = $response->json();
+                $responseData = $response->json();
+                $product = $responseData['data'] ?? $responseData;
                 return view('dashboard.products.show', compact('product'));
             } else {
                 return redirect()->route('dashboard.products.index')
@@ -158,11 +162,13 @@ class ProductController extends Controller
                     ->with('error', 'Không tìm thấy sản phẩm');
             }
             
-            $product = $productResponse->json();
+            $productData = $productResponse->json();
+            $product = $productData['data'] ?? $productData;
             
             // Lấy danh sách categories
             $categoriesResponse = Http::get(url('/api/categories'));
-            $categories = $categoriesResponse->successful() ? $categoriesResponse->json() : [];
+            $categoriesData = $categoriesResponse->json();
+            $categories = $categoriesData['data']['data'] ?? [];
             
             return view('dashboard.products.edit', compact('product', 'categories'));
         } catch (\Exception $e) {
