@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
-use App\Models\User;
 use Illuminate\Http\Request;
 
 class OrderController extends Controller
@@ -24,7 +23,7 @@ class OrderController extends Controller
                 $query->where('order_id', 'LIKE', "%{$searchTerm}%")
                     ->orWhereHas('user', function ($q) use ($searchTerm) {
                         $q->where('name', 'LIKE', "%{$searchTerm}%")
-                          ->orWhere('email', 'LIKE', "%{$searchTerm}%");
+                            ->orWhere('email', 'LIKE', "%{$searchTerm}%");
                     });
             }
 
@@ -110,7 +109,7 @@ class OrderController extends Controller
             $order = Order::findOrFail($id);
 
             // Kiểm tra xem có thể chuyển đổi trạng thái không
-            if (!$order->canTransitionTo($request->status)) {
+            if (! $order->canTransitionTo($request->status)) {
                 return redirect()->route('dashboard.orders.edit', $id)
                     ->with('error', 'Không thể chuyển đổi trạng thái đơn hàng từ "'.$this->getStatusLabel($order->status).'" sang "'.$this->getStatusLabel($request->status).'"');
             }
@@ -138,7 +137,7 @@ class OrderController extends Controller
             $order = Order::findOrFail($id);
 
             // Chỉ cho phép xóa đơn hàng đã hủy hoặc đã giao
-            if (!in_array($order->status, [Order::STATUS_CANCELLED, Order::STATUS_DELIVERED])) {
+            if (! in_array($order->status, [Order::STATUS_CANCELLED, Order::STATUS_DELIVERED])) {
                 return redirect()->route('dashboard.orders.index')
                     ->with('error', 'Chỉ có thể xóa đơn hàng đã hủy hoặc đã giao!');
             }
@@ -168,7 +167,7 @@ class OrderController extends Controller
         ];
 
         $availableTransitions = Order::STATUS_TRANSITIONS[$currentStatus] ?? [];
-        
+
         $result = [];
         foreach ($availableTransitions as $status) {
             $result[$status] = $allStatuses[$status];

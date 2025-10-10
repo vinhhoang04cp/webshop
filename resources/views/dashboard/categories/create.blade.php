@@ -1,19 +1,19 @@
-@extends('layouts.app')
+@extends('layouts.app') <!-- Ke thua layout app -->
 
-@section('title', 'Thêm danh mục - WebShop Admin')
+@section('title', 'Thêm danh mục - WebShop Admin') <!-- Tieu de trang -->
 
-@section('content')
-<div class="container-fluid p-0">
-    <div class="row g-0">
+@section('content') <!-- bat dau noi dung chinh -->
+<div class="container-fluid p-0"> <!-- class container-fluid de chiem toan bo chieu ngang -->
+    <div class="row g-0"> <!-- g-0 de khong co khoang cach giua cac cot -->
         <!-- Sidebar -->
-        <div class="col-md-3 col-lg-2 dashboard-sidebar d-flex flex-column">
-            <div class="sidebar-header">
-                <h3><i class="fas fa-shield-alt"></i> WebShop</h3>
-                <small class="text-muted" style="color: #9ca3af !important;">Admin Panel</small>
-            </div>
+        <div class="col-md-3 col-lg-2 dashboard-sidebar d-flex flex-column"> <!-- col-md-3 de chiem 3/12 chieu ngang tren man hinh trung binh, col-lg-2 de chiem 2/12 tren man hinh lon -->
+            <div class="sidebar-header"> <!-- Header cua sidebar -->
+                <h3><i class="fas fa-shield-alt"></i> WebShop</h3> <!-- Icon va ten trang -->
+                <small class="text-muted" style="color: #9ca3af !important;">Admin Panel</small> <!-- Mo ta nho -->
+            </div> <!-- Ket thuc header cua sidebar -->
             
-            <nav class="nav flex-column sidebar-menu">
-                <a class="nav-link" href="{{ route('dashboard') }}">
+            <nav class="nav flex-column sidebar-menu"> <!-- Menu dieu huong -->
+                <a class="nav-link" href="{{ route('dashboard') }}">  
                     <i class="fas fa-tachometer-alt"></i> Dashboard
                 </a>
                 <a class="nav-link" href="{{ route('dashboard.products.index') }}">
