@@ -13,44 +13,23 @@
     width: 200%;
     height: 200%;
     background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="rgba(255,255,255,0.03)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
-    animation: grain 8s linear infinite;
     z-index: 0;
-}
-
-@keyframes grain {
-    0%, 100% { transform: translate(0, 0) }
-    10% { transform: translate(-5%, -5%) }
-    20% { transform: translate(-10%, 5%) }
-    30% { transform: translate(5%, -10%) }
-    40% { transform: translate(-5%, 15%) }
-    50% { transform: translate(-10%, 5%) }
-    60% { transform: translate(15%, 0%) }
-    70% { transform: translate(0%, 15%) }
-    80% { transform: translate(-15%, 10%) }
-    90% { transform: translate(10%, 5%) }
 }
 
 .auth-card {
     position: relative;
     z-index: 1;
-    transform: translateY(0);
-    transition: transform 0.3s ease;
 }
 
-.auth-card:hover {
-    transform: translateY(-5px);
-}
-
-/* Form Animations */
+/* Form Styles */
 .form-floating input:focus + label,
 .form-floating textarea:focus + label,
 .form-floating input:not(:placeholder-shown) + label,
 .form-floating textarea:not(:placeholder-shown) + label {
-    transform: scale(0.85) translateY(-0.5rem) translateX(0.15rem);
     color: #667eea;
 }
 
-/* Loading Animation */
+/* Loading Styles */
 .btn-loading {
     position: relative;
     color: transparent !important;
@@ -69,26 +48,14 @@
     border: 2px solid #ffffff;
     border-radius: 50%;
     border-right-color: transparent;
-    animation: button-loading-spinner 1s ease infinite;
-}
-
-@keyframes button-loading-spinner {
-    from {
-        transform: rotate(0turn);
-    }
-    to {
-        transform: rotate(1turn);
-    }
 }
 
 /* Dashboard Styles */
 .dashboard-sidebar {
-    transition: all 0.3s ease;
     box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
 }
 
 .nav-link {
-    transition: all 0.3s ease;
     border-left: 3px solid transparent;
 }
 
@@ -96,46 +63,15 @@
 .nav-link.active {
     border-left-color: #ffffff;
     background: rgba(255, 255, 255, 0.1);
-    transform: translateX(5px);
 }
 
-/* Card Hover Effects */
-.card {
-    transition: all 0.3s ease;
-}
-
-.card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-}
-
-/* Stats Cards Animation */
+/* Stats Cards Styles */
 .bg-primary, .bg-success, .bg-warning, .bg-info {
     position: relative;
     overflow: hidden;
 }
 
-.bg-primary::before,
-.bg-success::before,
-.bg-warning::before,
-.bg-info::before {
-    content: '';
-    position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
-    background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
-    transform: translateX(-100%);
-    transition: transform 0.6s ease;
-}
 
-.card:hover .bg-primary::before,
-.card:hover .bg-success::before,
-.card:hover .bg-warning::before,
-.card:hover .bg-info::before {
-    transform: translateX(100%);
-}
 
 /* Responsive Design */
 @media (max-width: 768px) {
@@ -151,7 +87,6 @@
         width: 250px;
         height: 100vh;
         z-index: 1000;
-        transition: left 0.3s ease;
     }
     
     .dashboard-sidebar.show {
@@ -165,31 +100,9 @@
 
 /* Utility Classes */
 .fade-in {
-    animation: fadeIn 0.5s ease-in;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    opacity: 1;
 }
 
 .slide-up {
-    animation: slideUp 0.6s ease-out;
-}
-
-@keyframes slideUp {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    opacity: 1;
 }

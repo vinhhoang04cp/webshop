@@ -53,7 +53,18 @@ Route::middleware(['auth', 'role:admin,manager'])->group(function () {
     Route::delete('/dashboard/products/{id}', [\App\Http\Controllers\Web\ProductController::class, 'destroy'])
         ->name('dashboard.products.destroy')->middleware('role:admin');
 
+    // Orders Management (using Web Controller)
+    Route::get('/dashboard/orders', [\App\Http\Controllers\Web\OrderController::class, 'index'])
+        ->name('dashboard.orders.index');
+    Route::get('/dashboard/orders/{id}', [\App\Http\Controllers\Web\OrderController::class, 'show'])
+        ->name('dashboard.orders.show');
+    Route::get('/dashboard/orders/{id}/edit', [\App\Http\Controllers\Web\OrderController::class, 'edit'])
+        ->name('dashboard.orders.edit');
+    Route::put('/dashboard/orders/{id}', [\App\Http\Controllers\Web\OrderController::class, 'update'])
+        ->name('dashboard.orders.update');
+    Route::delete('/dashboard/orders/{id}', [\App\Http\Controllers\Web\OrderController::class, 'destroy'])
+        ->name('dashboard.orders.destroy')->middleware('role:admin');
+
     // Các route dashboard khác sẽ được thêm vào đây
-    // Route::get('/dashboard/orders', [OrderController::class, 'index'])->name('dashboard.orders');
     // Route::get('/dashboard/users', [UserController::class, 'index'])->name('dashboard.users');
 });

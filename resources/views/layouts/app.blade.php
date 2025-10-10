@@ -304,14 +304,8 @@
             position: relative;
             overflow: hidden;
             box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
-            transition: all 0.3s ease;
             border: none;
             backdrop-filter: blur(10px);
-        }
-
-        .stat-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
         }
 
         .stat-card::before {
@@ -388,39 +382,6 @@
             box-shadow: 0 8px 32px rgba(67, 233, 123, 0.3);
         }
 
-        /* Enhanced card animations */
-        @keyframes statCardPulse {
-            0% {
-                box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
-            }
-            50% {
-                box-shadow: 0 12px 40px rgba(102, 126, 234, 0.5);
-            }
-            100% {
-                box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
-            }
-        }
-
-        .stat-card:nth-child(1) {
-            animation: statCardPulse 3s ease-in-out infinite;
-            animation-delay: 0s;
-        }
-
-        .stat-card:nth-child(2) {
-            animation: statCardPulse 3s ease-in-out infinite;
-            animation-delay: 0.5s;
-        }
-
-        .stat-card:nth-child(3) {
-            animation: statCardPulse 3s ease-in-out infinite;
-            animation-delay: 1s;
-        }
-
-        .stat-card:nth-child(4) {
-            animation: statCardPulse 3s ease-in-out infinite;
-            animation-delay: 1.5s;
-        }
-
         /* Recent orders table styling */
         .card .table-responsive {
             border-radius: 12px;
@@ -445,12 +406,6 @@
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
             background: white;
             overflow: hidden;
-            transition: all 0.3s ease;
-        }
-
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
         }
 
         .card-header {
@@ -470,13 +425,6 @@
             border-radius: 12px;
             background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
             border: 1px solid #e2e8f0;
-            transition: all 0.3s ease;
-        }
-
-        .card .d-flex.align-items-center:hover {
-            background: linear-gradient(135deg, #f1f5f9 0%, #ffffff 100%);
-            border-color: #cbd5e1;
-            transform: translateX(5px);
         }
 
         .card .flex-shrink-0 i {

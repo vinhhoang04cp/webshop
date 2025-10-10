@@ -22,7 +22,7 @@
                 <a class="nav-link active" href="{{ route('dashboard.categories.index') }}">
                     <i class="fas fa-tags"></i> Danh mục
                 </a>
-                <a class="nav-link" href="#orders">
+                <a class="nav-link" href="{{ route('dashboard.orders.index') }}">
                     <i class="fas fa-shopping-cart"></i> Đơn hàng
                 </a>
                 <a class="nav-link" href="#users">
