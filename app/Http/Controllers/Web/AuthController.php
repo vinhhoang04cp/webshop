@@ -19,6 +19,9 @@ class AuthController extends Controller
             // Neu da dang nhap thi chuyen huong ve dashboard
             return redirect()->route('dashboard');
         }
+        
+        // Neu chua dang nhap thi hien thi form login
+        return view('auth.login');
     }
 
     /**
@@ -26,7 +29,7 @@ class AuthController extends Controller
      */
     public function showRegister() // Ham hien thi form register
     {
-        if (Auth::check) {
+        if (Auth::check()) {
             return redirect()->route('dashboard'); // Neu da dang nhap thi chuyen huong ve dashboard
         } else {
             return view('auth.register'); // Neu chua dang nhap thi hien thi form register
