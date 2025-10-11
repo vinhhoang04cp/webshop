@@ -95,4 +95,100 @@ class User extends Authenticatable
     {
         return $this->isAdmin() || $this->isManager();
     }
+
+    /**
+     * Kiểm tra user có quyền cụ thể
+     */
+    public function hasPermission(string $permission): bool
+    {
+        // Admin có tất cả quyền
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        // Định nghĩa các quyền cho từng role
+        $permissions = [
+            'manager' => [
+                'view_products',
+                'create_product',
+                'edit_product',
+                'view_orders',
+                'edit_order',
+                'view_categories',
+                'create_category',
+                'edit_category',
+                'view_reports',
+            ],
+            'user' => [
+                'view_products',
+                'create_order',
+                'view_own_orders',
+            ]
+        ];
+
+        // Kiểm tra quyền dựa trên role của user
+        foreach ($this->roles as $role) {
+            if (isset($permissions[$role->role_name]) && 
+                in_array($permission, $permissions[$role->role_name])) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Kiểm tra user có thể thực hiện hành động trên resource
+     */
+    public function canManage(string $resource): bool
+    {
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        $manageableResources = [
+            'manager' => ['products', 'categories', 'orders', 'users'],
+            'user' => ['own_orders', 'cart']
+        ];
+
+        foreach ($this->roles as $role) {
+            if (isset($manageableResources[$role->role_name]) && 
+                in_array($resource, $manageableResources[$role->role_name])) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Lấy tất cả quyền của user
+     */
+    public function getAllPermissions(): array
+    {
+        if ($this->isAdmin()) {
+            return ['*']; // Admin có tất cả quyền
+        }
+
+        $allPermissions = [];
+        $permissions = [
+            'manager' => [
+                'view_products', 'create_product', 'edit_product', 'delete_product',
+                'view_orders', 'edit_order', 'delete_order',
+                'view_categories', 'create_category', 'edit_category', 'delete_category',
+                'view_reports', 'view_users'
+            ],
+            'user' => [
+                'view_products', 'create_order', 'view_own_orders', 'edit_own_profile'
+            ]
+        ];
+
+        foreach ($this->roles as $role) {
+            if (isset($permissions[$role->role_name])) {
+                $allPermissions = array_merge($allPermissions, $permissions[$role->role_name]);
+            }
+        }
+
+        return array_unique($allPermissions);
+    }
 }
