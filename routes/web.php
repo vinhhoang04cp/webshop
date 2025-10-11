@@ -24,15 +24,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [AuthController::class, 'dashboard'])->name('dashboard')
         ->middleware('role:dashboard');
 
-    // Categories CRUD - cần quyền manager trở lên
-    Route::middleware('role:manager')->group(function () {
-        Route::get('/dashboard/categories', [\App\Http\Controllers\Web\CategoryController::class, 'index'])
-            ->name('dashboard.categories.index');
-        Route::get('/dashboard/categories/{id}', [\App\Http\Controllers\Web\CategoryController::class, 'show'])
-            ->name('dashboard.categories.show');
-    });
-
-    // Categories create/edit/delete - chỉ admin
+    // Categories create/edit/delete - chỉ admin (PHẢI ĐẶT TRƯỚC {id})
     Route::middleware('role:admin')->group(function () {
         Route::get('/dashboard/categories/create', [\App\Http\Controllers\Web\CategoryController::class, 'create'])
             ->name('dashboard.categories.create');
@@ -46,12 +38,18 @@ Route::middleware(['auth'])->group(function () {
             ->name('dashboard.categories.destroy');
     });
 
+    // Categories CRUD - cần quyền manager trở lên (ĐẶT SAU create)
+    Route::middleware('role:manager')->group(function () {
+        Route::get('/dashboard/categories', [\App\Http\Controllers\Web\CategoryController::class, 'index'])
+            ->name('dashboard.categories.index');
+        Route::get('/dashboard/categories/{id}', [\App\Http\Controllers\Web\CategoryController::class, 'show'])
+            ->name('dashboard.categories.show');
+    });
+
     // Products CRUD - cần quyền manager trở lên
     Route::middleware('role:manager')->group(function () {
         Route::get('/dashboard/products', [\App\Http\Controllers\Web\ProductController::class, 'index'])
             ->name('dashboard.products.index');
-        Route::get('/dashboard/products/{id}', [\App\Http\Controllers\Web\ProductController::class, 'show'])
-            ->name('dashboard.products.show');
     });
 
     // Products create/edit/delete - chỉ admin
@@ -66,6 +64,12 @@ Route::middleware(['auth'])->group(function () {
             ->name('dashboard.products.update');
         Route::delete('/dashboard/products/{id}', [\App\Http\Controllers\Web\ProductController::class, 'destroy'])
             ->name('dashboard.products.destroy');
+    });
+
+    // Products show - manager có thể xem
+    Route::middleware('role:manager')->group(function () {
+        Route::get('/dashboard/products/{id}', [\App\Http\Controllers\Web\ProductController::class, 'show'])
+            ->name('dashboard.products.show');
     });
 
     // Orders Management - cần quyền manager trở lên
