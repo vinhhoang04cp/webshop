@@ -25,12 +25,11 @@
                 <a class="nav-link" href="{{ route('dashboard.orders.index') }}">
                     <i class="fas fa-shopping-cart"></i> Đơn hàng
                 </a>
-                <a class="nav-link" href="#users">
+                @if(auth()->user()->isAdmin())
+                <a class="nav-link" href="{{ route('dashboard.users.index') }}">
                     <i class="fas fa-users"></i> Người dùng
                 </a>
-                <a class="nav-link" href="#reports">
-                    <i class="fas fa-chart-bar"></i> Báo cáo
-                </a>
+                @endif
             </nav>
             
             <div class="user-info mt-auto">

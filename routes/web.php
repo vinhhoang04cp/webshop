@@ -91,6 +91,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/users/{user}', [UserManagementController::class, 'show'])->name('users.show');
         Route::get('/users/{user}/edit', [UserManagementController::class, 'edit'])->name('users.edit');
         Route::put('/users/{user}', [UserManagementController::class, 'update'])->name('users.update');
+        Route::delete('/users/{user}', [UserManagementController::class, 'destroy'])->name('users.destroy');
         
         // Role Assignment
         Route::post('/users/{user}/assign-role', [UserManagementController::class, 'assignRole'])->name('users.assign-role');

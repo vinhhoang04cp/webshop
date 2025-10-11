@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Quản lý Users')
+@section('title', 'Quản lý người dùng - WebShop Admin')
 
 @section('content')
 <div class="container-fluid p-0">
@@ -27,18 +27,14 @@
                 </a>
                 @if(Auth::user()->isAdmin())
                 <a class="nav-link active" href="{{ route('dashboard.users.index') }}">
-                    <i class="fas fa-users"></i> Quản lý Users
+                    <i class="fas fa-users"></i> Người dùng
                 </a>
                 @endif
             </nav>
             
             <div class="user-info mt-auto">
-                <div class="user-name">{{ Auth::user()->name }}</div>
-                <div class="user-role">
-                    @foreach(Auth::user()->roles as $role)
-                        {{ $role->role_display_name }}{{ !$loop->last ? ', ' : '' }}
-                    @endforeach
-                </div>
+                <div class="user-name">{{ auth()->user()->name }}</div>
+                <div class="user-role">{{ auth()->user()->hasRole('admin') ? 'Administrator' : 'Manager' }}</div>
                 <form method="POST" action="{{ route('logout') }}" class="mt-3">
                     @csrf
                     <button type="submit" class="btn btn-outline-light btn-sm w-100">
@@ -50,51 +46,76 @@
 
         <!-- Main Content -->
         <div class="col-md-9 col-lg-10 dashboard-content">
-            <!-- Header -->
             <div class="dashboard-header">
                 <div>
-                    <h2>Quản lý Users</h2>
+                    <h2>Quản lý người dùng</h2>
                     <p class="text-muted mb-0">Quản lý người dùng và phân quyền</p>
                 </div>
             </div>
 
-            @if(session('success'))
+            @if (session('success'))
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    {{ session('success') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             @endif
 
-            @if(session('error'))
+            @if (session('error'))
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    {{ session('error') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    <i class="fas fa-exclamation-circle me-2"></i>{{ session('error') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             @endif
 
             <div class="card">
                 <div class="card-header">
-                    <h5 class="m-0"><i class="fas fa-users me-2"></i>Danh sách Users</h5>
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h5 class="mb-0"><i class="fas fa-list me-2"></i>Danh sách người dùng</h5>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <form method="GET" action="{{ route('dashboard.users.index') }}" class="search-box">
+                                <input name="search" class="form-control form-control-sm" 
+                                       placeholder="Tìm kiếm theo tên, email..." 
+                                       value="{{ request('search') }}">
+                                <button type="submit" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-search"></i> Tìm
+                                </button>
+                                <a href="{{ route('dashboard.users.index') }}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-times"></i> Xóa
+                                </a>
+                            </form>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-0">
                     <div class="table-responsive">
-                        <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
-                            <thead>
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
                                 <tr>
-                                    <th>ID</th>
+                                    <th class="ps-4">ID</th>
                                     <th>Tên</th>
                                     <th>Email</th>
                                     <th>Số điện thoại</th>
                                     <th>Roles</th>
                                     <th>Ngày tạo</th>
-                                    <th>Hành động</th>
+                                    <th class="text-center">Thao tác</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($users as $user)
+                                @forelse($users as $user)
                                 <tr>
-                                    <td>{{ $user->id }}</td>
-                                    <td>{{ $user->name }}</td>
+                                    <td class="ps-4">#{{ $user->id }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-circle me-2">
+                                                {{ strtoupper(substr($user->name, 0, 1)) }}
+                                            </div>
+                                            <strong>{{ $user->name }}</strong>
+                                        </div>
+                                    </td>
                                     <td>{{ $user->email }}</td>
                                     <td>{{ $user->phone ?? 'Chưa có' }}</td>
                                     <td>
@@ -107,29 +128,91 @@
                                         @endif
                                     </td>
                                     <td>{{ $user->created_at->format('d/m/Y H:i') }}</td>
-                                    <td>
-                                        <a href="{{ route('dashboard.users.show', $user->id) }}" class="btn btn-info btn-sm">
-                                            <i class="fas fa-eye"></i> Xem
-                                        </a>
-                                        @if(Auth::user()->isAdmin())
-                                        <a href="{{ route('dashboard.users.edit', $user->id) }}" class="btn btn-warning btn-sm">
-                                            <i class="fas fa-edit"></i> Sửa quyền
-                                        </a>
-                                        @endif
+                                    <td class="text-center">
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ route('dashboard.users.show', $user->id) }}" 
+                                               class="btn btn-sm btn-outline-info" 
+                                               title="Xem chi tiết">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            @if(Auth::user()->isAdmin())
+                                            <a href="{{ route('dashboard.users.edit', $user->id) }}" 
+                                               class="btn btn-sm btn-outline-warning" 
+                                               title="Sửa quyền">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            @if($user->id != Auth::user()->id)
+                                            <button type="button" 
+                                                    class="btn btn-sm btn-outline-danger" 
+                                                    title="Xóa người dùng"
+                                                    onclick="confirmDelete({{ $user->id }}, '{{ $user->name }}')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                            @endif
+                                            @endif
+                                        </div>
                                     </td>
                                 </tr>
-                                @endforeach
+                                @empty
+                                <tr>
+                                    <td colspan="7" class="text-center py-4 text-muted">
+                                        <i class="fas fa-users fa-3x mb-3 d-block"></i>
+                                        Không tìm thấy người dùng nào
+                                    </td>
+                                </tr>
+                                @endforelse
                             </tbody>
                         </table>
                     </div>
 
-                    <!-- Pagination -->
-                    <div class="d-flex justify-content-center">
+                    <!-- Hidden delete forms -->
+                    @foreach($users as $user)
+                        @if($user->id != Auth::user()->id)
+                        <form id="delete-form-{{ $user->id }}" 
+                              action="{{ route('dashboard.users.destroy', $user->id) }}" 
+                              method="POST" 
+                              class="d-none">
+                            @csrf
+                            @method('DELETE')
+                        </form>
+                        @endif
+                    @endforeach
+                </div>
+                @if($users->hasPages())
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="text-muted">
+                            Hiển thị {{ $users->firstItem() }} - {{ $users->lastItem() }} trong tổng số {{ $users->total() }} người dùng
+                        </div>
                         {{ $users->links() }}
                     </div>
                 </div>
+                @endif
             </div>
         </div>
     </div>
 </div>
+
+<style>
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 16px;
+}
+</style>
+
+<script>
+function confirmDelete(userId, userName) {
+    if (confirm(`Bạn có chắc chắn muốn xóa người dùng "${userName}"?\n\nHành động này không thể hoàn tác!`)) {
+        document.getElementById('delete-form-' + userId).submit();
+    }
+}
+</script>
 @endsection

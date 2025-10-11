@@ -22,12 +22,15 @@
                 <a class="nav-link" href="{{ route('dashboard.categories.index') }}"> <!-- Link den route dashboard.categories.index -->
                     <i class="fas fa-tags"></i> Danh mục
                 </a>
-                <a class="nav-link" href="{{ route('dashboard.orders.index') }}"> <!-- Link den route dashboard.orders.index -->
+                                <a class="nav-link" href="{{ route('dashboard.orders.index') }}">
                     <i class="fas fa-shopping-cart"></i> Đơn hàng
                 </a>
-                <a class="nav-link" href="{{ route('dashboard.users.index') }}"> <!-- Link den route dashboard.users.index -->
-                    <i class="fas fa-users"></i> Người dùng <!-- Link den route dashboard.users.index -->
+                @if(auth()->user()->isAdmin())
+                <a class="nav-link" href="{{ route('dashboard.users.index') }}">
+                    <i class="fas fa-users"></i> Người dùng
                 </a>
+                @endif
+            </nav>
                 <a class="nav-link" href="#reports">
                     <i class="fas fa-chart-bar"></i> Báo cáo
                 </a>

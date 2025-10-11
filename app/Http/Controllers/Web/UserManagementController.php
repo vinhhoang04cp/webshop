@@ -15,9 +15,21 @@ class UserManagementController extends Controller
     /**
      * Hiển thị danh sách users
      */
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::with('roles')->paginate(15);
+        $query = User::with('roles');
+
+        // Tìm kiếm theo tên hoặc email
+        if ($request->has('search') && $request->search) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        $users = $query->orderBy('created_at', 'desc')->paginate(15);
+        
         return view('dashboard.users.index', compact('users'));
     }
 
@@ -120,6 +132,36 @@ class UserManagementController extends Controller
         $userRole->delete();
 
         return back()->with('success', "Đã gỡ role {$role->role_display_name} khỏi user {$user->name}!");
+    }
+
+    /**
+     * Xóa user
+     */
+    public function destroy(User $user)
+    {
+        // Không cho phép xóa chính mình
+        if ($user->id === Auth::id()) {
+            return back()->with('error', 'Bạn không thể xóa tài khoản của chính mình!');
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // Xóa các roles của user
+            UserRole::where('user_id', $user->id)->delete();
+
+            // Xóa user (các quan hệ khác sẽ được xử lý bởi foreign key constraints)
+            $userName = $user->name;
+            $user->delete();
+
+            DB::commit();
+
+            return redirect()->route('dashboard.users.index')
+                           ->with('success', "Đã xóa người dùng {$userName} thành công!");
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Có lỗi xảy ra khi xóa người dùng: ' . $e->getMessage());
+        }
     }
 
     /**
