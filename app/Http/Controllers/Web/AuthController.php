@@ -118,8 +118,8 @@ class AuthController extends Controller
         if (! $user->hasRole('admin') && ! $user->hasRole('manager')) { // Neu user khong co role admin va manager
             Auth::logout(); // Dang xuat user
 
-            return redirect()->route('login')->withErrors([
-                'email' => 'Bạn không có quyền truy cập.',
+            return redirect()->route('login')->withErrors([ // Chuyen huong ve trang login voi loi
+                'email' => 'Bạn không có quyền truy cập.', // Thong bao loi
             ]);
         }
 
@@ -130,7 +130,7 @@ class AuthController extends Controller
             $ordersCount = \App\Models\Order::count(); // $ordersCount dem so luong orders trong bang orders
             $usersCount = \App\Models\User::count(); // $usersCount dem so luong users trong bang users
 
-            // Tính tổng doanh thu từ orders
+            // $totalRevenue tinh tong doanh thu tu cac orders khong bi huy
             $totalRevenue = \App\Models\Order::where('status', '!=', 'cancelled')->sum('total_amount');
 
             // Lấy 5 orders gần nhất với user relationship

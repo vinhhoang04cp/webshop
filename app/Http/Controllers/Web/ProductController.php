@@ -12,36 +12,36 @@ class ProductController extends Controller
     /**
      * Display a listing of products for admin UI.
      */
-    public function index(Request $request)
+    public function index(Request $request) //Request $request de lay du lieu tu Http request
     {
         try {
-            // Tạo query builder cho products với relationship category
+            // $query de lay products voi relationship category
             $query = Product::with('category');
 
-            // Nếu có search, filter dữ liệu
-            if ($request->has('search') && $request->search) {
-                $searchTerm = $request->search;
-                $query->where(function ($q) use ($searchTerm) {
-                    $q->where('name', 'like', '%'.$searchTerm.'%')
-                        ->orWhere('description', 'like', '%'.$searchTerm.'%');
+            // Search
+            if ($request->has('search') && $request->search) { //$request->has('search') kiem tra xem co tham so search trong request khong, && $request->search kiem tra xem tham so search co gia tri khong
+                $searchTerm = $request->search; // Lay gia tri search tu request
+                $query->where(function ($q) use ($searchTerm) { // Su dung where de loc products theo name hoac description
+                    $q->where('name', 'like', '%'.$searchTerm.'%') // Loc theo name
+                        ->orWhere('description', 'like', '%'.$searchTerm.'%'); // Hoac loc theo description
                 });
             }
 
             // Pagination
-            $perPage = 12;
-            $products = $query->paginate($perPage);
+            $perPage = 12; // So luong products tren moi trang
+            $products = $query->paginate($perPage); // $query->paginate de phan trang      
 
-            // Lấy tất cả products cho search (nếu cần)
+            // allProducts de lay tat ca products khong phan trang
             $allProducts = Product::all();
 
-            // Lấy danh sách categories cho dropdown
+            // categories de lay tat ca categories
             $categories = Category::all();
 
-            return view('dashboard.products.index', [
-                'paginatedProducts' => $products->items(),
-                'products' => $allProducts,
-                'categories' => $categories,
-                'pagination' => $products,
+            return view('dashboard.products.index', [ // Truyen du lieu sang view
+                'paginatedProducts' => $products->items(), //'paginatedProducts' chi chua products tren trang hien tai
+                'products' => $allProducts, // 'products' chua tat ca products
+                'categories' => $categories, // 'categories' chua tat ca categories
+                'pagination' => $products, // 'pagination' chua thong tin phan trang (tong so trang, trang hien tai, so luong tren moi trang, v.v.)
             ]);
 
         } catch (\Exception $e) {

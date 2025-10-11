@@ -29,14 +29,6 @@
                 <a class="nav-link active" href="{{ route('dashboard.users.index') }}">
                     <i class="fas fa-users"></i> Quản lý Users
                 </a>
-                <a class="nav-link" href="{{ route('dashboard.roles.index') }}">
-                    <i class="fas fa-user-shield"></i> Quản lý Roles
-                </a>
-                @endif
-                @if(Auth::user()->canAccessDashboard())
-                <a class="nav-link" href="{{ route('dashboard.permissions') }}">
-                    <i class="fas fa-lock"></i> Quyền & Thống kê
-                </a>
                 @endif
             </nav>
             

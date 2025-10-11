@@ -13,20 +13,20 @@
             </div>
             
             <nav class="nav flex-column sidebar-menu">
-                <a class="nav-link" href="{{ route('dashboard') }}">
+                <a class="nav-link" href="{{ route('dashboard') }}"> <!-- Link den route dashboard -->
                     <i class="fas fa-tachometer-alt"></i> Dashboard
                 </a>
-                <a class="nav-link active" href="{{ route('dashboard.products.index') }}">
+                <a class="nav-link active" href="{{ route('dashboard.products.index') }}"> <!-- Link den route dashboard.products.index -->
                     <i class="fas fa-box"></i> Sản phẩm
                 </a>
-                <a class="nav-link" href="{{ route('dashboard.categories.index') }}">
+                <a class="nav-link" href="{{ route('dashboard.categories.index') }}"> <!-- Link den route dashboard.categories.index -->
                     <i class="fas fa-tags"></i> Danh mục
                 </a>
-                <a class="nav-link" href="{{ route('dashboard.orders.index') }}">
+                <a class="nav-link" href="{{ route('dashboard.orders.index') }}"> <!-- Link den route dashboard.orders.index -->
                     <i class="fas fa-shopping-cart"></i> Đơn hàng
                 </a>
-                <a class="nav-link" href="#users">
-                    <i class="fas fa-users"></i> Người dùng
+                <a class="nav-link" href="{{ route('dashboard.users.index') }}"> <!-- Link den route dashboard.users.index -->
+                    <i class="fas fa-users"></i> Người dùng <!-- Link den route dashboard.users.index -->
                 </a>
                 <a class="nav-link" href="#reports">
                     <i class="fas fa-chart-bar"></i> Báo cáo
@@ -34,9 +34,7 @@
             </nav>
             
             <div class="user-info mt-auto">
-                <div class="user-name">{{ auth()->user()->name }}</div>
-                <div class="user-role">{{ auth()->user()->hasRole('admin') ? 'Administrator' : 'Manager' }}</div>
-                <form method="POST" action="{{ route('logout') }}" class="mt-3">
+                <form method="POST" action="{{ route('logout') }}" class="mt-3"> <!-- Form de dang xuat -->
                     @csrf
                     <button type="submit" class="btn btn-outline-light btn-sm w-100">
                         <i class="fas fa-sign-out-alt me-2"></i> Đăng xuất
