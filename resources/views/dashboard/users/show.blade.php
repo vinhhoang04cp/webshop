@@ -90,7 +90,6 @@
                             <div class="row mb-3">
                                 <div class="col-md-12 text-center mb-3">
                                     <div class="avatar-circle-large mx-auto">
-                                        {{ strtoupper(substr($user->name, 0, 1)) }}
                                     </div>
                                     <h3 class="mt-3">{{ $user->name }}</h3>
                                     <p class="text-muted">ID: #{{ $user->id }}</p>
