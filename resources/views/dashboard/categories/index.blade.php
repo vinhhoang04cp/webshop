@@ -1,9 +1,9 @@
-@extends('layouts.app')
-@section('title', 'Danh mục - WebShop Admin')
-@section('content')
+@extends('layouts.app') {{-- Ke ế thừa từ layout chính --}}
+@section('title', 'Danh mục - WebShop Admin') {{-- Tiêu đề trang --}}
+@section('content') {{-- Nội dung chính --}}
 <div class="container-fluid p-0">
     <div class="row g-0">
-        @include('components.sidebar')
+        @include('components.sidebar') {{-- Thanh điều hướng bên --}}
         <div class="col-md-9 col-lg-10 dashboard-content">
             <div class="dashboard-header">
                 <div>
@@ -11,7 +11,7 @@
                     <p class="text-muted mb-0">Quản lý danh mục sản phẩm</p>
                 </div>
             </div>
-            @include('components.alerts')
+            @include('components.alerts') {{-- Hiển thị thông báo --}}
             <div class="card">
                 <div class="card-header">
                     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -36,16 +36,16 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @if(isset($error))
-                                    <tr><td colspan="4" class="text-center py-4 text-danger"><i class="fas fa-exclamation-triangle fa-2x mb-2 d-block"></i>{{ $error }}</td></tr>
+                                @if(isset($error)) {{-- Neu co loi xay ra --}}
+                                    <tr><td colspan="4" class="text-center py-4 text-danger"><i class="fas fa-exclamation-triangle fa-2x mb-2 d-block"></i>{{ $error }}</td></tr> {{-- Hien thi loi --}}
                                 @elseif($categories->isEmpty())
                                     <tr><td colspan="4" class="text-center py-4 text-muted"><i class="fas fa-inbox fa-2x mb-2 d-block"></i>Không có danh mục nào</td></tr>
                                 @else
-                                    @foreach($categories as $category)
+                                    @foreach($categories as $category) {{-- Vong lap qua moi danh muc, category --}}
                                         <tr>
-                                            <td><strong>{{ $category->category_id }}</strong></td>
-                                            <td>{{ $category->name }}</td>
-                                            <td class="text-muted">{{ $category->description ?: '-' }}</td>
+                                            <td><strong>{{ $category->category_id }}</strong></td> {{-- $category->id query tu csdl --}}
+                                            <td>{{ $category->name }}</td> {{-- $category->name query tu csdl --}}
+                                            <td class="text-muted">{{ $category->description ?: '-' }}</td> {{-- $category->description query tu csdl --}}
                                             <td class="text-center">
                                                 <a href="{{ route('dashboard.categories.show', $category->category_id) }}" class="btn btn-sm btn-outline-info" title="Xem"><i class="fas fa-eye"></i></a>
                                                 <a href="{{ route('dashboard.categories.edit', $category->category_id) }}" class="btn btn-sm btn-outline-secondary" title="Sửa"><i class="fas fa-edit"></i></a>
@@ -56,14 +56,14 @@
                                             <div class="modal-dialog">
                                                 <div class="modal-content">
                                                     <form method="POST" action="{{ route('dashboard.categories.destroy', $category->category_id) }}">
-                                                        @csrf
-                                                        @method('DELETE')
+                                                        @csrf {{-- Bao ve CSRF --}}
+                                                        @method('DELETE') 
                                                         <div class="modal-header">
-                                                            <h5 class="modal-title">Xóa danh mục</h5>
+                                                            <h5 class="modal-title">Xóa danh mục</h5> {{-- Tieu de modal --}}
                                                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                                         </div>
                                                         <div class="modal-body">
-                                                            <p>Xóa danh mục <strong>{{ $category->name }}</strong>?</p>
+                                                            <p>Xóa danh mục <strong>{{ $category->name }}</strong>?</p> {{-- Hien thi ten danh muc can xoa --}}
                                                         </div>
                                                         <div class="modal-footer">
                                                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>

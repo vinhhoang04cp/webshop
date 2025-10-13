@@ -33,8 +33,6 @@
             </nav>
             
             <div class="user-info mt-auto">
-                <div class="user-name">{{ auth()->user()->name }}</div>
-                <div class="user-role">{{ auth()->user()->hasRole('admin') ? 'Administrator' : 'Manager' }}</div>
                 <form method="POST" action="{{ route('logout') }}" class="mt-3">
                     @csrf
                     <button type="submit" class="btn btn-outline-light btn-sm w-100">
@@ -49,13 +47,13 @@
             <div class="dashboard-header">
                 <div>
                     <h2>Chi tiết danh mục</h2>
-                    <p class="text-muted mb-0">Thông tin chi tiết về "{{ $category->name }}"</p>
+                    <p class="text-muted mb-0">Thông tin chi tiết về "{{ $category->name }}"</p> {{-- $category duoc truyen tu controller --}}
                 </div>
             </div>
 
             @if (session('success'))
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
+                    <i class="fas fa-check-circle me-2"></i>{{ session('success') }} {{-- Hiển thị thông báo thành công --}}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             @endif
