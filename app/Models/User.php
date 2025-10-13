@@ -123,12 +123,12 @@ class User extends Authenticatable
                 'view_products',
                 'create_order',
                 'view_own_orders',
-            ]
+            ],
         ];
 
         // Kiểm tra quyền dựa trên role của user
         foreach ($this->roles as $role) {
-            if (isset($permissions[$role->role_name]) && 
+            if (isset($permissions[$role->role_name]) &&
                 in_array($permission, $permissions[$role->role_name])) {
                 return true;
             }
@@ -148,11 +148,11 @@ class User extends Authenticatable
 
         $manageableResources = [
             'manager' => ['products', 'categories', 'orders', 'users'],
-            'user' => ['own_orders', 'cart']
+            'user' => ['own_orders', 'cart'],
         ];
 
         foreach ($this->roles as $role) {
-            if (isset($manageableResources[$role->role_name]) && 
+            if (isset($manageableResources[$role->role_name]) &&
                 in_array($resource, $manageableResources[$role->role_name])) {
                 return true;
             }
@@ -176,11 +176,11 @@ class User extends Authenticatable
                 'view_products', 'create_product', 'edit_product', 'delete_product',
                 'view_orders', 'edit_order', 'delete_order',
                 'view_categories', 'create_category', 'edit_category', 'delete_category',
-                'view_reports', 'view_users'
+                'view_reports', 'view_users',
             ],
             'user' => [
-                'view_products', 'create_order', 'view_own_orders', 'edit_own_profile'
-            ]
+                'view_products', 'create_order', 'view_own_orders', 'edit_own_profile',
+            ],
         ];
 
         foreach ($this->roles as $role) {

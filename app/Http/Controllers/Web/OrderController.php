@@ -156,14 +156,14 @@ class OrderController extends Controller
     /**
      * Get available statuses for transition
      */
-    private function getAvailableStatuses($currentStatus)
+    private function getAvailableStatuses($currentStatus) // $currentStatus lay tu bang orders
     {
-        $allStatuses = [
-            Order::STATUS_PENDING => 'Chờ xử lý',
-            Order::STATUS_PROCESSING => 'Đang xử lý',
-            Order::STATUS_SHIPPED => 'Đã gửi hàng',
-            Order::STATUS_DELIVERED => 'Đã giao hàng',
-            Order::STATUS_CANCELLED => 'Đã hủy',
+        $allStatuses = [ // khoi tao mang allStatuses
+            Order::STATUS_PENDING => 'Chờ xử lý', // key la trang thai, value la ten trang thai
+            Order::STATUS_PROCESSING => 'Đang xử lý', // key la trang thai, value la ten trang thai
+            Order::STATUS_SHIPPED => 'Đã gửi hàng', // key la trang thai, value la ten trang thai
+            Order::STATUS_DELIVERED => 'Đã giao hàng', // key la trang thai, value la ten trang thai
+            Order::STATUS_CANCELLED => 'Đã hủy', // key la trang thai, value la ten trang thai
         ];
 
         $availableTransitions = Order::STATUS_TRANSITIONS[$currentStatus] ?? [];
@@ -179,16 +179,16 @@ class OrderController extends Controller
     /**
      * Get status label in Vietnamese
      */
-    private function getStatusLabel($status)
+    private function getStatusLabel($status) // $status lay tu bang orders
     {
-        $labels = [
-            Order::STATUS_PENDING => 'Chờ xử lý',
-            Order::STATUS_PROCESSING => 'Đang xử lý',
-            Order::STATUS_SHIPPED => 'Đã gửi hàng',
-            Order::STATUS_DELIVERED => 'Đã giao hàng',
-            Order::STATUS_CANCELLED => 'Đã hủy',
+        $labels = [ // khoi tao mang labels
+            Order::STATUS_PENDING => 'Chờ xử lý', // key la trang thai, value la ten trang thai
+            Order::STATUS_PROCESSING => 'Đang xử lý', // key la trang thai, value la ten trang thai
+            Order::STATUS_SHIPPED => 'Đã gửi hàng', // key la trang thai, value la ten trang thai
+            Order::STATUS_DELIVERED => 'Đã giao hàng', // key la trang thai, value la ten trang thai
+            Order::STATUS_CANCELLED => 'Đã hủy', // key la trang thai, value la ten trang thai
         ];
 
-        return $labels[$status] ?? $status;
+        return $labels[$status] ?? $status; // neu co labels thi tra ve labels, khong co thi tra ve status
     }
 }

@@ -25,7 +25,7 @@ class RoleSeeder extends Seeder
                 [
                     'role_display_name' => $role['role_display_name'],
                     'role_created_at' => now(),
-                    'role_updated_at' => now()
+                    'role_updated_at' => now(),
                 ]
             );
         }

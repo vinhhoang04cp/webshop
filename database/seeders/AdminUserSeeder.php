@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use App\Models\Role;
+use App\Models\User;
 use App\Models\UserRole;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -36,10 +36,10 @@ class AdminUserSeeder extends Seeder
             UserRole::updateOrCreate(
                 [
                     'user_id' => $admin->id,
-                    'role_id' => $adminRole->role_id
+                    'role_id' => $adminRole->role_id,
                 ],
                 [
-                    'assigned_at' => now()
+                    'assigned_at' => now(),
                 ]
             );
         }

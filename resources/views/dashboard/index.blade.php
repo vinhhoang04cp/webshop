@@ -51,37 +51,77 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @php
-                                            $statusMap = [
-                                                \App\Models\Order::STATUS_PENDING => ['label' => 'warning', 'text' => 'Chờ xử lý'],
-                                                \App\Models\Order::STATUS_PROCESSING => ['label' => 'primary', 'text' => 'Đang xử lý'],
-                                                \App\Models\Order::STATUS_SHIPPED => ['label' => 'info', 'text' => 'Đang giao'],
-                                                \App\Models\Order::STATUS_DELIVERED => ['label' => 'success', 'text' => 'Hoàn thành'],
-                                                \App\Models\Order::STATUS_CANCELLED => ['label' => 'danger', 'text' => 'Đã huỷ'],
-                                            ];
-                                        @endphp
-                                        @if(isset($error))
-                                            <tr><td colspan="5" class="text-center py-4 text-danger"><i class="fas fa-exclamation-triangle fa-2x mb-2 d-block"></i>{{ $error }}</td></tr>
-                                        @elseif(empty($recentOrders))
-                                            <tr><td colspan="5" class="text-center py-4 text-muted"><i class="fas fa-inbox fa-2x mb-2 d-block"></i>Không có đơn hàng nào gần đây</td></tr>
-                                        @else
-                                            @foreach($recentOrders as $order)
-                                            <tr>
-                                                <td><strong>#{{ $order['order_id'] ?? $order['id'] }}</strong></td>
-                                                <td>{{ $order['user']['name'] ?? 'Khách vãng lai' }}</td>
-                                                <td>
-                                                    @php 
-                                                        $status = $order['status'] ?? 'pending';
-                                                        $s = $statusMap[$status] ?? null; 
-                                                    @endphp
-                                                    <span class="badge bg-{{ $s['label'] ?? 'secondary' }}">{{ $s['text'] ?? ucfirst($status) }}</span>
-                                                </td>
-                                                <td><strong>{{ number_format($order['total_amount'] ?? 0) }} đ</strong></td>
-                                                <td class="text-muted">{{ isset($order['order_date']) ? \Carbon\Carbon::parse($order['order_date'])->format('d/m/Y H:i') : '-' }}</td>
-                                            </tr>
-                                            @endforeach
-                                        @endif
-                                    </tbody>
+    {{-- Nếu có lỗi --}}
+    @isset($error)
+        <tr>
+            <td colspan="5" class="text-center py-4 text-danger">
+                <i class="fas fa-exclamation-triangle fa-2x mb-2 d-block"></i>{{ $error }}
+            </td>
+        </tr>
+    @endisset
+
+    {{-- Nếu không có đơn hàng --}}
+    @empty($recentOrders)
+        <tr>
+            <td colspan="5" class="text-center py-4 text-muted">
+                <i class="fas fa-inbox fa-2x mb-2 d-block"></i>Không có đơn hàng nào gần đây
+            </td>
+        </tr>
+
+    {{-- Nếu có đơn hàng --}}
+    @else
+        @foreach($recentOrders as $order)
+            <tr>
+                {{-- Mã đơn hàng --}}
+                <td><strong>#{{ $order['order_id'] ?? $order['id'] }}</strong></td>
+
+                {{-- Tên khách hàng --}}
+                <td>{{ $order['user']['name'] ?? 'Khách vãng lai' }}</td>
+
+                {{-- Trạng thái đơn hàng --}}
+                <td>
+                    @switch($order['status'] ?? 'pending')
+                        @case(\App\Models\Order::STATUS_PENDING)
+                            <span class="badge bg-warning">Chờ xử lý</span>
+                            @break
+
+                        @case(\App\Models\Order::STATUS_PROCESSING)
+                            <span class="badge bg-primary">Đang xử lý</span>
+                            @break
+
+                        @case(\App\Models\Order::STATUS_SHIPPED)
+                            <span class="badge bg-info">Đang giao</span>
+                            @break
+
+                        @case(\App\Models\Order::STATUS_DELIVERED)
+                            <span class="badge bg-success">Hoàn thành</span>
+                            @break
+
+                        @case(\App\Models\Order::STATUS_CANCELLED)
+                            <span class="badge bg-danger">Đã huỷ</span>
+                            @break
+
+                        @default
+                            <span class="badge bg-secondary">{{ ucfirst($order['status'] ?? 'Không rõ') }}</span>
+                    @endswitch
+                </td>
+
+                {{-- Tổng tiền --}}
+                <td><strong>{{ number_format($order['total_amount'] ?? 0) }} đ</strong></td>
+
+                {{-- Ngày đặt --}}
+                <td class="text-muted">
+                    @if(!empty($order['order_date']))
+                        {{ \Carbon\Carbon::parse($order['order_date'])->format('d/m/Y H:i') }}
+                    @else
+                        -
+                    @endif
+                </td>
+            </tr>
+        @endforeach
+    @endempty
+</tbody>
+
                                 </table>
                             </div>
                         </div>

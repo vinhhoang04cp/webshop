@@ -18,12 +18,12 @@ class CheckRole
     public function handle(Request $request, Closure $next, ...$roles): Response
     {
         // Kiểm tra user đã đăng nhập chưa
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             return redirect()->route('login')->with('error', 'Vui lòng đăng nhập để tiếp tục.');
         }
 
         $user = Auth::user();
-        
+
         // Debug logging
         \Log::info('CheckRole Middleware Debug', [
             'user_id' => $user->id,
@@ -35,31 +35,31 @@ class CheckRole
         // Kiểm tra từng role được yêu cầu
         foreach ($roles as $role) {
             $hasPermission = false;
-            
+
             switch ($role) {
                 case 'admin':
                     $hasPermission = $user->isAdmin();
                     break;
-                
+
                 case 'manager':
                     $hasPermission = $user->isManager() || $user->isAdmin();
                     break;
-                
+
                 case 'dashboard':
                     $hasPermission = $user->canAccessDashboard();
                     break;
-                    
+
                 default:
                     // Kiểm tra role cụ thể
                     $hasPermission = $user->hasRole($role);
                     break;
             }
-            
+
             \Log::info('Role Check Result', [
                 'role' => $role,
-                'hasPermission' => $hasPermission
+                'hasPermission' => $hasPermission,
             ]);
-            
+
             // Nếu có ít nhất một role thỏa mãn thì cho phép
             if ($hasPermission) {
                 return $next($request);
@@ -72,7 +72,7 @@ class CheckRole
             'required_roles' => $roles,
             'user_roles' => $user->roles->pluck('role_name')->toArray(),
         ]);
-        
+
         abort(403, 'Bạn không có quyền truy cập trang này.');
     }
 }

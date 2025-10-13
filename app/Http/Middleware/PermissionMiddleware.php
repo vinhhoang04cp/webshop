@@ -18,7 +18,7 @@ class PermissionMiddleware
     public function handle(Request $request, Closure $next, ...$permissions): Response
     {
         // Kiểm tra user đã đăng nhập chưa
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             return redirect()->route('login')->with('error', 'Vui lòng đăng nhập để tiếp tục.');
         }
 
@@ -31,7 +31,7 @@ class PermissionMiddleware
 
         // Kiểm tra từng quyền
         foreach ($permissions as $permission) {
-            if (!$user->hasPermission($permission)) {
+            if (! $user->hasPermission($permission)) {
                 abort(403, "Bạn không có quyền {$permission} để thực hiện hành động này.");
             }
         }

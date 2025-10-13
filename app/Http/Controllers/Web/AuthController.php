@@ -19,7 +19,7 @@ class AuthController extends Controller
             // Neu da dang nhap thi chuyen huong ve dashboard
             return redirect()->route('dashboard');
         }
-        
+
         // Neu chua dang nhap thi hien thi form login
         return view('auth.login');
     }

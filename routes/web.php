@@ -96,18 +96,18 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/users/{user}/edit', [UserManagementController::class, 'edit'])->name('users.edit');
         Route::put('/users/{user}', [UserManagementController::class, 'update'])->name('users.update');
         Route::delete('/users/{user}', [UserManagementController::class, 'destroy'])->name('users.destroy');
-        
+
         // Role Assignment
         Route::post('/users/{user}/assign-role', [UserManagementController::class, 'assignRole'])->name('users.assign-role');
         Route::delete('/users/{user}/remove-role/{role}', [UserManagementController::class, 'removeRole'])->name('users.remove-role');
-        
+
         // Roles Management
         Route::get('/roles', [UserManagementController::class, 'roles'])->name('roles.index');
         Route::post('/roles', [UserManagementController::class, 'createRole'])->name('roles.create');
         Route::delete('/roles/{role}', [UserManagementController::class, 'deleteRole'])->name('roles.delete');
     });
 
-    // Permissions và Statistics - manager và admin có thể xem  
+    // Permissions và Statistics - manager và admin có thể xem
     Route::get('/dashboard/permissions', [UserManagementController::class, 'permissions'])
         ->name('dashboard.permissions'); // Tạm thời bỏ middleware để debug
 
@@ -116,73 +116,74 @@ Route::middleware(['auth'])->group(function () {
         ->name('dashboard.permissions.debug');
 
     // Debug route - tạm thời để kiểm tra user info
-    Route::get('/debug/user-info', function() {
+    Route::get('/debug/user-info', function () {
         $user = Auth::user();
+
         return response()->json([
             'user_id' => $user->id,
             'user_name' => $user->name,
             'user_email' => $user->email,
-            'roles' => $user->roles->map(function($role) {
+            'roles' => $user->roles->map(function ($role) {
                 return [
                     'role_id' => $role->role_id,
                     'role_name' => $role->role_name,
-                    'role_display_name' => $role->role_display_name
+                    'role_display_name' => $role->role_display_name,
                 ];
             }),
             'is_admin' => $user->isAdmin(),
             'is_manager' => $user->isManager(),
             'can_access_dashboard' => $user->canAccessDashboard(),
-            'permissions' => $user->getAllPermissions()
+            'permissions' => $user->getAllPermissions(),
         ]);
     });
 
     // Debug route - tạm thời để gán role admin cho user hiện tại
-    Route::get('/debug/make-admin', function() {
+    Route::get('/debug/make-admin', function () {
         $user = Auth::user();
-        
+
         // Tạo role admin nếu chưa có
         $adminRole = \App\Models\Role::firstOrCreate(
             ['role_name' => 'admin'],
             [
                 'role_display_name' => 'Administrator',
                 'role_created_at' => now(),
-                'role_updated_at' => now()
+                'role_updated_at' => now(),
             ]
         );
-        
+
         // Gán role admin cho user hiện tại
         \App\Models\UserRole::firstOrCreate([
             'user_id' => $user->id,
-            'role_id' => $adminRole->role_id
+            'role_id' => $adminRole->role_id,
         ], [
-            'assigned_at' => now()
+            'assigned_at' => now(),
         ]);
-        
+
         return "User {$user->name} đã được gán role Admin!";
     });
 
-    // Debug route - tạm thời để gán role manager cho user hiện tại  
-    Route::get('/debug/make-manager', function() {
+    // Debug route - tạm thời để gán role manager cho user hiện tại
+    Route::get('/debug/make-manager', function () {
         $user = Auth::user();
-        
+
         // Tạo role manager nếu chưa có
         $managerRole = \App\Models\Role::firstOrCreate(
             ['role_name' => 'manager'],
             [
-                'role_display_name' => 'Manager', 
+                'role_display_name' => 'Manager',
                 'role_created_at' => now(),
-                'role_updated_at' => now()
+                'role_updated_at' => now(),
             ]
         );
-        
+
         // Gán role manager cho user hiện tại
         \App\Models\UserRole::firstOrCreate([
             'user_id' => $user->id,
-            'role_id' => $managerRole->role_id
+            'role_id' => $managerRole->role_id,
         ], [
-            'assigned_at' => now()
+            'assigned_at' => now(),
         ]);
-        
+
         return "User {$user->name} đã được gán role Manager!";
     });
 });
