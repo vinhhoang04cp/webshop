@@ -2,8 +2,10 @@
 
 namespace App\Providers;
 
+use App\View\Composers\NavigationComposer;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -26,5 +28,13 @@ class AppServiceProvider extends ServiceProvider
 
         // Use Bootstrap for pagination
         Paginator::useBootstrapFive();
+
+        // Share categories and cart count với tất cả views customer
+        View::composer([
+            'layouts.customer',
+            'home',
+            'products.*',
+            'cart.*',
+        ], NavigationComposer::class);
     }
 }

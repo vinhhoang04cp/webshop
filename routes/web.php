@@ -1,13 +1,14 @@
 <?php
 
 use App\Http\Controllers\Web\AuthController;
+use App\Http\Controllers\Web\CustomerCartController;
+use App\Http\Controllers\Web\CustomerProductController;
+use App\Http\Controllers\Web\HomeController;
 use App\Http\Controllers\Web\UserManagementController;
 use Illuminate\Support\Facades\Route;
 
-// Redirect root to login
-Route::get('/', function () {
-    return redirect()->route('login');
-});
+// Home page - Trang chủ cho khách hàng
+Route::get('/', [HomeController::class, 'index'])->name('home');
 
 // Authentication Routes
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -17,6 +18,19 @@ Route::get('/register', [AuthController::class, 'showRegister'])->name('register
 Route::post('/register', [AuthController::class, 'register']);
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+// Customer facing routes - Các route dành cho khách hàng
+Route::get('/products', [CustomerProductController::class, 'index'])->name('products.index');
+Route::get('/products/search', [CustomerProductController::class, 'search'])->name('products.search');
+Route::get('/product/{id}', [CustomerProductController::class, 'show'])->name('product.show');
+Route::get('/category/{id}', [CustomerProductController::class, 'category'])->name('category.show');
+
+// Cart routes - Giỏ hàng
+Route::get('/cart', [CustomerCartController::class, 'index'])->name('cart.index');
+Route::post('/cart/add/{productId}', [CustomerCartController::class, 'add'])->name('cart.add');
+Route::put('/cart/update/{cartItemId}', [CustomerCartController::class, 'update'])->name('cart.update');
+Route::delete('/cart/remove/{cartItemId}', [CustomerCartController::class, 'remove'])->name('cart.remove');
+Route::delete('/cart/clear', [CustomerCartController::class, 'clear'])->name('cart.clear');
 
 // Protected Dashboard Routes
 Route::middleware(['auth'])->group(function () {
