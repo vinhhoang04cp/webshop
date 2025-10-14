@@ -16,6 +16,9 @@
         <a class="nav-link {{ request()->routeIs('dashboard.orders.*') ? 'active' : '' }}" href="{{ route('dashboard.orders.index') }}">
             <i class="fas fa-shopping-cart"></i> Đơn hàng
         </a>
+        <a class="nav-link {{ request()->routeIs('dashboard.inventory.*') ? 'active' : '' }}" href="{{ route('dashboard.inventory.index') }}">
+            <i class="fas fa-boxes"></i> Tồn kho
+        </a>
         @if(auth()->user()->isAdmin())
         <a class="nav-link {{ request()->routeIs('dashboard.users.*') ? 'active' : '' }}" href="{{ route('dashboard.users.index') }}">
             <i class="fas fa-users"></i> Người dùng

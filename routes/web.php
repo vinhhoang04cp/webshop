@@ -88,6 +88,20 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/dashboard/orders/{id}', [\App\Http\Controllers\Web\OrderController::class, 'destroy'])
         ->name('dashboard.orders.destroy')->middleware('role:admin');
 
+    // Inventory Management - cần quyền manager trở lên
+    Route::middleware('role:manager')->group(function () {
+        Route::get('/dashboard/inventory', [\App\Http\Controllers\Web\InventoryController::class, 'index'])
+            ->name('dashboard.inventory.index');
+        Route::get('/dashboard/inventory/{id}', [\App\Http\Controllers\Web\InventoryController::class, 'show'])
+            ->name('dashboard.inventory.show');
+        Route::get('/dashboard/inventory/{id}/edit', [\App\Http\Controllers\Web\InventoryController::class, 'edit'])
+            ->name('dashboard.inventory.edit');
+        Route::put('/dashboard/inventory/{id}', [\App\Http\Controllers\Web\InventoryController::class, 'update'])
+            ->name('dashboard.inventory.update');
+        Route::post('/dashboard/inventory/{id}/adjust', [\App\Http\Controllers\Web\InventoryController::class, 'adjustStock'])
+            ->name('dashboard.inventory.adjust');
+    });
+
     // User Management Routes - chỉ admin
     Route::middleware('role:admin')->prefix('dashboard')->name('dashboard.')->group(function () {
         // Users Management
