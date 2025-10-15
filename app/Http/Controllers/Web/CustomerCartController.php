@@ -116,51 +116,53 @@ class CustomerCartController extends Controller
     /**
      * Cập nhật số lượng sản phẩm trong giỏ
      */
-    public function update(Request $request, $cartItemId)
+    public function update(Request $request, $cartItemId) // ham update de cap nhat so luong san pham trong gio hang voi tham so truyen vao la Request $request va $cartItemId
     {
-        if (! Auth::check()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Vui lòng đăng nhập!',
+        // check user da dang nhap chua
+        if (! Auth::check()) { // neu user chua dang nhap
+            return response()->json([ // tra ve response dang json
+                'success' => false, // bien success de biet cap nhat so luong san pham trong gio hang co thanh cong hay khong
+                'message' => 'Vui lòng đăng nhập!', // thong bao loi
             ], 401);
         }
 
-        $request->validate([
-            'quantity' => 'required|integer|min:1',
+        $request->validate([ // validate du lieu truyen vao
+            'quantity' => 'required|integer|min:1', // quantity la so luong san pham, bat buoc phai la so nguyen va lon hon hoac bang 1
         ]);
 
         try {
-            DB::beginTransaction();
+            DB::beginTransaction(); // bat dau giao dich
 
-            $cartItem = CartItem::findOrFail($cartItemId);
+            $cartItem = CartItem::findOrFail($cartItemId); // tim kiem item trong gio hang theo cartItemId, neu khong tim thay thi tra ve loi 404
 
             // Kiểm tra quyền sở hữu
-            if ($cartItem->cart->user_id != Auth::id()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Không có quyền!',
-                ], 403);
+            if ($cartItem->cart->user_id != Auth::id()) { // neu user_id cua gio hang khac voi id cua user hien tai dang nhap
+                return response()->json([ // tra ve response dang json
+                    'success' => false, // bien success de biet cap nhat so luong san pham trong gio hang co thanh cong hay khong
+                    'message' => 'Không có quyền!', // thong bao loi
+                ], 403); // 403 la ma trang thai HTTP cho biet user khong co quyen truy cap
             }
 
-            $cartItem->quantity = $request->quantity;
-            $cartItem->save();
+            $cartItem->quantity = $request->quantity; // cap nhat so luong san pham trong gio hang qua bien quantity
+            $cartItem->save(); // luu thay doi
 
             // Cập nhật tổng tiền không cần thiết - tính động
-            $cart = $cartItem->cart;
+            $cart = $cartItem->cart; // lay gio hang cua item trong gio hang
 
-            DB::commit();
+            DB::commit(); // ket thuc giao dich
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Đã cập nhật giỏ hàng!',
-                'itemTotal' => $cartItem->quantity * $cartItem->price,
+            return response()->json([ // tra ve response dang json
+                'success' => true, // bien success de biet cap nhat so luong san pham trong gio hang co thanh cong hay khong
+                'message' => 'Đã cập nhật giỏ hàng!', // thong bao thanh cong
+                'cartCount' => $cart->items()->sum('quantity'), // tinh tong so luong san pham trong gio hang bang ham sum('quantity')
+                'itemTotal' => $cartItem->quantity * $cartItem->price, // tinh tong tien cua item trong gio hang
                 'cartTotal' => $cart->totalPrice(), // Sử dụng method totalPrice() thay vì total_amount
             ]);
 
-        } catch (\Exception $e) {
-            DB::rollBack();
+        } catch (\Exception $e) { // neu co loi xay ra trong qua trinh cap nhat so luong san pham trong gio hang
+            DB::rollBack(); // quay lai trang thai truoc khi bat dau giao dich
 
-            return response()->json([
+            return response()->json([ // tra ve response dang json
                 'success' => false,
                 'message' => 'Có lỗi xảy ra: '.$e->getMessage(),
             ], 500);

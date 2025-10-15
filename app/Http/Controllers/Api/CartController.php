@@ -89,48 +89,48 @@ class CartController extends Controller
             $cart = Cart::with('items.product')->find($cart->cart_id); // Tai lai cart de lay du lieu moi nhat, ham with() de load quan he items va product
             $cartTotals = $this->calculateCartTotals($cart); // Tinh tong tien va so luong san pham trong cart
 
-            return response()->json([
+            return response()->json([ // Tra ve response JSON thanh cong
                 'status' => true,
-                'message' => 'Items added to cart successfully',
-                'data' => new CartResource($cart),
-                'total_amount' => $cartTotals['amount'],
-                'total_items' => $cartTotals['items'],
-                'items_added' => count($itemsToAdd),
+                'message' => 'Items added to cart successfully', // Thong bao thanh cong
+                'data' => new CartResource($cart), // Doi tuong CartResource de hien thi du lieu cart
+                'total_amount' => $cartTotals['amount'], // Tong so tien trong cart
+                'total_items' => $cartTotals['items'], // Tong so luong san pham trong cart
+                'items_added' => count($itemsToAdd), // So luong san pham da them vao cart
             ], 201);
-        } catch (Exception $e) {
-            DB::rollback();
+        } catch (Exception $e) { // Neu co loi xay ra trong qua trinh luu du lieu
+            DB::rollback(); // Rollback lai giao dich
 
-            return response()->json([
-                'status' => false,
-                'message' => 'Failed to add items to cart',
-                'error' => $e->getMessage(),
-            ], 500);
+            return response()->json([ // Tra ve response JSON loi
+                'status' => false, // Trang thai loi
+                'message' => 'Failed to add items to cart', // Thong bao loi
+                'error' => $e->getMessage(), // Chi tiet loi
+            ], 500); // HTTP status 500 Internal Server Error
         }
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(Request $request, $id)
+    public function show(Request $request, $id) // (Request $request, $id)  tham so $request la doi tuong chua cac tham so truyen tu client qua URL den controller, $id la cart_id cua cart can lay
     {
-        $cart = Cart::with('items.product')->findOrFail($id);
+        $cart = Cart::with('items.product')->findOrFail($id); // Tim cart voi cart_id tu $id, neu khong tim thay se tra ve loi 404, ham with() de load quan he items va product
 
         // Kiểm tra ownership: User chỉ xem được cart của mình
-        if (! $request->user()->isAdmin() && $cart->user_id !== $request->user()->id) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Access denied. You can only access your own cart.',
+        if (! $request->user()->isAdmin() && $cart->user_id !== $request->user()->id) { // neu user khong phai admin va user_id cua cart khac voi id cua user hien tai
+            return response()->json([ // Tra ve response JSON loi
+                'status' => false, // Trang thai loi
+                'message' => 'Access denied. You can only access your own cart.', // Thong bao loi
             ], 403);
         }
 
-        $cartTotals = $this->calculateCartTotals($cart);
+        $cartTotals = $this->calculateCartTotals($cart); // Tinh tong tien va so luong san pham trong cart
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Cart retrieved successfully',
-            'data' => new CartResource($cart),
-            'total_amount' => $cartTotals['amount'],
-            'total_items' => $cartTotals['items'],
+        return response()->json([ // Tra ve response JSON thanh cong
+            'status' => true, // Trang thai thanh cong
+            'message' => 'Cart retrieved successfully', // Thong bao thanh cong
+            'data' => new CartResource($cart), // Doi tuong CartResource de hien thi du lieu cart
+            'total_amount' => $cartTotals['amount'], // Tong so tien trong cart
+            'total_items' => $cartTotals['items'], // Tong so luong san pham trong cart
         ], 200);
     }
 

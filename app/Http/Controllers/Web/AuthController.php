@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
-use App\Models\Role;
-use App\Models\User;
-use App\Models\UserRole;
-use Illuminate\Http\Request;
+use App\Models\Role; // Import model Role de truy cap bang roles
+use App\Models\User; // Import model User de truy cap bang users
+use App\Models\UserRole; // Import model UserRole de tu dong gan role cho user moi dang ky
+use Illuminate\Http\Request; // Thu vien Request dung de lay du lieu tu form
 use Illuminate\Support\Facades\Auth; // Thu vien Auth dung de xac thuc
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\DB; // Thu vien DB dung de truy van database
 use Illuminate\Support\Facades\Hash; // Thu vien Hash dung de ma hoa password
 
 class AuthController extends Controller
@@ -44,13 +44,14 @@ class AuthController extends Controller
      */
     public function login(Request $request) // (Request $request) la tham so truyen vao ham , duoc gui tu form login
     {
+        // $request la doi tuong chua cac tham so truyen tu client qua URL den controller se duoc su dung de lay du lieu tu form
         $request->validate([ // Validate du lieu dau vao
             'email' => 'required|email', // email bat buoc va phai dung dinh dang email
             'password' => 'required', // password bat buoc
         ]);
 
         // Tìm user theo email
-        $user = User::where('email', $request->email)->first(); // User lay tu model User, tim user dau tien co email giong voi email tu form
+        $user = User::where('email', $request->email)->first(); // User lay tu model User, tim user dau tien co email giong voi email tu form, ham first() de lay user dau tien neu co nhieu user trung email
 
         // Kiểm tra credentials
         if (! $user || ! Hash::check($request->password, $user->password)) { // !user neu khong tim thay user hoac password khong dung, Hash::check de kiem tra password neu khong trung
@@ -137,7 +138,7 @@ class AuthController extends Controller
         /** @var \App\Models\User $user */
         $user = Auth::user(); // Lấy user hiện tại
 
-        // Double check role
+        // Check xem user có role admin hoặc manager không
         if (! $user->hasRole('admin') && ! $user->hasRole('manager')) { // Neu user khong co role admin va manager
             Auth::logout(); // Dang xuat user
 
@@ -149,38 +150,38 @@ class AuthController extends Controller
         try {
             // truy van truc tiep vao db qua model bang eloquent
             // Dem so luong products, orders, users
-            $productsCount = \App\Models\Product::count(); // $productsCount dem so luong products trong bang products
-            $ordersCount = \App\Models\Order::count(); // $ordersCount dem so luong orders trong bang orders
-            $usersCount = \App\Models\User::count(); // $usersCount dem so luong users trong bang users
+            $productsCount = \App\Models\Product::count(); // $productsCount goi den model Product de dem so luong products trong bang products
+            $ordersCount = \App\Models\Order::count(); // $ordersCount goi den model Order de dem so luong orders trong bang orders
+            $usersCount = \App\Models\User::count(); // $usersCount goi den model User de dem so luong users trong bang users
 
             // $totalRevenue tinh tong doanh thu tu cac orders khong bi huy
-            $totalRevenue = \App\Models\Order::where('status', '!=', 'cancelled')->sum('total_amount');
+            $totalRevenue = \App\Models\Order::where('status', '!=', 'cancelled')->sum('total_amount'); // $totalRevenue goi den model Order de tinh tong cot total_amount trong bang orders voi dieu kien status khac cancelled
 
             // Lấy 5 orders gần nhất với user relationship
-            $recentOrders = \App\Models\Order::with('user')
-                ->orderBy('order_date', 'desc')
-                ->limit(5)
-                ->get()
-                ->toArray();
+            $recentOrders = \App\Models\Order::with('user') // with('user') de load quan he user voi order
+                ->orderBy('order_date', 'desc') // Sap xep giam dan theo order_date
+                ->limit(5) // Gioi han 5 order
+                ->get() // Lay du lieu
+                ->toArray(); // Chuyen doi du lieu sang mang de truyen vao view
 
-            return view('dashboard.index', compact(
-                'user',
-                'productsCount',
-                'ordersCount',
-                'usersCount',
-                'totalRevenue',
-                'recentOrders'
+            return view('dashboard.index', compact( // tra ve view dashboard.index voi cac bien duoc truyen vao bang compact
+                'user', // user hien tai
+                'productsCount', // so luong products
+                'ordersCount', // so luong orders
+                'usersCount', // so luong users
+                'totalRevenue', // tong doanh thu
+                'recentOrders' // 5 orders gan nhat
             ));
         } catch (\Exception $e) {
             // Fallback to zero values nếu có lỗi
-            return view('dashboard.index', [
-                'user' => $user,
-                'productsCount' => 0,
-                'ordersCount' => 0,
-                'usersCount' => 0,
-                'totalRevenue' => 0,
-                'recentOrders' => [],
-                'error' => 'Không thể tải dữ liệu dashboard: '.$e->getMessage(),
+            return view('dashboard.index', [ // tra ve view dashboard.index voi cac bien duoc truyen vao bang mang
+                'user' => $user, // user hien tai
+                'productsCount' => 0, // so luong products bang 0
+                'ordersCount' => 0, // so luong orders bang 0
+                'usersCount' => 0, // so luong users bang 0
+                'totalRevenue' => 0, // tong doanh thu bang 0
+                'recentOrders' => [], // 5 orders gan nhat bang mang rong
+                'error' => 'Không thể tải dữ liệu dashboard: '.$e->getMessage(), // Thong bao loi
             ]);
         }
     }

@@ -5,7 +5,6 @@ use App\Http\Controllers\Web\CustomerCartController;
 use App\Http\Controllers\Web\CustomerProductController;
 use App\Http\Controllers\Web\HomeController;
 use App\Http\Controllers\Web\UserManagementController;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 // Home page - Trang chủ cho khách hàng
@@ -136,86 +135,9 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/roles/{role}', [UserManagementController::class, 'deleteRole'])->name('roles.delete');
     });
 
-    // Permissions và Statistics - manager và admin có thể xem
-    Route::get('/dashboard/permissions', [UserManagementController::class, 'permissions'])
-        ->name('dashboard.permissions'); // Tạm thời bỏ middleware để debug
-
-    // Alternative route không cần middleware
-    Route::get('/dashboard/permissions-debug', [UserManagementController::class, 'permissions'])
-        ->name('dashboard.permissions.debug');
-
-    // Debug route - tạm thời để kiểm tra user info
-    Route::get('/debug/user-info', function () {
-        /** @var \App\Models\User $user */
-        $user = Auth::user();
-
-        return response()->json([
-            'user_id' => $user->id,
-            'user_name' => $user->name,
-            'user_email' => $user->email,
-            'roles' => $user->roles->map(function ($role) {
-                return [
-                    'role_id' => $role->role_id,
-                    'role_name' => $role->role_name,
-                    'role_display_name' => $role->role_display_name,
-                ];
-            }),
-            'is_admin' => $user->isAdmin(),
-            'is_manager' => $user->isManager(),
-            'can_access_dashboard' => $user->canAccessDashboard(),
-            'permissions' => $user->getAllPermissions(),
-        ]);
-    });
-
-    // Debug route - tạm thời để gán role admin cho user hiện tại
-    Route::get('/debug/make-admin', function () {
-        /** @var \App\Models\User $user */
-        $user = Auth::user();
-
-        // Tạo role admin nếu chưa có
-        $adminRole = \App\Models\Role::firstOrCreate(
-            ['role_name' => 'admin'],
-            [
-                'role_display_name' => 'Administrator',
-                'role_created_at' => now(),
-                'role_updated_at' => now(),
-            ]
-        );
-
-        // Gán role admin cho user hiện tại
-        \App\Models\UserRole::firstOrCreate([
-            'user_id' => $user->id,
-            'role_id' => $adminRole->role_id,
-        ], [
-            'assigned_at' => now(),
-        ]);
-
-        return "User {$user->name} đã được gán role Admin!";
-    });
-
-    // Debug route - tạm thời để gán role manager cho user hiện tại
-    Route::get('/debug/make-manager', function () {
-        /** @var \App\Models\User $user */
-        $user = Auth::user();
-
-        // Tạo role manager nếu chưa có
-        $managerRole = \App\Models\Role::firstOrCreate(
-            ['role_name' => 'manager'],
-            [
-                'role_display_name' => 'Manager',
-                'role_created_at' => now(),
-                'role_updated_at' => now(),
-            ]
-        );
-
-        // Gán role manager cho user hiện tại
-        \App\Models\UserRole::firstOrCreate([
-            'user_id' => $user->id,
-            'role_id' => $managerRole->role_id,
-        ], [
-            'assigned_at' => now(),
-        ]);
-
-        return "User {$user->name} đã được gán role Manager!";
+    // Permissions - manager và admin có thể xem
+    Route::middleware('role:manager')->group(function () {
+        Route::get('/dashboard/permissions', [UserManagementController::class, 'permissions'])
+            ->name('dashboard.permissions');
     });
 });
