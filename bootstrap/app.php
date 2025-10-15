@@ -13,9 +13,13 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
-            'role' => \App\Http\Middleware\CheckRole::class,
-            'permission' => \App\Http\Middleware\PermissionMiddleware::class,
+            // Middleware tổng hợp cho role và permission - thay thế 4 middleware cũ
+            'role.permission' => \App\Http\Middleware\RolePermissionMiddleware::class,
+
+            // Giữ lại alias cũ để tương thích ngược (backward compatibility)
+            'admin' => \App\Http\Middleware\RolePermissionMiddleware::class,
+            'role' => \App\Http\Middleware\RolePermissionMiddleware::class,
+            'permission' => \App\Http\Middleware\RolePermissionMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

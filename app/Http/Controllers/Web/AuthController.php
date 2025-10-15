@@ -112,6 +112,7 @@ class AuthController extends Controller
      */
     public function dashboard()
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user(); // Lấy user hiện tại
 
         // Double check role

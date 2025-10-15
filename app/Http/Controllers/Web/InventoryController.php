@@ -158,6 +158,7 @@ class InventoryController extends Controller
             $inventory->save();
 
             $action = $request->adjustment_type === 'in' ? 'nhập' : 'xuất';
+
             return redirect()->route('dashboard.inventory.show', $id)
                 ->with('success', "Đã {$action} kho thành công {$request->quantity} sản phẩm!");
 

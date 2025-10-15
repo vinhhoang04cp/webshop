@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class CustomerProductController extends Controller
 {
@@ -14,12 +15,12 @@ class CustomerProductController extends Controller
      */
     public function index(Request $request) // Request $request la cac tham so truyen vao de loc, tim kiem, sap xep san pham
     {
-        $query = Product::with('category'); //$query la mot doi tuong query builder de truy van du lieu tu bang products voi quan he voi bang categories
+        $query = Product::with('category'); // $query la mot doi tuong query builder de truy van du lieu tu bang products voi quan he voi bang categories
 
         // Tìm kiếm theo tên
         if ($request->has('q') && $request->q) { // neu co tham so q va q khac rong
             $query->where('name', 'like', "%{$request->q}%")
-                  ->orWhere('description', 'like', "%{$request->q}%");
+                ->orWhere('description', 'like', "%{$request->q}%");
         }
 
         // Lọc theo danh mục
@@ -47,7 +48,7 @@ class CustomerProductController extends Controller
             case 'name_asc': // neu tham so sort la name_asc thi sap xep theo ten tang dan
                 $query->orderBy('name', 'asc');
                 break;
-            case 'name_desc': // neu tham so sort la name_desc thi sap xep theo ten giam dan    
+            case 'name_desc': // neu tham so sort la name_desc thi sap xep theo ten giam dan
                 $query->orderBy('name', 'desc');
                 break;
             default:
@@ -59,10 +60,10 @@ class CustomerProductController extends Controller
 
         // Đếm số lượng sản phẩm trong giỏ hàng
         $cartCount = 0; // Khoi tao cartCount bang 0
-        if (auth()->check()) { // check neu user da dang nhap bang ham auth()
-            $cart = auth()->user()->cart; // neu user da dang nhap thi lay gio hang cua user hien tai
+        if (Auth::check()) { // check neu user da dang nhap bang ham auth()
+            $cart = Auth::user()->cart; // neu user da dang nhap thi lay gio hang cua user hien tai
             if ($cart) { // neu co gio hang thi tinh tong so luong san pham trong gio hang
-                $cartCount = $cart->items()->sum('quantity'); 
+                $cartCount = $cart->items()->sum('quantity');
                 // $cart->items() goi den quan he items de lay ve danh sach cac item trong gio hang, sau do tinh tong so luong san pham trong gio hang bang ham sum('quantity')
             }
         }
@@ -87,8 +88,8 @@ class CustomerProductController extends Controller
 
         // Đếm số lượng sản phẩm trong giỏ hàng
         $cartCount = 0;
-        if (auth()->check()) {
-            $cart = auth()->user()->cart;
+        if (Auth::check()) {
+            $cart = Auth::user()->cart;
             if ($cart) {
                 $cartCount = $cart->items()->sum('quantity');
             }
@@ -113,7 +114,7 @@ class CustomerProductController extends Controller
     public function category($id)
     {
         $category = Category::findOrFail($id);
-        
+
         $products = Product::with('category')
             ->where('category_id', $id)
             ->latest('created_at')
@@ -123,8 +124,8 @@ class CustomerProductController extends Controller
 
         // Đếm số lượng sản phẩm trong giỏ hàng
         $cartCount = 0;
-        if (auth()->check()) {
-            $cart = auth()->user()->cart;
+        if (Auth::check()) {
+            $cart = Auth::user()->cart;
             if ($cart) {
                 $cartCount = $cart->items()->sum('quantity');
             }

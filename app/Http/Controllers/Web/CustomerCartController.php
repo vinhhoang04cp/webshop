@@ -18,17 +18,17 @@ class CustomerCartController extends Controller
      */
     public function index() // ham index de hien thi gio hang
     {
-        if (!auth()->check()) { // neu check user chua dang nhap
+        if (! Auth::check()) { // neu check user chua dang nhap
             return redirect()->route('login')->with('error', 'Vui lòng đăng nhập để xem giỏ hàng!'); // chuyen huong den trang dang nhap voi thong bao loi
         }
 
         $cart = Auth::user()->cart; // $cart la gio hang cua user hien tai dang nhap
-        
+
         // Nếu chưa có giỏ hàng, tạo mới
-        if (!$cart) { // !cart neu chua co gio hang thi tao moi
+        if (! $cart) { // !cart neu chua co gio hang thi tao moi
             $cart = Cart::create([ // $cart la doi tuong cart moi duoc tao thong qua phuong thuc create cua model Cart
                 'user_id' => Auth::id(), // lay id cua user hien tai dang nhap lam user_id
-                'total_amount' => 0, // khoi tao tong tien bang 0 
+                'total_amount' => 0, // khoi tao tong tien bang 0
             ]);
         }
 
@@ -46,7 +46,7 @@ class CustomerCartController extends Controller
      */
     public function add(Request $request, $productId) // ham add de them san pham vao gio hang voi tham so truyen vao la Request $request va $productId
     {
-        if (!auth()->check()) { // neu user chua dang nhap
+        if (! Auth::check()) { // neu user chua dang nhap
             return response()->json([ // tra ve response dang json
                 'success' => false, // bien success de biet them san pham vao gio hang co thanh cong hay khong
                 'message' => 'Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!', // thong bao loi
@@ -67,7 +67,7 @@ class CustomerCartController extends Controller
 
             // Lấy hoặc tạo giỏ hàng
             $cart = Auth::user()->cart; // lay gio hang cua user hien tai dang nhap
-            if (!$cart) { // neu chua co gio hang thi tao moi
+            if (! $cart) { // neu chua co gio hang thi tao moi
                 $cart = Cart::create([ // tao moi gio hang
                     'user_id' => Auth::id(), // lay id cua user hien tai dang nhap lam user_id
                     'total_amount' => 0, // khoi tao tong tien bang 0
@@ -75,16 +75,16 @@ class CustomerCartController extends Controller
             }
 
             // Kiểm tra xem sản phẩm đã có trong giỏ chưa
-            $cartItem = CartItem::where('cart_id', $cart->cart_id) //$cartItem la bien chua item trong gio hang
+            $cartItem = CartItem::where('cart_id', $cart->cart_id) // $cartItem la bien chua item trong gio hang
                 ->where('product_id', $productId) // tim kiem item trong gio hang theo cart_id va product_id
                 ->first(); // lay ve item dau tien tim thay, neu khong tim thay thi tra ve null
-                // Bien $cartItem se chua item trong gio hang neu tim thay, neu khong tim thay thi se la null
+            // Bien $cartItem se chua item trong gio hang neu tim thay, neu khong tim thay thi se la null
 
             if ($cartItem) { // neu tim thay item trong gio hang
                 // Nếu có rồi, tăng số lượng
                 $cartItem->quantity += $quantity; // tang so luong item trong gio hang qua bien quantity
                 $cartItem->save(); // luu thay doi
-            } else { 
+            } else {
                 // Nếu chưa có, thêm mới
                 CartItem::create([
                     'cart_id' => $cart->cart_id, // lay cart_id cua gio hang hien tai
@@ -110,9 +110,10 @@ class CustomerCartController extends Controller
 
         } catch (\Exception $e) { // neu co loi xay ra trong qua trinh them san pham vao gio hang
             DB::rollBack();
+
             return response()->json([
                 'success' => false,
-                'message' => 'Có lỗi xảy ra: ' . $e->getMessage(),
+                'message' => 'Có lỗi xảy ra: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -122,7 +123,7 @@ class CustomerCartController extends Controller
      */
     public function update(Request $request, $cartItemId)
     {
-        if (!auth()->check()) {
+        if (! Auth::check()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Vui lòng đăng nhập!',
@@ -137,7 +138,7 @@ class CustomerCartController extends Controller
             DB::beginTransaction();
 
             $cartItem = CartItem::findOrFail($cartItemId);
-            
+
             // Kiểm tra quyền sở hữu
             if ($cartItem->cart->user_id != Auth::id()) {
                 return response()->json([
@@ -167,9 +168,10 @@ class CustomerCartController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json([
                 'success' => false,
-                'message' => 'Có lỗi xảy ra: ' . $e->getMessage(),
+                'message' => 'Có lỗi xảy ra: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -179,7 +181,7 @@ class CustomerCartController extends Controller
      */
     public function remove($cartItemId)
     {
-        if (!auth()->check()) {
+        if (! Auth::check()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Vui lòng đăng nhập!',
@@ -190,7 +192,7 @@ class CustomerCartController extends Controller
             DB::beginTransaction();
 
             $cartItem = CartItem::findOrFail($cartItemId);
-            
+
             // Kiểm tra quyền sở hữu
             if ($cartItem->cart->user_id != Auth::id()) {
                 return response()->json([
@@ -219,9 +221,10 @@ class CustomerCartController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json([
                 'success' => false,
-                'message' => 'Có lỗi xảy ra: ' . $e->getMessage(),
+                'message' => 'Có lỗi xảy ra: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -231,7 +234,7 @@ class CustomerCartController extends Controller
      */
     public function clear()
     {
-        if (!auth()->check()) {
+        if (! Auth::check()) {
             return redirect()->route('login')->with('error', 'Vui lòng đăng nhập!');
         }
 
@@ -246,7 +249,7 @@ class CustomerCartController extends Controller
             return redirect()->back()->with('success', 'Đã xóa toàn bộ giỏ hàng!');
 
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Có lỗi xảy ra: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Có lỗi xảy ra: '.$e->getMessage());
         }
     }
 }

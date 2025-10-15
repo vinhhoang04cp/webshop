@@ -188,6 +188,7 @@ class UserManagementController extends Controller
      */
     public function permissions()
     {
+        /** @var \App\Models\User $currentUser */
         $currentUser = Auth::user(); // Lấy user hiện tại
         $permissions = $currentUser->getAllPermissions(); // Lấy tất cả quyền của user hiện tại
 
