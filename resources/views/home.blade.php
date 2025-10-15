@@ -10,12 +10,12 @@
             <div class="col-md-6">
                 <h1>Chào mừng đến WebShop</h1>
                 <p>Khám phá hàng ngàn sản phẩm chất lượng với giá tốt nhất. Mua sắm thật dễ dàng, giao hàng nhanh chóng!</p>
-                <a href="{{ route('products.index') }}" class="btn-hero">
+                <a href="{{ route('products.index') }}" class="btn-hero"> {{-- Link Route den trang danh sach san pham --}}
                     <i class="fas fa-shopping-bag"></i> Mua sắm ngay
                 </a>
             </div>
             <div class="col-md-6 text-center">
-                <img src="https://via.placeholder.com/500x400/667eea/ffffff?text=Shopping+Online" alt="Shopping" class="img-fluid" style="border-radius: 20px;">
+                <img src="https://m.yodycdn.com/blog/hinh-nen-thien-nhien-4k-yody-vn-11.jpg" alt="Shopping" class="img-fluid" style="border-radius: 20px;">
             </div>
         </div>
     </div>
@@ -25,20 +25,21 @@
 <section class="container mb-5">
     <h2 class="section-title">Danh mục nổi bật</h2>
     <div class="row g-4">
-        @if(isset($categories) && $categories->count() > 0)
-            @foreach($categories->take(6) as $category)
+        @if(isset($categories) && $categories->count() > 0) {{-- Neu co ton tai danh muc va so luong danh muc lon hon 6 --}}
+            @foreach($categories->take(6) as $category) {{-- Bat dau vong lap danh muc va chi lay toi da 6 danh muc --}}
             <div class="col-md-4 col-lg-2">
                 <a href="{{ route('category.show', $category->category_id) }}" class="text-decoration-none">
+                    {{-- route('category.show', $category->category_id) la link den trang danh muc san pham voi category_id tuong ung --}}
                     <div class="card text-center border-0 shadow-sm" style="border-radius: 12px; transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
                         <div class="card-body">
-                            <i class="fas fa-box fa-3x mb-3" style="color: #667eea;"></i>
-                            <h6 class="card-title mb-0">{{ $category->name }}</h6>
-                            <small class="text-muted">{{ $category->products_count ?? 0 }} sản phẩm</small>
+                            <i class="fas fa-box fa-3x mb-3" style="color: #667eea;"></i> {{-- Icon danh muc --}}
+                            <h6 class="card-title mb-0">{{ $category->name }}</h6> {{-- Hien thi ten danh muc --}}
+                            <small class="text-muted">{{ $category->products_count ?? 0 }} sản phẩm</small> {{-- Hien thi so luong san pham trong danh muc, neu khong co thi hien thi 0 --}}
                         </div>
                     </div>
                 </a>
             </div>
-            @endforeach
+            @endforeach {{-- Ket thuc vong lap danh muc --}}
         @else
             <div class="col-12 text-center">
                 <p class="text-muted">Chưa có danh mục nào</p>
@@ -51,15 +52,18 @@
 <section class="container mb-5">
     <h2 class="section-title">Sản phẩm nổi bật</h2>
     <div class="row g-4">
-        @if(isset($featuredProducts) && $featuredProducts->count() > 0)
-            @foreach($featuredProducts as $product)
-            <div class="col-md-6 col-lg-3">
+        @if(isset($featuredProducts) && $featuredProducts->count() > 0) {{-- Neu co ton tai san pham noi bat --}}
+            @foreach($featuredProducts as $product) {{-- Bat dau vong lap san pham noi bat --}}
+            <div class="col-md-6 col-lg-3"> {{-- Hien thi 4 san pham tren 1 hang tren man hinh lon --}}
+                {{-- Hien thi the hien thong tin san pham --}}
                 <div class="product-card">
-                    <a href="{{ route('product.show', $product->product_id) }}">
-                        <img src="{{ $product->image_url ?? 'https://via.placeholder.com/300x250/667eea/ffffff?text=Product' }}" 
-                             alt="{{ $product->name }}" 
-                             class="product-image">
+                    <a href="{{ route('product.show', $product->product_id) }}"> {{-- Link den trang chi tiet san pham voi product_id tuong ung --}}
+                        <img src="{{ $product->image_url ?? 'https://via.placeholder.com/300x250/667eea/ffffff?text=Product' }}"  
+                        {{-- Hien thi anh san pham, neu khong co thi hien thi anh mac dinh --}}
+                             alt="{{ $product->name }}" {{-- Hien thi ten san pham --}}
+                             class="product-image"> {{-- Class CSS de dinh dang anh san pham --}}
                     </a>
+                    {{-- Hien thi thong tin san pham --}}
                     <div class="product-body">
                         <span class="category-badge">{{ $product->category->name ?? 'Danh mục' }}</span>
                         <a href="{{ route('product.show', $product->product_id) }}" class="text-decoration-none">
@@ -75,23 +79,25 @@
                                 <i class="far fa-star"></i>
                             </div>
                         </div>
-                        <button class="btn-add-cart" onclick="addToCart({{ $product->product_id }})">
-                            <i class="fas fa-cart-plus"></i> Thêm vào giỏ
+                        <button class="btn-add-cart" onclick="addToCart({{ $product->product_id }})"> 
+                            {{-- onclick goi ham addToCart voi product_id tuong ung --}}
+                            <i class="fas fa-cart-plus"></i> Thêm vào giỏ {{-- Hien thi icon gio hang va chu "Them vao gio" --}}
                         </button>
                     </div>
                 </div>
             </div>
-            @endforeach
-        @else
+            @endforeach {{-- Ket thuc vong lap san pham noi bat --}}
+        @else {{-- Neu khong co san pham noi bat --}}
             <div class="col-12 text-center">
                 <p class="text-muted">Chưa có sản phẩm nào</p>
             </div>
         @endif
     </div>
-    
-    @if(isset($featuredProducts) && $featuredProducts->count() > 0)
+
+    @if(isset($featuredProducts) && $featuredProducts->count() > 0) {{-- Neu co ton tai san pham noi bat va co san pham lon hon 0 --}}
     <div class="text-center mt-4">
         <a href="{{ route('products.index') }}" class="btn btn-outline-primary btn-lg" style="border-radius: 25px;">
+            {{-- Link den trang danh sach san pham --}}
             Xem tất cả sản phẩm <i class="fas fa-arrow-right"></i>
         </a>
     </div>
@@ -102,37 +108,38 @@
 <section class="container mb-5" style="background: #f9fafb; padding: 40px 20px; border-radius: 20px;">
     <h2 class="section-title">Sản phẩm mới nhất</h2>
     <div class="row g-4">
-        @if(isset($newProducts) && $newProducts->count() > 0)
-            @foreach($newProducts as $product)
-            <div class="col-md-6 col-lg-3">
+        @if(isset($newProducts) && $newProducts->count() > 0) {{-- Neu co ton tai san pham moi --}}
+            @foreach($newProducts as $product) {{-- Bat dau vong lap san pham moi --}}
+            <div class="col-md-6 col-lg-3"> 
                 <div class="product-card">
-                    <div style="position: relative;">
+                    <div style="position: relative;"> {{-- De hien thi badge "Moi" o goc phai tren anh san pham --}}
                         <a href="{{ route('product.show', $product->product_id) }}">
-                            <img src="{{ $product->image_url ?? 'https://via.placeholder.com/300x250/764ba2/ffffff?text=New+Product' }}" 
-                                 alt="{{ $product->name }}" 
-                                 class="product-image">
+                            <img src="{{ $product->image_url ?? 'https://via.placeholder.com/300x250/764ba2/ffffff?text=New+Product' }}"
+                            {{-- link den anh san pham moi, neu khong co thi hien thi anh mac dinh --}} 
+                                 alt="{{ $product->name }}" {{-- Hien thi ten san pham moi --}}
+                                 class="product-image"> {{-- Class CSS de dinh dang anh san pham moi --}}
                         </a>
                         <span class="badge bg-danger" style="position: absolute; top: 10px; right: 10px;">Mới</span>
                     </div>
                     <div class="product-body">
-                        <span class="category-badge">{{ $product->category->name ?? 'Danh mục' }}</span>
-                        <a href="{{ route('product.show', $product->product_id) }}" class="text-decoration-none">
-                            <h5 class="product-title">{{ $product->name }}</h5>
+                        <span class="category-badge">{{ $product->category->name ?? 'Danh mục' }}</span> {{-- Hien thi ten danh muc san pham, neu khong co thi hien thi "Danh muc" --}} 
+                        <a href="{{ route('product.show', $product->product_id) }}" class="text-decoration-none"> {{-- Link den trang chi tiet san pham moi voi product_id tuong ung --}}
+                            <h5 class="product-title">{{ $product->name }}</h5> {{-- Hien thi ten san pham moi khi goi den $product->name --}}
                         </a>
                         <div class="d-flex justify-content-between align-items-center">
-                            <span class="product-price">{{ number_format($product->price, 0, ',', '.') }}₫</span>
-                            <small class="text-muted">{{ $product->created_at->diffForHumans() }}</small>
+                            <span class="product-price">{{ number_format($product->price, 0, ',', '.') }}₫</span> {{-- number format de dinh dang gia san pham moi --}}
+                            <small class="text-muted">{{ $product->created_at->diffForHumans() }}</small> {{-- Hien thi thoi gian them san pham moi dang "x phut truoc", "x gio truoc" --}}
                         </div>
-                        <button class="btn-add-cart" onclick="addToCart({{ $product->product_id }})">
-                            <i class="fas fa-cart-plus"></i> Thêm vào giỏ
+                        <button class="btn-add-cart" onclick="addToCart({{ $product->product_id }})"> {{-- onclick goi ham addToCart voi product_id tuong ung --}}
+                            <i class="fas fa-cart-plus"></i> Thêm vào giỏ {{-- Hien thi icon gio hang va chu "Them vao gio" --}}
                         </button>
                     </div>
                 </div>
             </div>
-            @endforeach
+            @endforeach {{-- Ket thuc vong lap san pham moi --}}
         @else
             <div class="col-12 text-center">
-                <p class="text-muted">Chưa có sản phẩm mới</p>
+                <p class="text-muted">Chưa có sản phẩm mới</p> {{-- Hien thi thong bao neu khong co san pham moi --}}
             </div>
         @endif
     </div>
@@ -144,37 +151,37 @@
         <div class="col-md-3">
             <div class="text-center p-4">
                 <div class="mb-3">
-                    <i class="fas fa-shipping-fast fa-3x" style="color: #667eea;"></i>
+                    <i class="fas fa-shipping-fast fa-3x" style="color: #667eea;"></i> {{-- Icon giao hang nhanh --}}
                 </div>
                 <h5>Giao hàng nhanh</h5>
-                <p class="text-muted">Miễn phí vận chuyển cho đơn hàng trên 500k</p>
+                <p class="text-muted">Miễn phí vận chuyển cho đơn hàng trên 500k</p> {{-- Mo ta dich vu giao hang nhanh --}}
             </div>
         </div>
         <div class="col-md-3">
             <div class="text-center p-4">
                 <div class="mb-3">
-                    <i class="fas fa-shield-alt fa-3x" style="color: #667eea;"></i>
+                    <i class="fas fa-shield-alt fa-3x" style="color: #667eea;"></i> {{-- Icon thanh toan an toan --}}
                 </div>
                 <h5>Thanh toán an toàn</h5>
-                <p class="text-muted">Hỗ trợ đa dạng phương thức thanh toán</p>
+                <p class="text-muted">Hỗ trợ đa dạng phương thức thanh toán</p> {{-- Mo ta dich vu thanh toan an toan --}}
             </div>
         </div>
         <div class="col-md-3">
             <div class="text-center p-4">
                 <div class="mb-3">
-                    <i class="fas fa-undo-alt fa-3x" style="color: #667eea;"></i>
+                    <i class="fas fa-undo-alt fa-3x" style="color: #667eea;"></i> {{-- Icon doi tra de dang --}}
                 </div>
                 <h5>Đổi trả dễ dàng</h5>
-                <p class="text-muted">Chính sách đổi trả trong vòng 7 ngày</p>
+                <p class="text-muted">Chính sách đổi trả trong vòng 7 ngày</p> {{-- Mo ta dich vu doi tra de dang --}}
             </div>
         </div>
         <div class="col-md-3">
             <div class="text-center p-4">
                 <div class="mb-3">
-                    <i class="fas fa-headset fa-3x" style="color: #667eea;"></i>
+                    <i class="fas fa-headset fa-3x" style="color: #667eea;"></i> {{-- Icon ho tro khach hang --}}
                 </div>
                 <h5>Hỗ trợ 24/7</h5>
-                <p class="text-muted">Đội ngũ CSKH luôn sẵn sàng hỗ trợ bạn</p>
+                <p class="text-muted">Đội ngũ CSKH luôn sẵn sàng hỗ trợ bạn</p> {{-- Mo ta dich vu ho tro khach hang --}}
             </div>
         </div>
     </div>
