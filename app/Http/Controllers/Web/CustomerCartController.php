@@ -106,9 +106,9 @@ class CustomerCartController extends Controller
         } catch (\Exception $e) { // neu co loi xay ra trong qua trinh them san pham vao gio hang
             DB::rollBack();
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Có lỗi xảy ra: '.$e->getMessage(),
+            return response()->json([ // tra ve response dang json
+                'success' => false, //  bien success de biet them san pham vao gio hang co thanh cong hay khong
+                'message' => 'Có lỗi xảy ra: '.$e->getMessage(), // thong bao loi
             ], 500);
         }
     }
@@ -174,47 +174,49 @@ class CustomerCartController extends Controller
      */
     public function remove($cartItemId)
     {
-        if (! Auth::check()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Vui lòng đăng nhập!',
+        if (! Auth::check()) { // neu user chua dang nhap
+            return response()->json([ // tra ve response dang json
+                'success' => false, // bien success de biet xoa san pham khoi gio hang co thanh cong hay khong
+                'message' => 'Vui lòng đăng nhập!', // thong bao loi
             ], 401);
         }
 
         try {
-            DB::beginTransaction();
+            DB::beginTransaction(); // bat dau giao dich
 
             $cartItem = CartItem::findOrFail($cartItemId);
+            // $cartItem la bien chua item trong gio hang, tim kiem item trong gio hang theo cartItemId, neu khong tim thay thi tra ve loi 404
 
             // Kiểm tra quyền sở hữu
-            if ($cartItem->cart->user_id != Auth::id()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Không có quyền!',
-                ], 403);
+            if ($cartItem->cart->user_id != Auth::id()) { // neu user_id cua gio hang khac voi id cua user hien tai dang nhap
+                //$cartItem->cart-> user_id la cach truy cap user_id cua gio hang thong qua item trong gio hang
+                return response()->json([ // tra ve response dang json
+                    'success' => false, //  bien success de biet xoa san pham khoi gio hang co thanh cong hay khong
+                    'message' => 'Không có quyền!', // thong bao loi
+                ], 403); // 403 la ma trang thai HTTP cho biet user khong co quyen truy cap
             }
 
-            $cart = $cartItem->cart;
-            $cartItem->delete();
+            $cart = $cartItem->cart; // $cart la bien chua gio hang cua item trong gio hang
+            $cartItem->delete(); // xoa item trong gio hang
 
-            // Cập nhật tổng tiền không cần thiết - tính động
+            // Cập nhật tổng tiền không cần thiết - tính động 
 
-            DB::commit();
+            DB::commit(); // ket thuc giao dich
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Đã xóa sản phẩm khỏi giỏ hàng!',
+            return response()->json([  // tra ve response dang json
+                'success' => true, // bien success de biet xoa san pham khoi gio hang co thanh cong hay khong
+                'message' => 'Đã xóa sản phẩm khỏi giỏ hàng!', // thong bao thanh cong
                 'cartTotal' => $cart->totalPrice(), // Sử dụng method totalPrice()
                 'cartCount' => $cart->items()->sum('quantity'),
             ]);
 
-        } catch (\Exception $e) {
-            DB::rollBack();
+        } catch (\Exception $e) { // neu co loi xay ra trong qua trinh xoa san pham khoi gio hang
+            DB::rollBack(); // quay lai trang thai truoc khi bat dau giao dich
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Có lỗi xảy ra: '.$e->getMessage(),
-            ], 500);
+            return response()->json([ // tra ve response dang json
+                'success' => false, // bien success de biet xoa san pham khoi gio hang co thanh cong hay khong
+                'message' => 'Có lỗi xảy ra: '.$e->getMessage(), // thong bao loi
+            ], 500); 
         }
     }
 
@@ -223,21 +225,21 @@ class CustomerCartController extends Controller
      */
     public function clear()
     {
-        if (! Auth::check()) {
-            return redirect()->route('login')->with('error', 'Vui lòng đăng nhập!');
+        if (! Auth::check()) { // neu user chua dang nhap
+            return redirect()->route('login')->with('error', 'Vui lòng đăng nhập!'); // tra ve trang login voi yeu cau dang nhap
         }
 
-        try {
-            $cart = Auth::user()->cart;
-            if ($cart) {
-                $cart->items()->delete();
+        try { // bat dau khoi tao try catch de bat loi
+            $cart = Auth::user()->cart; // lay gio hang cua user hien tai dang nhap
+            if ($cart) { // neu co gio hang
+                $cart->items()->delete(); // xoa toan bo item trong gio hang
                 // Không cần reset total_amount vì tính động
             }
 
-            return redirect()->back()->with('success', 'Đã xóa toàn bộ giỏ hàng!');
+            return redirect()->back()->with('success', 'Đã xóa toàn bộ giỏ hàng!'); // tra ve trang truoc do voi thong bao thanh cong
 
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Có lỗi xảy ra: '.$e->getMessage());
+        } catch (\Exception $e) { // neu co loi xay ra trong qua trinh xoa toan bo gio hang
+            return redirect()->back()->with('error', 'Có lỗi xảy ra: '.$e->getMessage()); // tra ve trang truoc do voi thong bao loi
         }
     }
 }

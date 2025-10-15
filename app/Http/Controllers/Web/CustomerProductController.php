@@ -87,36 +87,36 @@ class CustomerProductController extends Controller
             ->get(); // lay ve danh sach san pham lien quan
 
         // Đếm số lượng sản phẩm trong giỏ hàng
-        $cartCount = 0;
-        if (Auth::check()) {
-            $cart = Auth::user()->cart;
-            if ($cart) {
-                $cartCount = $cart->items()->sum('quantity');
+        $cartCount = 0; // Khoi tao cartCount bang 0
+        if (Auth::check()) { // Neu user da dang nhap
+            $cart = Auth::user()->cart; // lay gio hang cua user hien tai
+            if ($cart) { // neu co gio hang thi tinh tong so luong san pham trong gio hang
+                $cartCount = $cart->items()->sum('quantity'); // $cart->items() goi den quan he items de lay ve danh sach cac item trong gio hang, sau do tinh tong so luong san pham trong gio hang bang ham sum('quantity')
             }
         }
 
-        $categories = Category::withCount('products')->get();
+        $categories = Category::withCount('products')->get(); // lay so luong san pham trong tung danh muc
 
-        return view('products.show', compact('product', 'relatedProducts', 'categories', 'cartCount'));
-    }
+        return view('products.show', compact('product', 'relatedProducts', 'categories', 'cartCount')); //Tra ve view chi tiet , truyen du lieu qua ham compact
+    } 
 
     /**
      * Tìm kiếm sản phẩm
      */
-    public function search(Request $request)
+    public function search(Request $request) // su dung Request de lay tham so truyen vao de tim kiem
     {
-        return $this->index($request);
+        return $this->index($request); 
     }
 
     /**
      * Hiển thị sản phẩm theo danh mục
      */
-    public function category($id)
+    public function category($id) // $id la tham so cua danh muc can hien thi san pham
     {
-        $category = Category::findOrFail($id);
+        $category = Category::findOrFail($id); // Tim category qua id
 
-        $products = Product::with('category')
-            ->where('category_id', $id)
+        $products = Product::with('category') // Tim product co quan he voi Category qua model Product
+            ->where('category_id', $id) // 
             ->latest('created_at')
             ->paginate(12);
 
