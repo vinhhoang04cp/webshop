@@ -91,7 +91,7 @@
                     <h5 class="mb-4">Tóm tắt đơn hàng</h5>
                     
                     @php
-                        $subtotal = $cart->total_amount ?? 0;
+                        $subtotal = $cart->totalPrice() ?? 0;
                         $shippingFee = $subtotal >= 500000 ? 0 : 30000;
                         $total = $subtotal + $shippingFee;
                     @endphp

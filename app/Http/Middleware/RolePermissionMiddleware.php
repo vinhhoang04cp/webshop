@@ -78,6 +78,10 @@ class RolePermissionMiddleware
                         $hasAccess = $user->isManager() || $user->isAdmin();
                         break;
 
+                    case 'customer':
+                        $hasAccess = $user->isCustomer() || $user->isAdmin();
+                        break;
+
                     case 'dashboard':
                         $hasAccess = $user->canAccessDashboard();
                         break;

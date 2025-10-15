@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Product;
+use Illuminate\Support\Facades\Auth;
 
 class HomeController extends Controller
 {
@@ -32,8 +33,8 @@ class HomeController extends Controller
 
         // Đếm số lượng sản phẩm trong giỏ hàng (nếu user đã đăng nhập)
         $cartCount = 0; // khoi tao cartCount bang 0
-        if (auth()->check()) { // Check neu user da dang nhap
-            $cart = auth()->user()->cart; // auth() la ham tra ve doi tuong nguoi dung hien tai dang nhap
+        if (Auth::check()) { // Check neu user da dang nhap
+            $cart = Auth::user()->cart; // auth() la ham tra ve doi tuong nguoi dung hien tai dang nhap
             if ($cart) {  // neu co gio hang thi tinh tong so luong san pham trong gio hang
                 $cartCount = $cart->items()->sum('quantity'); // tinh tong so luong san pham trong gio hang
             }

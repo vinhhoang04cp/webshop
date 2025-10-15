@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Models\Role;
 use App\Models\User;
+use App\Models\UserRole;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth; // Thu vien Auth dung de xac thuc
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash; // Thu vien Hash dung de ma hoa password
 
 class AuthController extends Controller
@@ -56,17 +59,20 @@ class AuthController extends Controller
             ])->withInput(); // withInput de giu lai du lieu nguoi dung da nhap
         }
 
-        // Kiểm tra role - chỉ cho phép admin và manager
-        if (! $user->hasRole('admin') && ! $user->hasRole('manager')) { // ! $user->hasRole neu user khong co role admin va manager
-            return back()->withErrors([ // Quay lai trang truoc do voi loi
-                'email' => 'Bạn không có quyền truy cập vào hệ thống quản lý.', //
-            ])->withInput(); // withInput de giu lai du lieu nguoi dung da nhap
-        }
-
         // Đăng nhập user
         Auth::login($user); // Auth::login de dang nhap user
 
-        return redirect()->route('dashboard')->with('success', 'Đăng nhập thành công!'); // Chuyen huong ve dashboard voi thong bao thanh cong
+        // Chuyển hướng dựa trên role
+        if ($user->hasRole('admin') || $user->hasRole('manager')) {
+            // Admin và Manager vào dashboard
+            return redirect()->route('dashboard')->with('success', 'Đăng nhập thành công!');
+        } elseif ($user->hasRole('customer')) {
+            // Customer vào trang sản phẩm
+            return redirect()->route('products.index')->with('success', 'Đăng nhập thành công!');
+        } else {
+            // User thông thường vào trang chủ
+            return redirect()->route('home')->with('success', 'Đăng nhập thành công!');
+        }
     }
 
     /**
@@ -91,10 +97,26 @@ class AuthController extends Controller
             'address' => $request->address, // Lay address tu form
         ]);
 
-        // Note: User mới tạo sẽ không có role admin/manager
-        // Cần admin phân quyền sau
+        // Tự động gán role customer cho user mới đăng ký
+        try {
+            DB::beginTransaction();
 
-        return redirect()->route('login')->with('success', 'Đăng ký thành công! Vui lòng liên hệ admin để được phân quyền truy cập.'); // Chuyen huong ve trang login voi thong bao thanh cong
+            $customerRole = Role::where('role_name', 'customer')->first();
+            if ($customerRole) {
+                UserRole::create([
+                    'user_id' => $user->id,
+                    'role_id' => $customerRole->role_id,
+                    'assigned_at' => now(),
+                ]);
+            }
+
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            // Log lỗi nhưng vẫn cho user đăng ký thành công
+        }
+
+        return redirect()->route('login')->with('success', 'Đăng ký thành công! Vui lòng đăng nhập để tiếp tục.'); // Chuyen huong ve trang login voi thong bao thanh cong
     }
 
     /**

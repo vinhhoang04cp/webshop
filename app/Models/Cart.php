@@ -15,7 +15,6 @@ class Cart extends Model
 
     protected $fillable = [
         'user_id',
-        'total_amount',
     ];
 
     public function products()

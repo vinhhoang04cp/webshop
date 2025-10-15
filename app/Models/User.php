@@ -89,6 +89,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Kiểm tra user có phải customer không
+     */
+    public function isCustomer(): bool
+    {
+        return $this->hasRole('customer');
+    }
+
+    /**
      * Kiểm tra user có quyền truy cập dashboard (admin hoặc manager)
      */
     public function canAccessDashboard(): bool
@@ -119,6 +127,14 @@ class User extends Authenticatable
                 'edit_category',
                 'view_reports',
             ],
+            'customer' => [
+                'view_products',
+                'add_to_cart',
+                'view_cart',
+                'create_order',
+                'view_own_orders',
+                'edit_own_profile',
+            ],
             'user' => [
                 'view_products',
                 'create_order',
@@ -148,6 +164,7 @@ class User extends Authenticatable
 
         $manageableResources = [
             'manager' => ['products', 'categories', 'orders', 'users'],
+            'customer' => ['own_orders', 'cart', 'own_profile'],
             'user' => ['own_orders', 'cart'],
         ];
 
@@ -177,6 +194,10 @@ class User extends Authenticatable
                 'view_orders', 'edit_order', 'delete_order',
                 'view_categories', 'create_category', 'edit_category', 'delete_category',
                 'view_reports', 'view_users',
+            ],
+            'customer' => [
+                'view_products', 'add_to_cart', 'view_cart',
+                'create_order', 'view_own_orders', 'edit_own_profile',
             ],
             'user' => [
                 'view_products', 'create_order', 'view_own_orders', 'edit_own_profile',

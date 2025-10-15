@@ -5,6 +5,7 @@ use App\Http\Controllers\Web\CustomerCartController;
 use App\Http\Controllers\Web\CustomerProductController;
 use App\Http\Controllers\Web\HomeController;
 use App\Http\Controllers\Web\UserManagementController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 // Home page - Trang chủ cho khách hàng
@@ -145,6 +146,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Debug route - tạm thời để kiểm tra user info
     Route::get('/debug/user-info', function () {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
 
         return response()->json([
@@ -167,6 +169,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Debug route - tạm thời để gán role admin cho user hiện tại
     Route::get('/debug/make-admin', function () {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
 
         // Tạo role admin nếu chưa có
@@ -192,6 +195,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Debug route - tạm thời để gán role manager cho user hiện tại
     Route::get('/debug/make-manager', function () {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
 
         // Tạo role manager nếu chưa có

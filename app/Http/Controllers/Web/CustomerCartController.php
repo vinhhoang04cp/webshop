@@ -28,7 +28,6 @@ class CustomerCartController extends Controller
         if (! $cart) { // !cart neu chua co gio hang thi tao moi
             $cart = Cart::create([ // $cart la doi tuong cart moi duoc tao thong qua phuong thuc create cua model Cart
                 'user_id' => Auth::id(), // lay id cua user hien tai dang nhap lam user_id
-                'total_amount' => 0, // khoi tao tong tien bang 0
             ]);
         }
 
@@ -70,7 +69,6 @@ class CustomerCartController extends Controller
             if (! $cart) { // neu chua co gio hang thi tao moi
                 $cart = Cart::create([ // tao moi gio hang
                     'user_id' => Auth::id(), // lay id cua user hien tai dang nhap lam user_id
-                    'total_amount' => 0, // khoi tao tong tien bang 0
                 ]);
             }
 
@@ -94,11 +92,8 @@ class CustomerCartController extends Controller
                 ]);
             }
 
-            // Cập nhật tổng tiền
-            $cart->total_amount = $cart->items->sum(function ($item) { // function((%item) se tinh tong tien cua tung item trong gio hang bang cach nhan so luong voi gia cua tung item
-                return $item->quantity * $item->price;
-            });
-            $cart->save(); // luu thay doi
+            // Cập nhật tổng tiền không cần thiết vì sẽ tính động từ items
+            // $cart->total_amount sẽ được tính qua method totalPrice()
 
             DB::commit(); // ket thuc giao dich
 
@@ -150,12 +145,8 @@ class CustomerCartController extends Controller
             $cartItem->quantity = $request->quantity;
             $cartItem->save();
 
-            // Cập nhật tổng tiền
+            // Cập nhật tổng tiền không cần thiết - tính động
             $cart = $cartItem->cart;
-            $cart->total_amount = $cart->items->sum(function ($item) {
-                return $item->quantity * $item->price;
-            });
-            $cart->save();
 
             DB::commit();
 
@@ -163,7 +154,7 @@ class CustomerCartController extends Controller
                 'success' => true,
                 'message' => 'Đã cập nhật giỏ hàng!',
                 'itemTotal' => $cartItem->quantity * $cartItem->price,
-                'cartTotal' => $cart->total_amount,
+                'cartTotal' => $cart->totalPrice(), // Sử dụng method totalPrice() thay vì total_amount
             ]);
 
         } catch (\Exception $e) {
@@ -204,18 +195,14 @@ class CustomerCartController extends Controller
             $cart = $cartItem->cart;
             $cartItem->delete();
 
-            // Cập nhật tổng tiền
-            $cart->total_amount = $cart->items->sum(function ($item) {
-                return $item->quantity * $item->price;
-            });
-            $cart->save();
+            // Cập nhật tổng tiền không cần thiết - tính động
 
             DB::commit();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Đã xóa sản phẩm khỏi giỏ hàng!',
-                'cartTotal' => $cart->total_amount,
+                'cartTotal' => $cart->totalPrice(), // Sử dụng method totalPrice()
                 'cartCount' => $cart->items()->sum('quantity'),
             ]);
 
@@ -242,8 +229,7 @@ class CustomerCartController extends Controller
             $cart = Auth::user()->cart;
             if ($cart) {
                 $cart->items()->delete();
-                $cart->total_amount = 0;
-                $cart->save();
+                // Không cần reset total_amount vì tính động
             }
 
             return redirect()->back()->with('success', 'Đã xóa toàn bộ giỏ hàng!');
