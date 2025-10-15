@@ -22,22 +22,40 @@ class CustomerCartController extends Controller
             return redirect()->route('login')->with('error', 'Vui lòng đăng nhập để xem giỏ hàng!'); // chuyen huong den trang dang nhap voi thong bao loi
         }
 
-        $cart = Auth::user()->cart; // $cart la gio hang cua user hien tai dang nhap
+        try {
+            $cart = Auth::user()->cart; // $cart la gio hang cua user hien tai dang nhap
 
-        // Nếu chưa có giỏ hàng, tạo mới
-        if (! $cart) { // !cart neu chua co gio hang thi tao moi
-            $cart = Cart::create([ // $cart la doi tuong cart moi duoc tao thong qua phuong thuc create cua model Cart
-                'user_id' => Auth::id(), // lay id cua user hien tai dang nhap lam user_id
-            ]);
+            // Nếu chưa có giỏ hàng, tạo mới
+            if (! $cart) { // !cart neu chua co gio hang thi tao moi
+                $cart = Cart::create([ // $cart la doi tuong cart moi duoc tao thong qua phuong thuc create cua model Cart
+                    'user_id' => Auth::id(), // lay id cua user hien tai dang nhap lam user_id
+                ]);
+            }
+
+            // Load cart items with better error handling
+            $cartItems = collect(); // Initialize empty collection
+            
+            try {
+                $cartItems = $cart->items()
+                    ->with(['product' => function($query) {
+                        $query->with('category');
+                    }])
+                    ->get();
+            } catch (\Exception $e) {
+                \Log::error('Error loading cart items: ' . $e->getMessage());
+                // Return empty collection on error
+                $cartItems = collect();
+            }
+
+            $categories = \App\Models\Category::withCount('products')->get(); // Model Category lay ve danh sach danh muc voi so luong san pham trong tung danh muc
+            $cartCount = $cartItems->sum('quantity'); // tinh tong so luong san pham trong gio hang
+
+            return view('cart.index', compact('cart', 'cartItems', 'categories', 'cartCount')); // truyen du lieu ra view cart.index voi cac bien cart, cartItems, categories, cartCount
+            
+        } catch (\Exception $e) {
+            \Log::error('Error in cart index: ' . $e->getMessage());
+            return redirect()->route('home')->with('error', 'Có lỗi xảy ra khi tải giỏ hàng: ' . $e->getMessage());
         }
-
-        $cartItems = $cart->items()->with('product.category')->get(); // $cartItems la bien chua danh sach cac item trong gio hang voi quan he voi product va category
-        // $cart->items() goi den quan he items de lay ve danh sach cac item trong gio hang, sau do su dung with de lay ve quan he voi product va category
-        // cuoi cung su dung get() de thuc hien truy van va lay ve ket qua
-        $categories = Category::withCount('products')->get(); // Model Category lay ve danh sach danh muc voi so luong san pham trong tung danh muc
-        $cartCount = $cart->items()->sum('quantity'); // tinh tong so luong san pham trong gio hang bang ham sum('quantity')
-
-        return view('cart.index', compact('cart', 'cartItems', 'categories', 'cartCount')); // truyen du lieu ra view cart.index voi cac bien cart, cartItems, categories, cartCount
     }
 
     /**
@@ -155,7 +173,7 @@ class CustomerCartController extends Controller
                 'success' => true, // bien success de biet cap nhat so luong san pham trong gio hang co thanh cong hay khong
                 'message' => 'Đã cập nhật giỏ hàng!', // thong bao thanh cong
                 'cartCount' => $cart->items()->sum('quantity'), // tinh tong so luong san pham trong gio hang bang ham sum('quantity')
-                'itemTotal' => $cartItem->quantity * $cartItem->price, // tinh tong tien cua item trong gio hang
+                'itemTotal' => $cartItem->quantity * ($cartItem->price ?? $cartItem->product->price ?? 0), // tinh tong tien cua item trong gio hang
                 'cartTotal' => $cart->totalPrice(), // Sử dụng method totalPrice() thay vì total_amount
             ]);
 

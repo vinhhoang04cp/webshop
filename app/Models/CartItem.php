@@ -31,48 +31,32 @@ class CartItem extends Model
     }
 
     /**
-     * Phương thức trợ giúp để lấy giá (từ column price nếu có, hoặc từ product)
+     * Phương thức trợ giúp để lấy giá hiệu quả (từ column price nếu có, hoặc từ product)
      */
-    public function price()
+    public function getEffectivePrice()
     {
         // Nếu có price được lưu trong cart_items, dùng nó; nếu không thì lấy từ product
-        return $this->price ?? ($this->product ? $this->product->price : 0);
+        return $this->attributes['price'] ?? ($this->product ? $this->product->price : 0);
     }
 
     /**
      * Phương thức trợ giúp để tính tổng giá
      */
-    public function totalPrice()
+    public function getItemTotal()
     {
-        return $this->quantity * $this->price();
+        return $this->quantity * $this->getEffectivePrice();
     }
-
-    protected $appends = ['price', 'total_price'];
 
     protected $casts = [
         'price' => 'decimal:2',
-        'total_price' => 'decimal:2',
+        'quantity' => 'integer',
     ];
 
     /**
-     * Accessor để lấy giá sản phẩm (trả về từ helper method hoặc column price)
-     */
-    public function getPriceAttribute()
-    {
-        // Accessor này chỉ kích hoạt khi truy cập thuộc tính thông qua $cartItem->price
-        // và khi không có giá trị trong database
-        if (! isset($this->attributes['price']) || $this->attributes['price'] === null) {
-            return $this->price();
-        }
-
-        return $this->attributes['price'];
-    }
-
-    /**
-     * Accessor để tính tổng giá
+     * Accessor để tính tổng giá của item này
      */
     public function getTotalPriceAttribute()
     {
-        return $this->totalPrice();
+        return $this->getItemTotal();
     }
 }

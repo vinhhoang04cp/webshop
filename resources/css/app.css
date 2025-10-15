@@ -1,0 +1,356 @@
+/* Mint Green Theme for WebShop */
+:root {
+    /* Mint Green Color Palette */
+    --mint-primary: #00d4aa;
+    --mint-secondary: #26d0ce;
+    --mint-light: #e6fff8;
+    --mint-dark: #008c73;
+    --mint-darker: #006b5a;
+    
+    /* Complementary Colors */
+    --mint-bg: #f0fffe;
+    --mint-text: #134e4a;
+    --mint-text-light: #5f8a8b;
+    --mint-border: #ccf2f0;
+    --mint-shadow: rgba(0, 212, 170, 0.15);
+    
+    /* Status Colors with Mint Accent */
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --info: #06b6d4;
+}
+
+/* Global Styles */
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+}
+
+body {
+    background: linear-gradient(135deg, var(--mint-primary) 0%, var(--mint-secondary) 100%);
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: var(--mint-text);
+    line-height: 1.6;
+}
+
+/* Container Styles */
+.container, .container-fluid {
+    background: var(--mint-bg);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px var(--mint-shadow);
+}
+
+/* Card Styles */
+.card {
+    background: white;
+    border: 1px solid var(--mint-border);
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 212, 170, 0.1);
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 212, 170, 0.15);
+}
+
+.card-header {
+    background: linear-gradient(135deg, var(--mint-light) 0%, #ffffff 100%);
+    border-bottom: 1px solid var(--mint-border);
+    color: var(--mint-text);
+    font-weight: 600;
+}
+
+/* Button Styles */
+.btn-primary {
+    background: linear-gradient(135deg, var(--mint-primary) 0%, var(--mint-secondary) 100%);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, var(--mint-dark) 0%, var(--mint-primary) 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 212, 170, 0.3);
+}
+
+.btn-secondary {
+    background: var(--mint-text-light);
+    border: none;
+    color: white;
+}
+
+.btn-success {
+    background: var(--success);
+    border: none;
+}
+
+.btn-warning {
+    background: var(--warning);
+    border: none;
+}
+
+.btn-danger {
+    background: var(--danger);
+    border: none;
+}
+
+.btn-info {
+    background: var(--info);
+    border: none;
+}
+
+/* Form Styles */
+.form-control, .form-select {
+    border: 2px solid var(--mint-border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--mint-primary);
+    box-shadow: 0 0 0 0.2rem rgba(0, 212, 170, 0.25);
+    outline: none;
+}
+
+.form-label {
+    color: var(--mint-text);
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+/* Table Styles */
+.table {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.table thead th {
+    background: linear-gradient(135deg, var(--mint-light) 0%, #ffffff 100%);
+    color: var(--mint-text);
+    border: none;
+    font-weight: 600;
+}
+
+.table tbody tr {
+    transition: all 0.2s ease;
+}
+
+.table tbody tr:hover {
+    background: var(--mint-light);
+}
+
+/* Navigation Styles */
+.navbar {
+    background: linear-gradient(135deg, var(--mint-primary) 0%, var(--mint-secondary) 100%);
+    box-shadow: 0 2px 16px var(--mint-shadow);
+}
+
+.navbar-brand {
+    color: white !important;
+    font-weight: bold;
+    font-size: 1.5rem;
+}
+
+.nav-link {
+    color: rgba(255, 255, 255, 0.9) !important;
+    transition: all 0.3s ease;
+}
+
+.nav-link:hover {
+    color: white !important;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+}
+
+/* Sidebar Styles */
+.sidebar {
+    background: linear-gradient(180deg, var(--mint-primary) 0%, var(--mint-dark) 100%);
+    color: white;
+    min-height: 100vh;
+    box-shadow: 2px 0 16px var(--mint-shadow);
+}
+
+.sidebar .nav-link {
+    color: rgba(255, 255, 255, 0.9);
+    padding: 12px 20px;
+    border-radius: 0;
+    border-left: 3px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.sidebar .nav-link:hover,
+.sidebar .nav-link.active {
+    background: rgba(255, 255, 255, 0.15);
+    border-left-color: white;
+    color: white;
+}
+
+/* Alert Styles */
+.alert-success {
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid var(--success);
+    color: var(--success);
+}
+
+.alert-warning {
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid var(--warning);
+    color: var(--warning);
+}
+
+.alert-danger {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid var(--danger);
+    color: var(--danger);
+}
+
+.alert-info {
+    background: rgba(6, 182, 212, 0.1);
+    border: 1px solid var(--info);
+    color: var(--info);
+}
+
+/* Stats Cards */
+.stats-card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    border-left: 4px solid var(--mint-primary);
+    box-shadow: 0 4px 16px rgba(0, 212, 170, 0.1);
+    transition: all 0.3s ease;
+}
+
+.stats-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 212, 170, 0.15);
+}
+
+.stats-card h3 {
+    color: var(--mint-text);
+    font-size: 2rem;
+    font-weight: bold;
+    margin: 0;
+}
+
+.stats-card p {
+    color: var(--mint-text-light);
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+/* Product Cards */
+.product-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0, 212, 170, 0.1);
+    transition: all 0.3s ease;
+}
+
+.product-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 212, 170, 0.15);
+}
+
+.product-card img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+
+.product-card .card-body {
+    padding: 20px;
+}
+
+.product-price {
+    color: var(--mint-primary);
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+/* Animations */
+@keyframes mintPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(0, 212, 170, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(0, 212, 170, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(0, 212, 170, 0);
+    }
+}
+
+.pulse-mint {
+    animation: mintPulse 2s infinite;
+}
+
+/* Loading Spinner */
+.spinner-mint {
+    border: 3px solid var(--mint-light);
+    border-top: 3px solid var(--mint-primary);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    body {
+        font-size: 14px;
+    }
+    
+    .container {
+        margin: 10px;
+        padding: 15px;
+    }
+    
+    .stats-card {
+        padding: 16px;
+        margin-bottom: 16px;
+    }
+    
+    .product-card {
+        margin-bottom: 16px;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --mint-bg: #0f2027;
+        --mint-text: #e2f8f5;
+        --mint-text-light: #8bb8b1;
+    }
+    
+    .card {
+        background: #1a2f32;
+        color: var(--mint-text);
+    }
+    
+    .form-control, .form-select {
+        background: #1a2f32;
+        color: var(--mint-text);
+        border-color: var(--mint-dark);
+    }
+}

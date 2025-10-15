@@ -7,17 +7,21 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/auth.css') }}">
     <style>
         :root {
-            --primary: #667eea;
-            --secondary: #764ba2;
-            --dark: #1f2937;
-            --light: #f9fafb;
+            --primary: #00d4aa;
+            --secondary: #26d0ce;
+            --dark: #008c73;
+            --light: #f0fffe;
+            --mint-text: #134e4a;
         }
         
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: #333;
+            color: var(--mint-text);
+            background: var(--light);
         }
 
         /* Header Styles */

@@ -25,7 +25,7 @@
                             <tbody>
                                 @if($cartItems->count() > 0)
                                     @foreach($cartItems as $item)
-                                    <tr id="cart-item-{{ $item->id }}">
+                                    <tr id="cart-item-{{ $item->cart_item_id }}">
                                         <td>
                                             <div class="d-flex align-items-center">
                                                 <img src="{{ $item->product->image_url ?? 'https://via.placeholder.com/80x80/667eea/ffffff?text=' . urlencode($item->product->name) }}" 
@@ -43,19 +43,19 @@
                                                 </div>
                                             </div>
                                         </td>
-                                        <td class="align-middle">{{ number_format($item->price, 0, ',', '.') }}₫</td>
+                                        <td class="align-middle">{{ number_format($item->price ?? $item->product->price ?? 0, 0, ',', '.') }}₫</td>
                                         <td class="align-middle">
                                             <div class="input-group" style="width: 130px;">
-                                                <button class="btn btn-outline-secondary" type="button" onclick="updateQuantity({{ $item->id }}, {{ $item->quantity - 1 }})">-</button>
-                                                <input type="text" class="form-control text-center" value="{{ $item->quantity }}" id="qty-{{ $item->id }}" readonly>
-                                                <button class="btn btn-outline-secondary" type="button" onclick="updateQuantity({{ $item->id }}, {{ $item->quantity + 1 }})">+</button>
+                                                <button class="btn btn-outline-secondary" type="button" onclick="updateQuantity({{ $item->cart_item_id }}, {{ $item->quantity - 1 }})">-</button>
+                                                <input type="text" class="form-control text-center" value="{{ $item->quantity }}" id="qty-{{ $item->cart_item_id }}" readonly>
+                                                <button class="btn btn-outline-secondary" type="button" onclick="updateQuantity({{ $item->cart_item_id }}, {{ $item->quantity + 1 }})">+</button>
                                             </div>
                                         </td>
-                                        <td class="fw-bold align-middle" id="item-total-{{ $item->id }}">
-                                            {{ number_format($item->price * $item->quantity, 0, ',', '.') }}₫
+                                        <td class="fw-bold align-middle" id="item-total-{{ $item->cart_item_id }}">
+                                            {{ number_format(($item->price ?? $item->product->price ?? 0) * $item->quantity, 0, ',', '.') }}₫
                                         </td>
                                         <td class="align-middle">
-                                            <button class="btn btn-link text-danger" onclick="removeItem({{ $item->id }})">
+                                            <button class="btn btn-link text-danger" onclick="removeItem({{ $item->cart_item_id }})" title="Xóa sản phẩm">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         </td>

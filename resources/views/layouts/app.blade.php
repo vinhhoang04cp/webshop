@@ -7,15 +7,20 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/auth.css') }}">
     <style>
         :root {
-            --primary: #667eea;
-            --secondary: #764ba2;
+            --primary: #00d4aa;
+            --secondary: #26d0ce;
+            --mint-dark: #008c73;
+            --mint-text: #134e4a;
         }
         body {
             background: linear-gradient(135deg, var(--primary), var(--secondary));
             min-height: 100vh;
-            font-family: system-ui, -apple-system, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--mint-text);
         }
         .auth-container {
             min-height: 100vh;
@@ -48,7 +53,7 @@
         }
         .form-control:focus, .form-select:focus {
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+            box-shadow: 0 0 0 3px rgba(0, 212, 170, 0.1);
         }
         .btn {
             border-radius: 8px;
@@ -65,8 +70,9 @@
             padding: 12px 16px;
         }
         .dashboard-sidebar {
-            background: linear-gradient(180deg, #1f2937, #111827);
+            background: linear-gradient(180deg, var(--primary), var(--mint-dark));
             min-height: 100vh;
+            color: white;
         }
         .sidebar-header {
             padding: 20px;
@@ -81,23 +87,28 @@
             padding: 15px 0;
         }
         .nav-link {
-            color: #d1d5db !important;
+            color: rgba(255, 255, 255, 0.9) !important;
             padding: 12px 20px;
             margin: 4px 10px;
             border-radius: 8px;
             display: flex;
             align-items: center;
+            transition: all 0.3s ease;
         }
         .nav-link i {
             width: 20px;
             margin-right: 10px;
         }
         .nav-link.active {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            background: rgba(255, 255, 255, 0.2);
             color: white !important;
+            border-left: 3px solid white;
         }
         .dashboard-content {
-            background: #f9fafb;
+            background: #f0fffe;
+            min-height: 100vh;
+            padding: 20px;
+        }
             min-height: 100vh;
             padding: 25px;
         }
