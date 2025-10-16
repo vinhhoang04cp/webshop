@@ -13,26 +13,26 @@ use Illuminate\Support\Facades\DB;
 
 class CustomerCartController extends Controller
 {
-    public function checkout(Request $request)
+    public function checkout(Request $request) // Ham checkout de xu ly thanh toan gio hang
     {
-        if (! Auth::check()) {
-            return redirect()->route('login')->with('error', 'Vui lòng đăng nhập để thanh toán!');
+        if (! Auth::check()) { // neu user chua dang nhap
+            return redirect()->route('login')->with('error', 'Vui lòng đăng nhập để thanh toán!'); // chuyen huong den trang dang nhap voi thong bao loi
         }
 
-        $cart = Auth::user()->cart;
-        if (! $cart || $cart->items()->count() == 0) {
-            return redirect()->route('cart.index')->with('error', 'Giỏ hàng trống!');
+        $cart = Auth::user()->cart; // $cart la gio hang cua user hien tai dang nhap
+        if (! $cart || $cart->items()->count() == 0) { // neu chua co gio hang hoac gio hang trong
+            return redirect()->route('cart.index')->with('error', 'Giỏ hàng trống!'); // chuyen huong den trang gio hang voi thong bao loi
         }
 
         DB::beginTransaction();
         try {
             // Tạo đơn hàng
-            $order = new \App\Models\Order;
-            $order->user_id = Auth::id();
-            $order->total_amount = $cart->totalPrice();
-            $order->status = 'pending';
-            $order->order_date = now();
-            $order->save();
+            $order = new \App\Models\Order; // Su dung model Order de tao don hang moi
+            $order->user_id = Auth::id(); // lay id cua user hien tai dang nhap lam user_id
+            $order->total_amount = $cart->totalPrice(); // Su dung method totalPrice() de tinh tong tien gio hang
+            $order->status = 'pending'; // trang thai don hang mac dinh la 'pending'
+            $order->order_date = now();  // thoi gian dat hang la thoi diem hien tai
+            $order->save(); // luu don hang vao database
 
             // Thêm các sản phẩm vào order_items
             foreach ($cart->items as $item) {
@@ -109,6 +109,14 @@ class CustomerCartController extends Controller
     public function add(Request $request, $productId) // ham add de them san pham vao gio hang voi tham so truyen vao la Request $request va $productId
     {
         if (! Auth::check()) { // neu user chua dang nhap
+            // Kiểm tra nếu là AJAX request thì trả về JSON
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!',
+                ], 401);
+            }
+
             return redirect()->route('login')->with('error', 'Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!');
         }
 
@@ -157,10 +165,26 @@ class CustomerCartController extends Controller
 
             DB::commit(); // ket thuc giao dich
 
+            // Kiểm tra nếu là AJAX request thì trả về JSON
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Đã thêm sản phẩm vào giỏ hàng!',
+                ]);
+            }
+
             return redirect()->back()->with('success', 'Đã thêm sản phẩm vào giỏ hàng!');
 
         } catch (\Exception $e) { // neu co loi xay ra trong qua trinh them san pham vao gio hang
             DB::rollBack();
+
+            // Kiểm tra nếu là AJAX request thì trả về JSON
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Có lỗi xảy ra: '.$e->getMessage(),
+                ], 500);
+            }
 
             return redirect()->back()->with('error', 'Có lỗi xảy ra: '.$e->getMessage());
         }

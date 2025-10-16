@@ -195,26 +195,34 @@ function addToCart(productId) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'Accept': 'application/json'
         },
         body: JSON.stringify({ quantity: 1 })
     })
-    .then(response => response.json())
+    .then(response => {
+        // Kiểm tra nếu là lỗi 401 (chưa đăng nhập)
+        if (response.status === 401) {
+            return response.json().then(data => {
+                alert(data.message || 'Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!');
+                window.location.href = '/login';
+                throw new Error('Unauthorized');
+            });
+        }
+        return response.json();
+    })
     .then(data => {
-        if(data.success) {
+        if(data && data.success) {
             alert(data.message);
             location.reload();
-        } else {
+        } else if(data && !data.success) {
             alert(data.message || 'Có lỗi xảy ra!');
-            if(!data.success && data.message.includes('đăng nhập')) {
-                window.location.href = '/login';
-            }
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        alert('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!');
-        window.location.href = '/login';
+        if (error.message !== 'Unauthorized') {
+            console.error('Error:', error);
+        }
     });
 }
 </script>
