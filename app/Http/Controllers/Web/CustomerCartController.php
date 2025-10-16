@@ -65,10 +65,7 @@ class CustomerCartController extends Controller
     public function add(Request $request, $productId) // ham add de them san pham vao gio hang voi tham so truyen vao la Request $request va $productId
     {
         if (! Auth::check()) { // neu user chua dang nhap
-            return response()->json([ // tra ve response dang json
-                'success' => false, // bien success de biet them san pham vao gio hang co thanh cong hay khong
-                'message' => 'Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!', // thong bao loi
-            ], 401); // 401 la ma trang thai HTTP cho biet user chua dang nhap
+            return redirect()->route('login')->with('error', 'Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!');
         }
 
         $request->validate([ // validate du lieu truyen vao
@@ -116,19 +113,12 @@ class CustomerCartController extends Controller
 
             DB::commit(); // ket thuc giao dich
 
-            return response()->json([ // tra ve response dang json
-                'success' => true,
-                'message' => 'Đã thêm sản phẩm vào giỏ hàng!',
-                'cartCount' => $cart->items()->sum('quantity'),
-            ]);
+            return redirect()->back()->with('success', 'Đã thêm sản phẩm vào giỏ hàng!');
 
         } catch (\Exception $e) { // neu co loi xay ra trong qua trinh them san pham vao gio hang
             DB::rollBack();
 
-            return response()->json([ // tra ve response dang json
-                'success' => false, //  bien success de biet them san pham vao gio hang co thanh cong hay khong
-                'message' => 'Có lỗi xảy ra: '.$e->getMessage(), // thong bao loi
-            ], 500);
+            return redirect()->back()->with('error', 'Có lỗi xảy ra: '.$e->getMessage());
         }
     }
 

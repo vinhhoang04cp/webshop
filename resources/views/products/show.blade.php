@@ -1,32 +1,48 @@
-@extends('layouts.customer')
+@extends('layouts.customer') {{-- Ke thua layout chính --}}
 
-@section('title', $product->name . ' - WebShop')
+@section('title', $product->name . ' - WebShop') {{-- Tiêu đề trang --}}
 
-@section('content')
+@section('content') {{-- Nội dung chính --}}
 <div class="container">
+    {{-- Hiển thị thông báo --}}
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle"></i> {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle"></i> {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
     <div class="row">
         <div class="col-12">
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a href="{{ route('home') }}">Trang chủ</a></li>
                     <li class="breadcrumb-item"><a href="{{ route('products.index') }}">Sản phẩm</a></li>
-                    @if($product->category)
-                        <li class="breadcrumb-item">
-                            <a href="{{ route('category.show', $product->category->category_id) }}">
-                                {{ $product->category->name }}
+                    @if($product->category) {{-- Kiểm tra nếu sản phẩm có danh mục --}}
+                        <li class="breadcrumb-item"> 
+                            <a href="{{ route('category.show', $product->category->category_id) }}"> 
+                                {{ $product->category->name }} {{-- Hiển thị tên danh mục --}}
                             </a>
                         </li>
-                    @endif
-                    <li class="breadcrumb-item active">{{ $product->name }}</li>
+                    @endif 
+                    <li class="breadcrumb-item active">{{ $product->name }}</li> {{-- Tên sản phẩm --}}
                 </ol>
             </nav>
         </div>
     </div>
 
-    <div class="row mb-5">
+    <div class="row mb-5"> 
         <!-- Product Image -->
         <div class="col-md-5">
             <div class="card border-0 shadow-sm" style="border-radius: 12px; overflow: hidden;">
+                {{-- $product->image_url hien thi anh san pham qua link url neu khong co thi hien thi hinh mac dinh --}}
                 <img src="{{ $product->image_url ?? 'https://via.placeholder.com/500x500/667eea/ffffff?text=' . urlencode($product->name) }}" 
                      alt="{{ $product->name }}" 
                      class="img-fluid"
@@ -38,13 +54,13 @@
         <div class="col-md-7">
             <div class="card border-0 shadow-sm" style="border-radius: 12px;">
                 <div class="card-body p-4">
-                    @if($product->category)
-                        <span class="category-badge mb-3">{{ $product->category->name }}</span>
+                    @if($product->category) {{-- Kiểm tra nếu sản phẩm có danh mục --}}
+                        <span class="category-badge mb-3">{{ $product->category->name }}</span> {{-- Hiển thị tên danh mục --}}
                     @endif
                     
-                    <h1 class="mb-3" style="font-size: 2rem; font-weight: 700;">{{ $product->name }}</h1>
+                    <h1 class="mb-3" style="font-size: 2rem; font-weight: 700;">{{ $product->name }}</h1> {{-- Tên sản phẩm --}}
                     
-                    <div class="d-flex align-items-center mb-3">
+                    <div class="d-flex align-items-center mb-3"> {{-- Đánh giá sao giả định --}}
                         <div class="text-warning me-3">
                             <i class="fas fa-star"></i>
                             <i class="fas fa-star"></i>
@@ -57,10 +73,11 @@
                         <span class="ms-3 text-muted">
                             <i class="fas fa-box"></i> 
                             Kho: 
+                            {{-- $product->inventory hien thi thong tin kho --}}
                             @if($product->inventory)
                                 <strong>{{ $product->inventory->quantity }}</strong> sản phẩm
                             @else
-                                <strong class="text-danger">Hết hàng</strong>
+                                <strong class="text-danger">Hết hàng</strong> {{-- Neu khong co thong tin kho thi hien thi het hang --}}
                             @endif
                         </span>
                     </div>
@@ -69,13 +86,14 @@
 
                     <div class="mb-4">
                         <h2 class="text-primary mb-0" style="font-size: 2.5rem; font-weight: 700;">
-                            {{ number_format($product->price, 0, ',', '.') }}₫
+                            {{ number_format($product->price, 0, ',', '.') }}₫ {{-- Giá sản phẩm đã được định dạng --}}
                         </h2>
                     </div>
 
                     <div class="mb-4">
                         <h5>Mô tả sản phẩm:</h5>
                         <p class="text-muted">{{ $product->description ?? 'Chưa có mô tả cho sản phẩm này.' }}</p>
+                        {{-- $product->description hien thi mo ta san pham --}}
                     </div>
 
                     @if($product->details)
@@ -98,28 +116,21 @@
                         </div>
                     @endif
 
-                    <div class="mb-4">
-                        <label class="mb-2"><strong>Số lượng:</strong></label>
-                        <div class="input-group" style="width: 150px;">
-                            <button class="btn btn-outline-secondary" type="button" onclick="decreaseQty()">
-                                <i class="fas fa-minus"></i>
-                            </button>
-                            <input type="number" id="quantity" class="form-control text-center" value="1" min="1">
-                            <button class="btn btn-outline-secondary" type="button" onclick="increaseQty()">
-                                <i class="fas fa-plus"></i>
+                    <form action="{{ route('cart.add', $product->product_id) }}" method="POST">
+                        @csrf
+                        <div class="mb-4">
+                            <label class="mb-2"><strong>Số lượng:</strong></label>
+                            <div class="input-group" style="width: 150px;">
+                                <input type="number" name="quantity" class="form-control text-center" value="1" min="1" max="{{ $product->inventory ? $product->inventory->quantity : 1 }}">
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg" style="border-radius: 25px; padding: 12px;">
+                                <i class="fas fa-cart-plus"></i> Thêm vào giỏ hàng
                             </button>
                         </div>
-                    </div>
-
-                    <div class="d-grid gap-2">
-                        <button class="btn btn-primary btn-lg" style="border-radius: 25px; padding: 12px;" 
-                                onclick="addToCart({{ $product->product_id }})">
-                            <i class="fas fa-cart-plus"></i> Thêm vào giỏ hàng
-                        </button>
-                        <button class="btn btn-outline-primary btn-lg" style="border-radius: 25px;">
-                            <i class="fas fa-heart"></i> Thêm vào yêu thích
-                        </button>
-                    </div>
+                    </form>
 
                     <div class="alert alert-info mt-3" style="border-radius: 10px;">
                         <i class="fas fa-truck"></i> Miễn phí vận chuyển cho đơn hàng trên 500k
@@ -152,9 +163,13 @@
                         <div class="d-flex justify-content-between align-items-center">
                             <span class="product-price">{{ number_format($related->price, 0, ',', '.') }}₫</span>
                         </div>
-                        <button class="btn-add-cart" onclick="addToCart({{ $related->product_id }})">
-                            <i class="fas fa-cart-plus"></i> Thêm vào giỏ
-                        </button>
+                        <form action="{{ route('cart.add', $related->product_id) }}" method="POST" style="display: inline;">
+                            @csrf
+                            <input type="hidden" name="quantity" value="1">
+                            <button type="submit" class="btn-add-cart">
+                                <i class="fas fa-cart-plus"></i> Thêm vào giỏ
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -163,50 +178,4 @@
     </section>
     @endif
 </div>
-@endsection
-
-@section('scripts')
-<script>
-function increaseQty() {
-    const qtyInput = document.getElementById('quantity');
-    qtyInput.value = parseInt(qtyInput.value) + 1;
-}
-
-function decreaseQty() {
-    const qtyInput = document.getElementById('quantity');
-    if(parseInt(qtyInput.value) > 1) {
-        qtyInput.value = parseInt(qtyInput.value) - 1;
-    }
-}
-
-function addToCart(productId) {
-    const quantity = document.getElementById('quantity').value;
-    
-    fetch(`/cart/add/${productId}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-        },
-        body: JSON.stringify({ quantity: parseInt(quantity) })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if(data.success) {
-            alert(data.message);
-            location.reload();
-        } else {
-            alert(data.message || 'Có lỗi xảy ra!');
-            if(!data.success && data.message.includes('đăng nhập')) {
-                window.location.href = '/login';
-            }
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!');
-        window.location.href = '/login';
-    });
-}
-</script>
 @endsection
