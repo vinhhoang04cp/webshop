@@ -18,7 +18,7 @@ class ProductDetailController extends Controller
     {
         $query = ProductDetail::query(); // $query la bien de thuc hien query den Bang ProductDetail thong qua model
 
-        // Filter by product_id, color, size
+        // Filter by product_id, color, storage, ram, chip
 
         if ($request->has('product_id')) {  // neu request truyen len co product_id
             $query->where('product_id', $request->get('product_id')); // thuc hien query den product_id
@@ -26,8 +26,17 @@ class ProductDetailController extends Controller
         if ($request->has('color')) {  // neu request truyen len co color
             $query->where('color', $request->get('color'));
         }
-        if ($request->has('size')) {  // neu request truyen len co size
-            $query->where('size', $request->get('size'));
+        if ($request->has('storage')) {  // neu request truyen len co storage (128GB, 256GB, 512GB)
+            $query->where('storage', $request->get('storage'));
+        }
+        if ($request->has('ram')) {  // neu request truyen len co ram (4GB, 8GB, 12GB, 16GB)
+            $query->where('ram', $request->get('ram'));
+        }
+        if ($request->has('chip')) {  // neu request truyen len co chip
+            $query->where('chip', 'LIKE', '%'.$request->get('chip').'%'); // tim kiem gan dung
+        }
+        if ($request->has('os')) {  // neu request truyen len co os (iOS, Android)
+            $query->where('os', 'LIKE', '%'.$request->get('os').'%'); // tim kiem gan dung
         }
 
         $productDetails = $query->paginate(10); // Paginate results, 10 per page

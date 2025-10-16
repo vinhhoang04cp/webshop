@@ -25,9 +25,16 @@ class ProductDetailResource extends JsonResource
         return [
             'detail_id' => $this->detail_id,
             'product_id' => $this->product_id,
-            'size' => $this->size,
             'color' => $this->color,
-            'material' => $this->material,
+            'storage' => $this->storage, // 128GB, 256GB, 512GB
+            'ram' => $this->ram, // 4GB, 8GB, 12GB, 16GB
+            'screen_size' => $this->screen_size, // 6.1 inch, 6.7 inch
+            'chip' => $this->chip, // Apple A17 Pro, Snapdragon 8 Gen 3
+            'battery' => $this->battery, // 5000 mAh, 4422 mAh
+            'camera_main' => $this->camera_main, // 48MP Main + 12MP Ultra Wide
+            'camera_front' => $this->camera_front, // 12MP, 32MP
+            'os' => $this->os, // iOS 17, Android 14
+            'special_features' => $this->special_features, // Dynamic Island, Galaxy AI
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

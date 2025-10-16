@@ -17,9 +17,16 @@ class ProductDetail extends Model
 
     protected $fillable = [
         'product_id',
-        'size',
         'color',
-        'material',
+        'storage',
+        'ram',
+        'screen_size',
+        'chip',
+        'battery',
+        'camera_main',
+        'camera_front',
+        'os',
+        'special_features',
     ];
 
     public function product()

@@ -807,8 +807,8 @@ public function index(Request $request)
 | PUT | `/api/products/{id}` | auth:sanctum, admin | Admin | Cập nhật sản phẩm |
 | DELETE | `/api/products/{id}` | auth:sanctum, admin | Admin | Xóa sản phẩm |
 | **Product Details** |
-| GET | `/api/product-details` | auth:sanctum, admin | Admin | Danh sách chi tiết SP |
-| POST | `/api/product-details` | auth:sanctum, admin | Admin | Tạo chi tiết SP |
+| GET | `/api/product-details` | auth:sanctum, admin | Admin | Danh sách chi tiết SP (thông số kỹ thuật điện thoại) |
+| POST | `/api/product-details` | auth:sanctum, admin | Admin | Tạo chi tiết SP (màu, RAM, chip, camera...) |
 | GET | `/api/product-details/{id}` | auth:sanctum, admin | Admin | Xem chi tiết SP |
 | PUT/PATCH | `/api/product-details/{id}` | auth:sanctum, admin | Admin | Cập nhật chi tiết SP |
 | DELETE | `/api/product-details/{id}` | auth:sanctum, admin | Admin | Xóa chi tiết SP |
@@ -1201,14 +1201,492 @@ public function test_non_admin_cannot_create_category()
 
 ---
 
-## 📖 Tài liệu tham khảo
+## � Chi tiết API Product Details (Thông số kỹ thuật điện thoại)
+
+### 1. Cấu trúc dữ liệu Product Details
+
+Product Details lưu trữ thông số kỹ thuật chi tiết của điện thoại, bao gồm:
+
+**Bảng `product_details`**:
+```sql
+CREATE TABLE product_details (
+    detail_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    product_id BIGINT NOT NULL,
+    color VARCHAR(50) NULL,              -- Màu sắc: Titan Xanh, Đen, Tím, Hồng...
+    storage VARCHAR(20) NULL,            -- Bộ nhớ: 128GB, 256GB, 512GB, 1TB
+    ram VARCHAR(20) NULL,                -- RAM: 4GB, 6GB, 8GB, 12GB, 16GB
+    screen_size VARCHAR(20) NULL,        -- Màn hình: 6.1 inch, 6.7 inch, 6.8 inch
+    chip VARCHAR(100) NULL,              -- Vi xử lý: Apple A17 Pro, Snapdragon 8 Gen 3
+    battery VARCHAR(50) NULL,            -- Pin: 5000 mAh, 4422 mAh
+    camera_main VARCHAR(100) NULL,       -- Camera sau: 48MP Main + 12MP Ultra Wide
+    camera_front VARCHAR(100) NULL,      -- Camera trước: 12MP, 32MP, 50MP
+    os VARCHAR(50) NULL,                 -- Hệ điều hành: iOS 17, Android 14
+    special_features TEXT NULL,          -- Tính năng đặc biệt
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP,
+    FOREIGN KEY (product_id) REFERENCES products(product_id)
+);
+```
+
+### 2. GET /api/product-details (Lấy danh sách)
+
+**Middleware**: `auth:sanctum`, `admin`
+
+**Query Parameters** (Filters):
+- `product_id`: Lọc theo ID sản phẩm
+- `color`: Lọc theo màu sắc (exact match)
+- `storage`: Lọc theo dung lượng (128GB, 256GB, 512GB)
+- `ram`: Lọc theo RAM (4GB, 8GB, 12GB, 16GB)
+- `chip`: Tìm kiếm chip (LIKE search)
+- `os`: Tìm kiếm hệ điều hành (LIKE search)
+
+**Request Examples**:
+```bash
+# Lấy tất cả product details
+GET /api/product-details
+Headers: Authorization: Bearer {admin_token}
+
+# Lọc theo sản phẩm cụ thể
+GET /api/product-details?product_id=1
+
+# Lọc theo màu và dung lượng
+GET /api/product-details?color=Titan%20Xanh&storage=256GB
+
+# Lọc theo RAM
+GET /api/product-details?ram=12GB
+
+# Tìm kiếm theo chip
+GET /api/product-details?chip=Snapdragon
+
+# Tìm kiếm theo OS
+GET /api/product-details?os=iOS
+```
+
+**Response Success (200)**:
+```json
+{
+  "success": true,
+  "message": "Product detail retrieved successfully",
+  "data": [
+    {
+      "detail_id": 1,
+      "product_id": 1,
+      "color": "Titan Xanh",
+      "storage": "256GB",
+      "ram": "8GB",
+      "screen_size": "6.7 inch",
+      "chip": "Apple A17 Pro",
+      "battery": "4422 mAh",
+      "camera_main": "48MP Main + 12MP Telephoto + 12MP Ultra Wide",
+      "camera_front": "12MP",
+      "os": "iOS 17",
+      "special_features": "Dynamic Island, Titanium Design, ProMotion 120Hz, USB-C, Action Button",
+      "created_at": "2025-01-15T10:30:00.000000Z",
+      "updated_at": "2025-01-15T10:30:00.000000Z"
+    },
+    {
+      "detail_id": 2,
+      "product_id": 2,
+      "color": "Titan Đen",
+      "storage": "512GB",
+      "ram": "12GB",
+      "screen_size": "6.8 inch",
+      "chip": "Snapdragon 8 Gen 3 for Galaxy",
+      "battery": "5000 mAh",
+      "camera_main": "200MP Main + 50MP Periscope + 10MP Telephoto + 12MP Ultra Wide",
+      "camera_front": "12MP",
+      "os": "Android 14, One UI 6.1",
+      "special_features": "S Pen, Galaxy AI, QHD+ AMOLED 2X, Gorilla Armor, Titanium Frame",
+      "created_at": "2025-01-15T10:35:00.000000Z",
+      "updated_at": "2025-01-15T10:35:00.000000Z"
+    }
+  ],
+  "links": {
+    "first": "http://localhost/api/product-details?page=1",
+    "last": "http://localhost/api/product-details?page=5",
+    "prev": null,
+    "next": "http://localhost/api/product-details?page=2"
+  },
+  "meta": {
+    "current_page": 1,
+    "from": 1,
+    "last_page": 5,
+    "per_page": 10,
+    "to": 10,
+    "total": 50
+  }
+}
+```
+
+### 3. POST /api/product-details (Tạo mới)
+
+**Middleware**: `auth:sanctum`, `admin`
+
+**Validation Rules**:
+```php
+[
+    'product_id' => 'required|exists:products,product_id',
+    'color' => 'nullable|string|max:50',
+    'storage' => 'nullable|string|max:20',
+    'ram' => 'nullable|string|max:20',
+    'screen_size' => 'nullable|string|max:20',
+    'chip' => 'nullable|string|max:100',
+    'battery' => 'nullable|string|max:50',
+    'camera_main' => 'nullable|string|max:100',
+    'camera_front' => 'nullable|string|max:100',
+    'os' => 'nullable|string|max:50',
+    'special_features' => 'nullable|string',
+]
+```
+
+**Request Example**:
+```bash
+POST /api/product-details
+Headers: 
+  Authorization: Bearer {admin_token}
+  Content-Type: application/json
+
+Body:
+{
+  "product_id": 1,
+  "color": "Titan Trắng",
+  "storage": "512GB",
+  "ram": "8GB",
+  "screen_size": "6.7 inch",
+  "chip": "Apple A17 Pro",
+  "battery": "4422 mAh",
+  "camera_main": "48MP Main + 12MP Telephoto + 12MP Ultra Wide",
+  "camera_front": "12MP",
+  "os": "iOS 17",
+  "special_features": "Dynamic Island, Titanium Design, ProMotion 120Hz, USB-C"
+}
+```
+
+**Response Success (201)**:
+```json
+{
+  "success": true,
+  "message": "Product detail created successfully",
+  "data": {
+    "detail_id": 51,
+    "product_id": 1,
+    "color": "Titan Trắng",
+    "storage": "512GB",
+    "ram": "8GB",
+    "screen_size": "6.7 inch",
+    "chip": "Apple A17 Pro",
+    "battery": "4422 mAh",
+    "camera_main": "48MP Main + 12MP Telephoto + 12MP Ultra Wide",
+    "camera_front": "12MP",
+    "os": "iOS 17",
+    "special_features": "Dynamic Island, Titanium Design, ProMotion 120Hz, USB-C",
+    "created_at": "2025-01-16T14:20:00.000000Z",
+    "updated_at": "2025-01-16T14:20:00.000000Z"
+  }
+}
+```
+
+**Response Error (422) - Validation Failed**:
+```json
+{
+  "success": false,
+  "message": "Validation errors",
+  "errors": {
+    "product_id": [
+      "Product not found"
+    ],
+    "storage": [
+      "Storage must not exceed 20 characters"
+    ]
+  }
+}
+```
+
+### 4. GET /api/product-details/{id} (Chi tiết)
+
+**Middleware**: `auth:sanctum`, `admin`
+
+**Request Example**:
+```bash
+GET /api/product-details/1
+Headers: Authorization: Bearer {admin_token}
+```
+
+**Response Success (200)**:
+```json
+{
+  "success": true,
+  "message": "Product detail retrieved successfully",
+  "data": {
+    "detail_id": 1,
+    "product_id": 1,
+    "color": "Titan Xanh",
+    "storage": "256GB",
+    "ram": "8GB",
+    "screen_size": "6.7 inch",
+    "chip": "Apple A17 Pro",
+    "battery": "4422 mAh",
+    "camera_main": "48MP Main + 12MP Telephoto + 12MP Ultra Wide",
+    "camera_front": "12MP",
+    "os": "iOS 17",
+    "special_features": "Dynamic Island, Titanium Design, ProMotion 120Hz, USB-C, Action Button",
+    "created_at": "2025-01-15T10:30:00.000000Z",
+    "updated_at": "2025-01-15T10:30:00.000000Z"
+  }
+}
+```
+
+**Response Error (404)**:
+```json
+{
+  "message": "Product detail not found"
+}
+```
+
+### 5. PUT/PATCH /api/product-details/{id} (Cập nhật)
+
+**Middleware**: `auth:sanctum`, `admin`
+
+**Request Example**:
+```bash
+PUT /api/product-details/1
+Headers: 
+  Authorization: Bearer {admin_token}
+  Content-Type: application/json
+
+Body:
+{
+  "color": "Titan Đen",
+  "storage": "512GB",
+  "ram": "12GB",
+  "battery": "5000 mAh"
+}
+```
+
+**Response Success (200)**:
+```json
+{
+  "success": true,
+  "message": "Product detail updated successfully",
+  "data": {
+    "detail_id": 1,
+    "product_id": 1,
+    "color": "Titan Đen",
+    "storage": "512GB",
+    "ram": "12GB",
+    "screen_size": "6.7 inch",
+    "chip": "Apple A17 Pro",
+    "battery": "5000 mAh",
+    "camera_main": "48MP Main + 12MP Telephoto + 12MP Ultra Wide",
+    "camera_front": "12MP",
+    "os": "iOS 17",
+    "special_features": "Dynamic Island, Titanium Design, ProMotion 120Hz, USB-C, Action Button",
+    "created_at": "2025-01-15T10:30:00.000000Z",
+    "updated_at": "2025-01-16T15:45:00.000000Z"
+  }
+}
+```
+
+### 6. DELETE /api/product-details/{id} (Xóa)
+
+**Middleware**: `auth:sanctum`, `admin`
+
+**Request Example**:
+```bash
+DELETE /api/product-details/1
+Headers: Authorization: Bearer {admin_token}
+```
+
+**Response Success (200)**:
+```json
+{
+  "message": "Product detail deleted successfully"
+}
+```
+
+**Response Error (404)**:
+```json
+{
+  "message": "Product detail not found"
+}
+```
+
+---
+
+## 📱 GET /api/products - Hiển thị sản phẩm kèm chi tiết kỹ thuật
+
+Khi lấy danh sách sản phẩm hoặc chi tiết sản phẩm, API sẽ tự động load thông tin `details` (thông số kỹ thuật).
+
+### Request Example:
+```bash
+# Lấy danh sách sản phẩm
+GET /api/products
+Headers: Accept: application/json
+
+# Lấy chi tiết 1 sản phẩm
+GET /api/products/1
+Headers: Accept: application/json
+```
+
+### Response với Product Details:
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "name": "iPhone 15 Pro Max 256GB",
+      "description": "iPhone 15 Pro Max với chip A17 Pro mạnh mẽ, camera 48MP, màn hình Dynamic Island",
+      "price": 33990000,
+      "category_id": 1,
+      "stock_quantity": 25,
+      "image_url": "https://cdn.tgdd.vn/Products/Images/42/305658/iphone-15-pro-max-blue-1.jpg",
+      "category": {
+        "category_id": 1,
+        "name": "iPhone",
+        "description": "Dòng điện thoại cao cấp của Apple"
+      },
+      "details": {
+        "detail_id": 1,
+        "product_id": 1,
+        "color": "Titan Xanh",
+        "storage": "256GB",
+        "ram": "8GB",
+        "screen_size": "6.7 inch",
+        "chip": "Apple A17 Pro",
+        "battery": "4422 mAh",
+        "camera_main": "48MP Main + 12MP Telephoto + 12MP Ultra Wide",
+        "camera_front": "12MP",
+        "os": "iOS 17",
+        "special_features": "Dynamic Island, Titanium Design, ProMotion 120Hz, USB-C, Action Button",
+        "created_at": "2025-01-15T10:30:00.000000Z",
+        "updated_at": "2025-01-15T10:30:00.000000Z"
+      },
+      "created_at": "2025-01-15T10:00:00.000000Z",
+      "updated_at": "2025-01-15T10:00:00.000000Z"
+    }
+  ]
+}
+```
+
+---
+
+## 📊 Ví dụ thực tế: Dữ liệu mẫu
+
+### iPhone 15 Pro Max
+```json
+{
+  "product_id": 1,
+  "color": "Titan Xanh",
+  "storage": "256GB",
+  "ram": "8GB",
+  "screen_size": "6.7 inch",
+  "chip": "Apple A17 Pro",
+  "battery": "4422 mAh",
+  "camera_main": "48MP Main + 12MP Telephoto + 12MP Ultra Wide",
+  "camera_front": "12MP",
+  "os": "iOS 17",
+  "special_features": "Dynamic Island, Titanium Design, ProMotion 120Hz, USB-C, Action Button"
+}
+```
+
+### Samsung Galaxy S24 Ultra
+```json
+{
+  "product_id": 2,
+  "color": "Titan Đen",
+  "storage": "256GB",
+  "ram": "12GB",
+  "screen_size": "6.8 inch",
+  "chip": "Snapdragon 8 Gen 3 for Galaxy",
+  "battery": "5000 mAh",
+  "camera_main": "200MP Main + 50MP Periscope + 10MP Telephoto + 12MP Ultra Wide",
+  "camera_front": "12MP",
+  "os": "Android 14, One UI 6.1",
+  "special_features": "S Pen, Galaxy AI, QHD+ AMOLED 2X, Gorilla Armor, Titanium Frame"
+}
+```
+
+### Xiaomi 14 Ultra
+```json
+{
+  "product_id": 3,
+  "color": "Đen",
+  "storage": "512GB",
+  "ram": "16GB",
+  "screen_size": "6.73 inch",
+  "chip": "Snapdragon 8 Gen 3",
+  "battery": "5000 mAh",
+  "camera_main": "50MP Main Leica + 50MP Periscope + 50MP Telephoto + 50MP Ultra Wide",
+  "camera_front": "32MP",
+  "os": "Android 14, HyperOS",
+  "special_features": "Leica Professional Optics, LTPO AMOLED 120Hz, Sạc nhanh 90W"
+}
+```
+
+### OPPO Reno11 F (Phân khúc tầm trung)
+```json
+{
+  "product_id": 4,
+  "color": "Xanh",
+  "storage": "256GB",
+  "ram": "8GB",
+  "screen_size": "6.7 inch",
+  "chip": "MediaTek Dimensity 7050",
+  "battery": "5000 mAh",
+  "camera_main": "64MP Main + 8MP Ultra Wide + 2MP Macro",
+  "camera_front": "32MP",
+  "os": "Android 14, ColorOS 14",
+  "special_features": "AMOLED 120Hz, IP65, Sạc nhanh SUPERVOOC 67W"
+}
+```
+
+---
+
+## 🔍 Use Cases
+
+### 1. Tìm điện thoại theo RAM
+```bash
+GET /api/product-details?ram=12GB
+# Trả về tất cả các biến thể điện thoại có RAM 12GB
+```
+
+### 2. Tìm điện thoại theo dung lượng
+```bash
+GET /api/product-details?storage=256GB
+# Trả về tất cả các biến thể điện thoại có bộ nhớ 256GB
+```
+
+### 3. Tìm điện thoại theo chip
+```bash
+GET /api/product-details?chip=Snapdragon
+# Trả về tất cả điện thoại dùng chip Snapdragon (LIKE search)
+```
+
+### 4. Tìm điện thoại iOS
+```bash
+GET /api/product-details?os=iOS
+# Trả về tất cả iPhone
+```
+
+### 5. Xem tất cả biến thể màu của 1 sản phẩm
+```bash
+GET /api/product-details?product_id=1
+# Trả về tất cả các màu sắc của iPhone 15 Pro Max
+```
+
+---
+
+## �📖 Tài liệu tham khảo
 
 - [Laravel Sanctum Documentation](https://laravel.com/docs/11.x/sanctum)
 - [Laravel Authentication](https://laravel.com/docs/11.x/authentication)
 - [Laravel Authorization](https://laravel.com/docs/11.x/authorization)
 - [Laravel Middleware](https://laravel.com/docs/11.x/middleware)
+- [Laravel Eloquent Relationships](https://laravel.com/docs/11.x/eloquent-relationships)
+- [Laravel API Resources](https://laravel.com/docs/11.x/eloquent-resources)
 
 ---
 
-**Người viết**: Vinh Hoang 2004
-**Ngày tạo**: 6/10/2025
+**Người viết**: Vinh Hoang 2004  
+**Ngày tạo**: 6/10/2025  
+**Cập nhật lần cuối**: 16/10/2025 - Thêm chi tiết API Product Details cho điện thoại

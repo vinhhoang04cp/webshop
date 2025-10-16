@@ -23,6 +23,7 @@ class ProductResource extends JsonResource
             'stock_quantity' => $this->stock_quantity,
             'image_url' => $this->image_url,
             'category' => $this->whenLoaded('category'),
+            'details' => new ProductDetailResource($this->whenLoaded('details')), // Thông tin chi tiết kỹ thuật điện thoại (màu, RAM, chip, camera...)
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

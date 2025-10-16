@@ -20,7 +20,7 @@ class ProductController extends Controller
      */
     public function index(Request $request) // Trả về danh sách sản phẩm
     {
-        $query = Product::with('category'); // $query là biến để thực hiện query đến bảng Product thông qua model
+        $query = Product::with(['category', 'details']); // $query là biến để thực hiện query đến bảng Product thông qua model, kèm category và details
 
         // Lọc theo category
         if ($request->has('category')) { // nếu request truyền lên có category
@@ -85,9 +85,9 @@ class ProductController extends Controller
      */
     public function show($id)
     {
-        // Eager load category để trả về thông tin danh mục kèm theo sản phẩm.
+        // Eager load category và details để trả về thông tin danh mục và chi tiết kỹ thuật kèm theo sản phẩm.
         // Dùng find() để tự kiểm soát JSON 404 (khác với findOrFail() sẽ throw exception).
-        $product = Product::with('category')->find($id); // query den bang Product thong qua model, tim kiem theo id, voi category
+        $product = Product::with(['category', 'details'])->find($id); // query den bang Product thong qua model, tim kiem theo id, voi category va details
 
         // Không tìm thấy -> trả 404 với format JSON thống nhất của API.
         if (! $product) {
