@@ -19,7 +19,6 @@ return new class extends Migration
             $table->enum('status', ['pending', 'processing', 'shipped', 'delivered', 'cancelled'])
                 ->default('pending');
             $table->timestamps();
-            
 
             $table->foreign('user_id')->references('id')->on('users')->onDelete('restrict');
         });

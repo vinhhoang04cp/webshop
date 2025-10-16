@@ -97,15 +97,15 @@ class CustomerProductController extends Controller
 
         $categories = Category::withCount('products')->get(); // lay so luong san pham trong tung danh muc
 
-        return view('products.show', compact('product', 'relatedProducts', 'categories', 'cartCount')); //Tra ve view chi tiet , truyen du lieu qua ham compact
-    } 
+        return view('products.show', compact('product', 'relatedProducts', 'categories', 'cartCount')); // Tra ve view chi tiet , truyen du lieu qua ham compact
+    }
 
     /**
      * Tìm kiếm sản phẩm
      */
     public function search(Request $request) // su dung Request de lay tham so truyen vao de tim kiem
     {
-        return $this->index($request); 
+        return $this->index($request);
     }
 
     /**
@@ -116,7 +116,7 @@ class CustomerProductController extends Controller
         $category = Category::findOrFail($id); // Tim category qua id
 
         $products = Product::with('category') // Tim product co quan he voi Category qua model Product
-            ->where('category_id', $id) // 
+            ->where('category_id', $id) //
             ->latest('created_at')
             ->paginate(12);
 

@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('product_details', function (Blueprint $table) {
             $table->id('detail_id');
             $table->unsignedBigInteger('product_id');
-            
+
             // Thông số kỹ thuật điện thoại
             $table->string('color', 50)->nullable();           // Màu sắc
             $table->string('storage', 20)->nullable();         // Bộ nhớ (128GB, 256GB, 512GB)

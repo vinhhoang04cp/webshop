@@ -46,12 +46,12 @@
                                         <td class="align-middle">{{ number_format($item->price ?? $item->product->price ?? 0, 0, ',', '.') }}₫</td>
                                         <td class="align-middle">
                                             <div class="input-group" style="width: 130px;">
-                                                <button class="btn btn-outline-secondary" type="button" onclick="updateQuantity({{ $item->cart_item_id }}, {{ $item->quantity - 1 }})">-</button>
+                                                <button class="btn btn-outline-secondary" type="button" onclick="changeQuantity({{ $item->cart_item_id }}, -1)">-</button>
                                                 <input type="text" class="form-control text-center" value="{{ $item->quantity }}" id="qty-{{ $item->cart_item_id }}" readonly>
-                                                <button class="btn btn-outline-secondary" type="button" onclick="updateQuantity({{ $item->cart_item_id }}, {{ $item->quantity + 1 }})">+</button>
+                                                <button class="btn btn-outline-secondary" type="button" onclick="changeQuantity({{ $item->cart_item_id }}, 1)">+</button>
                                             </div>
                                         </td>
-                                        <td class="fw-bold align-middle" id="item-total-{{ $item->cart_item_id }}">
+                                        <td class="fw-bold align-middle" id="item-total-{{ $item->cart_item_id }}"
                                             {{ number_format(($item->price ?? $item->product->price ?? 0) * $item->quantity, 0, ',', '.') }}₫
                                         </td>
                                         <td class="align-middle">
@@ -142,6 +142,15 @@
 
 @section('scripts')
 <script>
+// Hàm mới để thay đổi số lượng (tăng/giảm)
+function changeQuantity(cartItemId, delta) {
+    const input = document.getElementById(`qty-${cartItemId}`);
+    const currentQty = parseInt(input.value);
+    const newQuantity = currentQty + delta;
+    
+    updateQuantity(cartItemId, newQuantity);
+}
+
 function updateQuantity(cartItemId, newQuantity) {
     if(newQuantity < 1) {
         if(confirm('Bạn có muốn xóa sản phẩm này khỏi giỏ hàng?')) {

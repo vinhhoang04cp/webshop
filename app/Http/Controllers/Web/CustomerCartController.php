@@ -34,15 +34,15 @@ class CustomerCartController extends Controller
 
             // Load cart items with better error handling
             $cartItems = collect(); // Initialize empty collection
-            
+
             try {
                 $cartItems = $cart->items()
-                    ->with(['product' => function($query) {
+                    ->with(['product' => function ($query) {
                         $query->with('category');
                     }])
                     ->get();
             } catch (\Exception $e) {
-                \Log::error('Error loading cart items: ' . $e->getMessage());
+                \Log::error('Error loading cart items: '.$e->getMessage());
                 // Return empty collection on error
                 $cartItems = collect();
             }
@@ -51,10 +51,11 @@ class CustomerCartController extends Controller
             $cartCount = $cartItems->sum('quantity'); // tinh tong so luong san pham trong gio hang
 
             return view('cart.index', compact('cart', 'cartItems', 'categories', 'cartCount')); // truyen du lieu ra view cart.index voi cac bien cart, cartItems, categories, cartCount
-            
+
         } catch (\Exception $e) {
-            \Log::error('Error in cart index: ' . $e->getMessage());
-            return redirect()->route('home')->with('error', 'Có lỗi xảy ra khi tải giỏ hàng: ' . $e->getMessage());
+            \Log::error('Error in cart index: '.$e->getMessage());
+
+            return redirect()->route('home')->with('error', 'Có lỗi xảy ra khi tải giỏ hàng: '.$e->getMessage());
         }
     }
 
@@ -207,7 +208,7 @@ class CustomerCartController extends Controller
 
             // Kiểm tra quyền sở hữu
             if ($cartItem->cart->user_id != Auth::id()) { // neu user_id cua gio hang khac voi id cua user hien tai dang nhap
-                //$cartItem->cart-> user_id la cach truy cap user_id cua gio hang thong qua item trong gio hang
+                // $cartItem->cart-> user_id la cach truy cap user_id cua gio hang thong qua item trong gio hang
                 return response()->json([ // tra ve response dang json
                     'success' => false, //  bien success de biet xoa san pham khoi gio hang co thanh cong hay khong
                     'message' => 'Không có quyền!', // thong bao loi
@@ -217,7 +218,7 @@ class CustomerCartController extends Controller
             $cart = $cartItem->cart; // $cart la bien chua gio hang cua item trong gio hang
             $cartItem->delete(); // xoa item trong gio hang
 
-            // Cập nhật tổng tiền không cần thiết - tính động 
+            // Cập nhật tổng tiền không cần thiết - tính động
 
             DB::commit(); // ket thuc giao dich
 
@@ -234,7 +235,7 @@ class CustomerCartController extends Controller
             return response()->json([ // tra ve response dang json
                 'success' => false, // bien success de biet xoa san pham khoi gio hang co thanh cong hay khong
                 'message' => 'Có lỗi xảy ra: '.$e->getMessage(), // thong bao loi
-            ], 500); 
+            ], 500);
         }
     }
 

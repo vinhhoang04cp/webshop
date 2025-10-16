@@ -5,7 +5,6 @@ use App\Http\Controllers\Web\CustomerCartController;
 use App\Http\Controllers\Web\CustomerProductController;
 use App\Http\Controllers\Web\HomeController;
 use App\Http\Controllers\Web\UserManagementController;
-use App\Http\Controllers\Web\DebugController;
 use Illuminate\Support\Facades\Route;
 
 // Home page - Trang chủ cho khách hàng

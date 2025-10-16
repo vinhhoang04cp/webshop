@@ -29,7 +29,7 @@ class ProductDetailSeeder extends Seeder
                 'camera_main' => '48MP Main + 12MP Telephoto + 12MP Ultra Wide',
                 'camera_front' => '12MP',
                 'os' => 'iOS 17',
-                'special_features' => 'Dynamic Island, Titanium Design, ProMotion 120Hz, USB-C, Action Button'
+                'special_features' => 'Dynamic Island, Titanium Design, ProMotion 120Hz, USB-C, Action Button',
             ],
             [
                 'product_name' => 'iPhone 15 Pro Max 256GB',
@@ -42,7 +42,7 @@ class ProductDetailSeeder extends Seeder
                 'camera_main' => '48MP Main + 12MP Telephoto + 12MP Ultra Wide',
                 'camera_front' => '12MP',
                 'os' => 'iOS 17',
-                'special_features' => 'Dynamic Island, Titanium Design, ProMotion 120Hz, USB-C, Action Button'
+                'special_features' => 'Dynamic Island, Titanium Design, ProMotion 120Hz, USB-C, Action Button',
             ],
 
             // iPhone 15 Pro
@@ -57,7 +57,7 @@ class ProductDetailSeeder extends Seeder
                 'camera_main' => '48MP Main + 12MP Telephoto + 12MP Ultra Wide',
                 'camera_front' => '12MP',
                 'os' => 'iOS 17',
-                'special_features' => 'Dynamic Island, Titanium Design, ProMotion 120Hz, USB-C'
+                'special_features' => 'Dynamic Island, Titanium Design, ProMotion 120Hz, USB-C',
             ],
 
             // iPhone 15
@@ -72,7 +72,7 @@ class ProductDetailSeeder extends Seeder
                 'camera_main' => '48MP Main + 12MP Ultra Wide',
                 'camera_front' => '12MP',
                 'os' => 'iOS 17',
-                'special_features' => 'Dynamic Island, USB-C, Ceramic Shield'
+                'special_features' => 'Dynamic Island, USB-C, Ceramic Shield',
             ],
             [
                 'product_name' => 'iPhone 15 128GB',
@@ -85,7 +85,7 @@ class ProductDetailSeeder extends Seeder
                 'camera_main' => '48MP Main + 12MP Ultra Wide',
                 'camera_front' => '12MP',
                 'os' => 'iOS 17',
-                'special_features' => 'Dynamic Island, USB-C, Ceramic Shield'
+                'special_features' => 'Dynamic Island, USB-C, Ceramic Shield',
             ],
 
             // Samsung Galaxy S24 Ultra
@@ -100,7 +100,7 @@ class ProductDetailSeeder extends Seeder
                 'camera_main' => '200MP Main + 50MP Periscope + 10MP Telephoto + 12MP Ultra Wide',
                 'camera_front' => '12MP',
                 'os' => 'Android 14, One UI 6.1',
-                'special_features' => 'S Pen, Galaxy AI, QHD+ AMOLED 2X, Gorilla Armor, Titanium Frame'
+                'special_features' => 'S Pen, Galaxy AI, QHD+ AMOLED 2X, Gorilla Armor, Titanium Frame',
             ],
             [
                 'product_name' => 'Samsung Galaxy S24 Ultra 256GB',
@@ -113,7 +113,7 @@ class ProductDetailSeeder extends Seeder
                 'camera_main' => '200MP Main + 50MP Periscope + 10MP Telephoto + 12MP Ultra Wide',
                 'camera_front' => '12MP',
                 'os' => 'Android 14, One UI 6.1',
-                'special_features' => 'S Pen, Galaxy AI, QHD+ AMOLED 2X, Gorilla Armor, Titanium Frame'
+                'special_features' => 'S Pen, Galaxy AI, QHD+ AMOLED 2X, Gorilla Armor, Titanium Frame',
             ],
 
             // Samsung Galaxy S24
@@ -128,7 +128,7 @@ class ProductDetailSeeder extends Seeder
                 'camera_main' => '50MP Main + 10MP Telephoto + 12MP Ultra Wide',
                 'camera_front' => '12MP',
                 'os' => 'Android 14, One UI 6.1',
-                'special_features' => 'Galaxy AI, FHD+ AMOLED 2X, Gorilla Glass Victus 2'
+                'special_features' => 'Galaxy AI, FHD+ AMOLED 2X, Gorilla Glass Victus 2',
             ],
 
             // Samsung Galaxy A55
@@ -143,7 +143,7 @@ class ProductDetailSeeder extends Seeder
                 'camera_main' => '50MP Main OIS + 12MP Ultra Wide + 5MP Macro',
                 'camera_front' => '32MP',
                 'os' => 'Android 14, One UI 6.1',
-                'special_features' => 'Super AMOLED 120Hz, IP67, Knox Security'
+                'special_features' => 'Super AMOLED 120Hz, IP67, Knox Security',
             ],
 
             // Xiaomi 14 Ultra
@@ -158,7 +158,7 @@ class ProductDetailSeeder extends Seeder
                 'camera_main' => '50MP Main Leica + 50MP Periscope + 50MP Telephoto + 50MP Ultra Wide',
                 'camera_front' => '32MP',
                 'os' => 'Android 14, HyperOS',
-                'special_features' => 'Leica Professional Optics, LTPO AMOLED 120Hz, Sạc nhanh 90W'
+                'special_features' => 'Leica Professional Optics, LTPO AMOLED 120Hz, Sạc nhanh 90W',
             ],
 
             // Xiaomi Redmi Note 13 Pro+
@@ -173,7 +173,7 @@ class ProductDetailSeeder extends Seeder
                 'camera_main' => '200MP Main + 8MP Ultra Wide + 2MP Macro',
                 'camera_front' => '16MP',
                 'os' => 'Android 13, MIUI 14',
-                'special_features' => 'AMOLED 120Hz, IP68, Sạc nhanh 120W'
+                'special_features' => 'AMOLED 120Hz, IP68, Sạc nhanh 120W',
             ],
             [
                 'product_name' => 'Xiaomi Redmi Note 13 Pro+ 5G',
@@ -186,7 +186,7 @@ class ProductDetailSeeder extends Seeder
                 'camera_main' => '200MP Main + 8MP Ultra Wide + 2MP Macro',
                 'camera_front' => '16MP',
                 'os' => 'Android 13, MIUI 14',
-                'special_features' => 'AMOLED 120Hz, IP68, Sạc nhanh 120W'
+                'special_features' => 'AMOLED 120Hz, IP68, Sạc nhanh 120W',
             ],
 
             // Xiaomi Redmi 13C
@@ -201,7 +201,7 @@ class ProductDetailSeeder extends Seeder
                 'camera_main' => '50MP Main + 2MP Depth',
                 'camera_front' => '8MP',
                 'os' => 'Android 13, MIUI 14',
-                'special_features' => 'IPS LCD 90Hz, Sạc nhanh 18W'
+                'special_features' => 'IPS LCD 90Hz, Sạc nhanh 18W',
             ],
 
             // OPPO Find X7 Ultra
@@ -216,7 +216,7 @@ class ProductDetailSeeder extends Seeder
                 'camera_main' => '50MP Main Hasselblad + 50MP Periscope + 50MP Telephoto + 50MP Ultra Wide',
                 'camera_front' => '32MP',
                 'os' => 'Android 14, ColorOS 14',
-                'special_features' => 'Hasselblad Camera, LTPO AMOLED 120Hz, Sạc nhanh 100W'
+                'special_features' => 'Hasselblad Camera, LTPO AMOLED 120Hz, Sạc nhanh 100W',
             ],
 
             // OPPO Reno11 F
@@ -231,7 +231,7 @@ class ProductDetailSeeder extends Seeder
                 'camera_main' => '64MP Main + 8MP Ultra Wide + 2MP Macro',
                 'camera_front' => '32MP',
                 'os' => 'Android 14, ColorOS 14',
-                'special_features' => 'AMOLED 120Hz, IP65, Sạc nhanh SUPERVOOC 67W'
+                'special_features' => 'AMOLED 120Hz, IP65, Sạc nhanh SUPERVOOC 67W',
             ],
 
             // Vivo V30
@@ -246,7 +246,7 @@ class ProductDetailSeeder extends Seeder
                 'camera_main' => '50MP Main OIS + 50MP Ultra Wide',
                 'camera_front' => '50MP',
                 'os' => 'Android 14, Funtouch OS 14',
-                'special_features' => 'AMOLED 120Hz, Camera Zeiss, Sạc nhanh 80W, IP54'
+                'special_features' => 'AMOLED 120Hz, Camera Zeiss, Sạc nhanh 80W, IP54',
             ],
 
             // Realme GT 5 Pro
@@ -261,7 +261,7 @@ class ProductDetailSeeder extends Seeder
                 'camera_main' => '50MP Main OIS + 50MP Periscope + 8MP Ultra Wide',
                 'camera_front' => '32MP',
                 'os' => 'Android 14, Realme UI 5.0',
-                'special_features' => 'LTPO AMOLED 144Hz, Sạc nhanh 100W, IP64'
+                'special_features' => 'LTPO AMOLED 144Hz, Sạc nhanh 100W, IP64',
             ],
 
             // Realme C67
@@ -276,7 +276,7 @@ class ProductDetailSeeder extends Seeder
                 'camera_main' => '108MP Main + 2MP Depth',
                 'camera_front' => '8MP',
                 'os' => 'Android 13, Realme UI 4.0',
-                'special_features' => 'IPS LCD 90Hz, Sạc nhanh 33W, IP54'
+                'special_features' => 'IPS LCD 90Hz, Sạc nhanh 33W, IP54',
             ],
 
             // Nokia G60
@@ -291,12 +291,12 @@ class ProductDetailSeeder extends Seeder
                 'camera_main' => '50MP Main + 5MP Ultra Wide + 2MP Depth',
                 'camera_front' => '8MP',
                 'os' => 'Android 12, Pure Android',
-                'special_features' => 'IPS LCD 120Hz, Android One, Recyclable Materials'
+                'special_features' => 'IPS LCD 120Hz, Android One, Recyclable Materials',
             ],
         ];
 
         foreach ($productDetails as $detail) {
-            $product = $products->where('name', 'LIKE', '%' . $detail['product_name'] . '%')->first();
+            $product = $products->where('name', 'LIKE', '%'.$detail['product_name'].'%')->first();
             if ($product) {
                 ProductDetail::create([
                     'product_id' => $product->product_id,
