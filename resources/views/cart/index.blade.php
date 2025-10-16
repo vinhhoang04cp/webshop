@@ -116,9 +116,12 @@
                     </div>
 
                     @if($cartItems->count() > 0)
-                        <button class="btn btn-primary w-100 mb-3" style="padding: 12px; border-radius: 25px;">
-                            <i class="fas fa-check"></i> Thanh toán
-                        </button>
+                        <form action="{{ route('cart.checkout') }}" method="POST">
+                            @csrf
+                            <button type="submit" class="btn btn-primary w-100 mb-3" style="padding: 12px; border-radius: 25px;">
+                                <i class="fas fa-check"></i> Thanh toán
+                            </button>
+                        </form>
                         
                         <form action="{{ route('cart.clear') }}" method="POST">
                             @csrf

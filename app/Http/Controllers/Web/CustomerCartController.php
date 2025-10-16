@@ -13,6 +13,50 @@ use Illuminate\Support\Facades\DB;
 
 class CustomerCartController extends Controller
 {
+    public function checkout(Request $request)
+    {
+        if (! Auth::check()) {
+            return redirect()->route('login')->with('error', 'Vui lòng đăng nhập để thanh toán!');
+        }
+
+        $cart = Auth::user()->cart;
+        if (! $cart || $cart->items()->count() == 0) {
+            return redirect()->route('cart.index')->with('error', 'Giỏ hàng trống!');
+        }
+
+        DB::beginTransaction();
+        try {
+            // Tạo đơn hàng
+            $order = new \App\Models\Order;
+            $order->user_id = Auth::id();
+            $order->total_amount = $cart->totalPrice();
+            $order->status = 'pending';
+            $order->order_date = now();
+            $order->save();
+
+            // Thêm các sản phẩm vào order_items
+            foreach ($cart->items as $item) {
+                $orderItem = new \App\Models\OrderItem;
+                $orderItem->order_id = $order->order_id;
+                $orderItem->product_id = $item->product_id;
+                $orderItem->quantity = $item->quantity;
+                $orderItem->price = $item->price ?? $item->product->price;
+                $orderItem->save();
+            }
+
+            // Xóa giỏ hàng sau khi đặt hàng
+            $cart->items()->delete();
+
+            DB::commit();
+
+            return redirect()->route('cart.index')->with('success', 'Đặt hàng thành công! Đơn hàng của bạn đã được ghi nhận.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return redirect()->route('cart.index')->with('error', 'Có lỗi xảy ra khi đặt hàng: '.$e->getMessage());
+        }
+    }
+
     /**
      * Hiển thị giỏ hàng
      */

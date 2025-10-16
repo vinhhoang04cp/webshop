@@ -31,6 +31,7 @@ Route::post('/cart/add/{productId}', [CustomerCartController::class, 'add'])->na
 Route::put('/cart/update/{cartItemId}', [CustomerCartController::class, 'update'])->name('cart.update');
 Route::delete('/cart/remove/{cartItemId}', [CustomerCartController::class, 'remove'])->name('cart.remove');
 Route::delete('/cart/clear', [CustomerCartController::class, 'clear'])->name('cart.clear');
+Route::post('/cart/checkout', [CustomerCartController::class, 'checkout'])->name('cart.checkout');
 
 // Protected Dashboard Routes
 Route::middleware(['auth'])->group(function () {
