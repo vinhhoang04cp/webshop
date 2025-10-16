@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\Category;
 use App\Models\Product;
-use Faker\Factory as Faker;
 use Illuminate\Database\Seeder;
 
 class ProductSeeder extends Seeder
@@ -14,103 +13,83 @@ class ProductSeeder extends Seeder
      */
     public function run(): void
     {
-        $faker = Faker::create('vi_VN');
         $categories = Category::all();
 
-        // Tạo 50 sản phẩm với dữ liệu đa dạng
+        // Dữ liệu điện thoại thực tế với giá cả và thông tin chi tiết
         $products = [
-            // Điện tử
-            ['name' => 'iPhone 15 Pro Max', 'description' => 'Smartphone cao cấp mới nhất từ Apple', 'price' => 29999000, 'category' => 'Điện tử', 'stock' => 25, 'image' => 'iphone-15-pro-max.jpg'],
-            ['name' => 'Samsung Galaxy S24 Ultra', 'description' => 'Android flagship với bút S Pen', 'price' => 27999000, 'category' => 'Điện tử', 'stock' => 30, 'image' => 'galaxy-s24-ultra.jpg'],
-            ['name' => 'MacBook Air M3', 'description' => 'Laptop siêu mỏng với chip M3', 'price' => 35999000, 'category' => 'Điện tử', 'stock' => 15, 'image' => 'macbook-air-m3.jpg'],
-            ['name' => 'Dell XPS 13', 'description' => 'Ultrabook cao cấp cho dân văn phòng', 'price' => 28999000, 'category' => 'Điện tử', 'stock' => 20, 'image' => 'dell-xps-13.jpg'],
-            ['name' => 'iPad Pro 12.9 inch', 'description' => 'Máy tính bảng chuyên nghiệp', 'price' => 32999000, 'category' => 'Điện tử', 'stock' => 18, 'image' => 'ipad-pro-129.jpg'],
-            ['name' => 'Sony WH-1000XM5', 'description' => 'Tai nghe chống ồn cao cấp', 'price' => 8999000, 'category' => 'Điện tử', 'stock' => 40, 'image' => 'sony-wh1000xm5.jpg'],
-            ['name' => 'Samsung QLED 55 inch', 'description' => 'Smart TV 4K QLED 55 inch', 'price' => 19999000, 'category' => 'Điện tử', 'stock' => 12, 'image' => 'samsung-qled-55.jpg'],
+            // iPhone
+            ['name' => 'iPhone 15 Pro Max 256GB', 'description' => 'iPhone 15 Pro Max với chip A17 Pro, camera 48MP, titanium cao cấp', 'price' => 34990000, 'category' => 'iPhone', 'stock' => 50, 'image' => 'https://cdn.tgdd.vn/Products/Images/42/305658/iphone-15-pro-max-blue-thumbnew-600x600.jpg'],
+            ['name' => 'iPhone 15 Pro 128GB', 'description' => 'iPhone 15 Pro với khung viền titanium, Dynamic Island, camera 48MP Pro', 'price' => 28990000, 'category' => 'iPhone', 'stock' => 45, 'image' => 'https://cdn.tgdd.vn/Products/Images/42/305660/iphone-15-pro-natural-thumbnew-600x600.jpg'],
+            ['name' => 'iPhone 15 Plus 128GB', 'description' => 'iPhone 15 Plus màn hình lớn 6.7 inch, Dynamic Island, camera chính 48MP', 'price' => 25990000, 'category' => 'iPhone', 'stock' => 60, 'image' => 'https://cdn.tgdd.vn/Products/Images/42/305657/iphone-15-plus-128gb-xanh-thumb-600x600.jpg'],
+            ['name' => 'iPhone 15 128GB', 'description' => 'iPhone 15 với màn hình Dynamic Island, chip A16 Bionic mạnh mẽ', 'price' => 22990000, 'category' => 'iPhone', 'stock' => 70, 'image' => 'https://cdn.tgdd.vn/Products/Images/42/303891/iphone-15-green-thumbnew-600x600.jpg'],
+            ['name' => 'iPhone 14 Pro Max 256GB', 'description' => 'iPhone 14 Pro Max camera 48MP, màn hình Always-On, chip A16 Bionic', 'price' => 31990000, 'category' => 'iPhone', 'stock' => 35, 'image' => 'https://cdn.tgdd.vn/Products/Images/42/289700/iphone-14-pro-max-purple-thumb-600x600.jpg'],
+            ['name' => 'iPhone 14 128GB', 'description' => 'iPhone 14 thiết kế sang trọng, camera kép 12MP, pin trâu', 'price' => 19990000, 'category' => 'iPhone', 'stock' => 55, 'image' => 'https://cdn.tgdd.vn/Products/Images/42/289659/iphone-14-thumb-tim-1-600x600.jpg'],
+            ['name' => 'iPhone 13 128GB', 'description' => 'iPhone 13 giá tốt, camera kép 12MP, hiệu năng A15 Bionic mạnh mẽ', 'price' => 16990000, 'category' => 'iPhone', 'stock' => 80, 'image' => 'https://cdn.tgdd.vn/Products/Images/42/223602/iphone-13-blue-600x600.jpg'],
 
-            // Thời trang
-            ['name' => 'Áo sơ mi nam công sở', 'description' => 'Áo sơ mi trắng lịch lãm', 'price' => 299000, 'category' => 'Thời trang', 'stock' => 100, 'image' => 'ao-so-mi-nam.jpg'],
-            ['name' => 'Quần jean nữ skinny', 'description' => 'Quần jean ôm dáng thời trang', 'price' => 599000, 'category' => 'Thời trang', 'stock' => 80, 'image' => 'quan-jean-nu.jpg'],
-            ['name' => 'Giày sneaker Nike', 'description' => 'Giày thể thao Nike Air Force 1', 'price' => 2599000, 'category' => 'Thời trang', 'stock' => 60, 'image' => 'nike-air-force-1.jpg'],
-            ['name' => 'Túi xách nữ da thật', 'description' => 'Túi xách cao cấp từ da thật', 'price' => 1999000, 'category' => 'Thời trang', 'stock' => 35, 'image' => 'tui-xach-nu.jpg'],
-            ['name' => 'Đồng hồ nam Casio', 'description' => 'Đồng hồ thể thao chống nước', 'price' => 1299000, 'category' => 'Thời trang', 'stock' => 50, 'image' => 'dong-ho-casio.jpg'],
+            // Samsung
+            ['name' => 'Samsung Galaxy S24 Ultra 256GB', 'description' => 'Galaxy S24 Ultra với bút S Pen, camera 200MP, chip Snapdragon 8 Gen 3', 'price' => 29990000, 'category' => 'Samsung', 'stock' => 40, 'image' => 'https://cdn.tgdd.vn/Products/Images/42/319541/samsung-galaxy-s24-ultra-den-thumbnew-600x600.jpg'],
+            ['name' => 'Samsung Galaxy S24+ 256GB', 'description' => 'Galaxy S24+ màn hình 6.7 inch QHD+, camera AI siêu nét', 'price' => 24990000, 'category' => 'Samsung', 'stock' => 45, 'image' => 'https://cdn.tgdd.vn/Products/Images/42/319540/samsung-galaxy-s24-plus-tim-thumbnew-600x600.jpg'],
+            ['name' => 'Samsung Galaxy S24 128GB', 'description' => 'Galaxy S24 nhỏ gọn, hiệu năng mạnh mẽ, camera AI thông minh', 'price' => 19990000, 'category' => 'Samsung', 'stock' => 60, 'image' => 'https://cdn.tgdd.vn/Products/Images/42/307174/samsung-galaxy-s24-xam-thumbnew-600x600.jpg'],
+            ['name' => 'Samsung Galaxy Z Fold5 256GB', 'description' => 'Điện thoại gập cao cấp, màn hình 7.6 inch, bút S Pen', 'price' => 40990000, 'category' => 'Samsung', 'stock' => 20, 'image' => 'https://cdn.tgdd.vn/Products/Images/42/305658/samsung-galaxy-z-fold5-kem-thumbnew-600x600.jpg'],
+            ['name' => 'Samsung Galaxy Z Flip5 256GB', 'description' => 'Điện thoại gập vỏ sò, thiết kế thời trang, màn hình phụ lớn', 'price' => 23990000, 'category' => 'Samsung', 'stock' => 30, 'image' => 'https://cdn.tgdd.vn/Products/Images/42/305658/samsung-galaxy-z-flip5-tim-thumbnew-600x600.jpg'],
+            ['name' => 'Samsung Galaxy A55 5G 128GB', 'description' => 'Galaxy A55 camera 50MP OIS, pin 5000mAh, sạc nhanh 25W', 'price' => 10490000, 'category' => 'Samsung', 'stock' => 70, 'image' => 'https://cdn.tgdd.vn/Products/Images/42/319540/samsung-galaxy-a55-5g-xanh-nhat-thumbnew-600x600.jpg'],
+            ['name' => 'Samsung Galaxy A35 5G 128GB', 'description' => 'Galaxy A35 màn hình Super AMOLED 6.6 inch, pin 5000mAh', 'price' => 7690000, 'category' => 'Samsung', 'stock' => 90, 'image' => 'https://cdn.tgdd.vn/Products/Images/42/319541/samsung-galaxy-a35-5g-xanh-duong-thumbnew-600x600.jpg'],
 
-            // Nhà cửa & Đời sống
-            ['name' => 'Nồi cơm điện Panasonic', 'description' => 'Nồi cơm điện cao tần 1.8L', 'price' => 2799000, 'category' => 'Nhà cửa & Đời sống', 'stock' => 45, 'image' => 'noi-com-dien.jpg'],
-            ['name' => 'Máy lọc nước RO', 'description' => 'Máy lọc nước 10 cấp độ', 'price' => 5999000, 'category' => 'Nhà cửa & Đời sống', 'stock' => 25, 'image' => 'may-loc-nuoc.jpg'],
-            ['name' => 'Bộ chăn ga gối Singapore', 'description' => 'Bộ chăn ga cotton cao cấp', 'price' => 899000, 'category' => 'Nhà cửa & Đời sống', 'stock' => 70, 'image' => 'bo-chan-ga.jpg'],
-            ['name' => 'Bàn làm việc gỗ sồi', 'description' => 'Bàn làm việc minimalist', 'price' => 3499000, 'category' => 'Nhà cửa & Đời sống', 'stock' => 20, 'image' => 'ban-lam-viec.jpg'],
+            // Xiaomi
+            ['name' => 'Xiaomi 14 Ultra 512GB', 'description' => 'Xiaomi 14 Ultra camera Leica, chip Snapdragon 8 Gen 3, sạc 90W', 'price' => 29990000, 'category' => 'Xiaomi', 'stock' => 25, 'image' => 'https://cdn.tgdd.vn/Products/Images/42/319540/xiaomi-14-ultra-den-thumbnew-600x600.jpg'],
+            ['name' => 'Xiaomi 14 256GB', 'description' => 'Xiaomi 14 với camera Leica, màn hình LTPO AMOLED', 'price' => 19990000, 'category' => 'Xiaomi', 'stock' => 40, 'image' => 'https://cdn.tgdd.vn/Products/Images/42/319541/xiaomi-14-xanh-la-thumbnew-600x600.jpg'],
+            ['name' => 'Xiaomi Redmi Note 13 Pro+ 5G', 'description' => 'Redmi Note 13 Pro+ camera 200MP, sạc nhanh 120W', 'price' => 9990000, 'category' => 'Xiaomi', 'stock' => 70, 'image' => 'https://cdn.tgdd.vn/Products/Images/42/314206/xiaomi-redmi-note-13-pro-plus-den-thumbnew-600x600.jpg'],
+            ['name' => 'Xiaomi Redmi Note 13 Pro', 'description' => 'Redmi Note 13 Pro camera 200MP OIS, sạc 67W', 'price' => 7490000, 'category' => 'Xiaomi', 'stock' => 85, 'image' => 'https://cdn.tgdd.vn/Products/Images/42/314205/xiaomi-redmi-note-13-pro-tim-thumbnew-600x600.jpg'],
+            ['name' => 'Xiaomi Redmi 13C 128GB', 'description' => 'Redmi 13C giá rẻ, pin 5000mAh, camera 50MP', 'price' => 3290000, 'category' => 'Xiaomi', 'stock' => 120, 'image' => 'https://cdn.tgdd.vn/Products/Images/42/313825/xiaomi-redmi-13c-xanh-la-thumbnew-600x600.jpg'],
+            ['name' => 'Xiaomi POCO X6 Pro 5G', 'description' => 'POCO X6 Pro hiệu năng khủng, chip Dimensity 8300-Ultra', 'price' => 8990000, 'category' => 'Xiaomi', 'stock' => 50, 'image' => 'https://cdn.tgdd.vn/Products/Images/42/314204/xiaomi-poco-x6-pro-xam-thumbnew-600x600.jpg'],
 
-            // Sách
-            ['name' => 'Sapiens - Lược sử loài người', 'description' => 'Cuốn sách bestseller của Yuval Noah Harari', 'price' => 199000, 'category' => 'Sách', 'stock' => 150, 'image' => 'sapiens-book.jpg'],
-            ['name' => 'Đắc Nhân Tâm', 'description' => 'Nghệ thuật giao tiếp và ứng xử', 'price' => 89000, 'category' => 'Sách', 'stock' => 200, 'image' => 'dac-nhan-tam.jpg'],
-            ['name' => 'Clean Code', 'description' => 'Cẩm nang viết code sạch', 'price' => 299000, 'category' => 'Sách', 'stock' => 80, 'image' => 'clean-code.jpg'],
-            ['name' => 'Tôi Thấy Hoa Vàng Trên Cỏ Xanh', 'description' => 'Tiểu thuyết của Nguyễn Nhật Ánh', 'price' => 79000, 'category' => 'Sách', 'stock' => 120, 'image' => 'hoa-vang-co-xanh.jpg'],
+            // OPPO
+            ['name' => 'OPPO Find X7 Ultra 512GB', 'description' => 'Find X7 Ultra camera Hasselblad, zoom quang học 6x', 'price' => 32990000, 'category' => 'OPPO', 'stock' => 20, 'image' => 'https://cdn.tgdd.vn/Products/Images/42/319540/oppo-find-x7-ultra-den-thumbnew-600x600.jpg'],
+            ['name' => 'OPPO Reno11 F 5G 256GB', 'description' => 'Reno11 F camera 64MP, sạc nhanh SUPERVOOC 67W', 'price' => 8990000, 'category' => 'OPPO', 'stock' => 60, 'image' => 'https://cdn.tgdd.vn/Products/Images/42/314206/oppo-reno11-f-xanh-thumbnew-600x600.jpg'],
+            ['name' => 'OPPO A79 5G 128GB', 'description' => 'OPPO A79 màn hình 90Hz, pin 5000mAh, sạc 33W', 'price' => 6290000, 'category' => 'OPPO', 'stock' => 75, 'image' => 'https://cdn.tgdd.vn/Products/Images/42/313826/oppo-a79-5g-tim-thumbnew-600x600.jpg'],
+            ['name' => 'OPPO A58 128GB', 'description' => 'OPPO A58 giá tốt, pin 5000mAh, màn hình 6.72 inch', 'price' => 4490000, 'category' => 'OPPO', 'stock' => 100, 'image' => 'https://cdn.tgdd.vn/Products/Images/42/309831/oppo-a58-xanh-thumbnew-600x600.jpg'],
 
-            // Thể thao & Du lịch
-            ['name' => 'Máy chạy bộ điện', 'description' => 'Máy chạy bộ cao cấp cho gia đình', 'price' => 12999000, 'category' => 'Thể thao & Du lịch', 'stock' => 15, 'image' => 'may-chay-bo.jpg'],
-            ['name' => 'Bóng đá Nike Premier League', 'description' => 'Bóng đá chính hãng FIFA Quality', 'price' => 799000, 'category' => 'Thể thao & Du lịch', 'stock' => 50, 'image' => 'bong-da-nike.jpg'],
-            ['name' => 'Ba lô du lịch 40L', 'description' => 'Ba lô trekking chống thấm nước', 'price' => 1299000, 'category' => 'Thể thao & Du lịch', 'stock' => 40, 'image' => 'ba-lo-du-lich.jpg'],
-            ['name' => 'Giày chạy bộ Adidas', 'description' => 'Giày chạy bộ công nghệ Boost', 'price' => 2299000, 'category' => 'Thể thao & Du lịch', 'stock' => 65, 'image' => 'giay-chay-bo.jpg'],
+            // Vivo
+            ['name' => 'Vivo V30 5G 256GB', 'description' => 'Vivo V30 camera 50MP OIS, sạc nhanh 80W', 'price' => 12990000, 'category' => 'Vivo', 'stock' => 45, 'image' => 'https://cdn.tgdd.vn/Products/Images/42/319540/vivo-v30-xanh-thumbnew-600x600.jpg'],
+            ['name' => 'Vivo Y100 5G 256GB', 'description' => 'Vivo Y100 màn hình AMOLED 120Hz, sạc 80W', 'price' => 7990000, 'category' => 'Vivo', 'stock' => 65, 'image' => 'https://cdn.tgdd.vn/Products/Images/42/314206/vivo-y100-tim-thumbnew-600x600.jpg'],
+            ['name' => 'Vivo Y36 128GB', 'description' => 'Vivo Y36 pin 5000mAh, sạc nhanh 44W, camera 50MP', 'price' => 5490000, 'category' => 'Vivo', 'stock' => 80, 'image' => 'https://cdn.tgdd.vn/Products/Images/42/309108/vivo-y36-xanh-thumbnew-600x600.jpg'],
 
-            // Làm đẹp & Sức khỏe
-            ['name' => 'Kem chống nắng Anessa', 'description' => 'Kem chống nắng SPF 50+ PA++++', 'price' => 599000, 'category' => 'Làm đẹp & Sức khỏe', 'stock' => 90, 'image' => 'kem-chong-nang.jpg'],
-            ['name' => 'Son môi Dior Rouge', 'description' => 'Son môi cao cấp lâu trôi', 'price' => 1399000, 'category' => 'Làm đẹp & Sức khỏe', 'stock' => 75, 'image' => 'son-moi-dior.jpg'],
-            ['name' => 'Vitamin C Blackmores', 'description' => 'Viên uống bổ sung Vitamin C', 'price' => 299000, 'category' => 'Làm đẹp & Sức khỏe', 'stock' => 100, 'image' => 'vitamin-c.jpg'],
-            ['name' => 'Máy massage cầm tay', 'description' => 'Máy massage thư giãn cơ bắp', 'price' => 899000, 'category' => 'Làm đẹp & Sức khỏe', 'stock' => 55, 'image' => 'may-massage.jpg'],
+            // Realme
+            ['name' => 'Realme GT 5 Pro 256GB', 'description' => 'Realme GT 5 Pro chip Snapdragon 8 Gen 3, sạc 100W', 'price' => 15990000, 'category' => 'Realme', 'stock' => 30, 'image' => 'https://cdn.tgdd.vn/Products/Images/42/319541/realme-gt-5-pro-xam-thumbnew-600x600.jpg'],
+            ['name' => 'Realme 12 Pro+ 5G 256GB', 'description' => 'Realme 12 Pro+ camera zoom quang 3x, sạc nhanh 67W', 'price' => 10490000, 'category' => 'Realme', 'stock' => 50, 'image' => 'https://cdn.tgdd.vn/Products/Images/42/314206/realme-12-pro-plus-xanh-thumbnew-600x600.jpg'],
+            ['name' => 'Realme C67 128GB', 'description' => 'Realme C67 camera 108MP, pin 5000mAh, sạc 33W', 'price' => 4990000, 'category' => 'Realme', 'stock' => 85, 'image' => 'https://cdn.tgdd.vn/Products/Images/42/313825/realme-c67-xanh-thumbnew-600x600.jpg'],
 
-            // Đồ chơi
-            ['name' => 'LEGO Architecture', 'description' => 'Bộ xếp hình kiến trúc nổi tiếng', 'price' => 1999000, 'category' => 'Đồ chơi', 'stock' => 30, 'image' => 'lego-architecture.jpg'],
-            ['name' => 'Búp bê Barbie', 'description' => 'Búp bê thời trang cao cấp', 'price' => 699000, 'category' => 'Đồ chơi', 'stock' => 60, 'image' => 'bup-be-barbie.jpg'],
-            ['name' => 'Xe điều khiển từ xa', 'description' => 'Xe địa hình điều khiển từ xa', 'price' => 1599000, 'category' => 'Đồ chơi', 'stock' => 35, 'image' => 'xe-dieu-khien.jpg'],
-            ['name' => 'Rubik 3x3 cao cấp', 'description' => 'Rubik tốc độ chuyên nghiệp', 'price' => 299000, 'category' => 'Đồ chơi', 'stock' => 80, 'image' => 'rubik-3x3.jpg'],
+            // Nokia
+            ['name' => 'Nokia G60 5G 128GB', 'description' => 'Nokia G60 Android One, camera 50MP, pin 4500mAh', 'price' => 5990000, 'category' => 'Nokia', 'stock' => 40, 'image' => 'https://cdn.tgdd.vn/Products/Images/42/289700/nokia-g60-5g-den-thumb-600x600.jpg'],
+            ['name' => 'Nokia C32 64GB', 'description' => 'Nokia C32 giá rẻ, pin 5000mAh, màn hình lớn', 'price' => 2290000, 'category' => 'Nokia', 'stock' => 80, 'image' => 'https://cdn.tgdd.vn/Products/Images/42/306174/nokia-c32-xanh-thumb-600x600.jpg'],
 
-            // Ô tô & Xe máy
-            ['name' => 'Lốp xe Michelin', 'description' => 'Lốp xe ô tô cao cấp 215/60R16', 'price' => 2199000, 'category' => 'Ô tô & Xe máy', 'stock' => 40, 'image' => 'lop-xe-michelin.jpg'],
-            ['name' => 'Dầu nhớt Castrol', 'description' => 'Dầu nhớt tổng hợp 5W-30', 'price' => 799000, 'category' => 'Ô tô & Xe máy', 'stock' => 70, 'image' => 'dau-nhot-castrol.jpg'],
-            ['name' => 'Camera hành trình', 'description' => 'Camera hành trình 4K WiFi', 'price' => 2999000, 'category' => 'Ô tô & Xe máy', 'stock' => 25, 'image' => 'camera-hanh-trinh.jpg'],
+            // Phụ kiện
+            ['name' => 'Ốp lưng Silicone', 'description' => 'Ốp lưng chất liệu silicone mềm mại, chống sốc', 'price' => 150000, 'category' => 'Phụ kiện điện thoại', 'stock' => 200, 'image' => 'https://via.placeholder.com/600x600/00d4aa/ffffff?text=Op+Lung'],
+            ['name' => 'Dán cường lực UV', 'description' => 'Dán màn hình UV full màn, độ cứng 9H', 'price' => 250000, 'category' => 'Phụ kiện điện thoại', 'stock' => 150, 'image' => 'https://via.placeholder.com/600x600/00d4aa/ffffff?text=Dan+Man+Hinh'],
+            ['name' => 'Sạc dự phòng 20000mAh', 'description' => 'Sạc dự phòng sạc nhanh 22.5W, 2 cổng USB', 'price' => 799000, 'category' => 'Phụ kiện điện thoại', 'stock' => 100, 'image' => 'https://via.placeholder.com/600x600/00d4aa/ffffff?text=Sac+Du+Phong'],
+            ['name' => 'Tai nghe AirPods Pro 2', 'description' => 'Tai nghe True Wireless chống ồn chủ động', 'price' => 6490000, 'category' => 'Phụ kiện điện thoại', 'stock' => 60, 'image' => 'https://cdn.tgdd.vn/Products/Images/54/289782/tai-nghe-bluetooth-airpods-pro-2nd-gen-usb-c-charge-apple-thumb-600x600.jpg'],
+            ['name' => 'Củ sạc nhanh 65W GaN', 'description' => 'Củ sạc GaN công nghệ mới, nhỏ gọn, 3 cổng sạc', 'price' => 890000, 'category' => 'Phụ kiện điện thoại', 'stock' => 120, 'image' => 'https://via.placeholder.com/600x600/00d4aa/ffffff?text=Cu+Sac'],
 
-            // Mẹ & Bé
-            ['name' => 'Xe đẩy em bé Combi', 'description' => 'Xe đẩy gấp gọn 2 chiều', 'price' => 4999000, 'category' => 'Mẹ & Bé', 'stock' => 20, 'image' => 'xe-day-em-be.jpg'],
-            ['name' => 'Tã Pampers newborn', 'description' => 'Tã dán sơ sinh siêu mềm', 'price' => 349000, 'category' => 'Mẹ & Bé', 'stock' => 150, 'image' => 'ta-pampers.jpg'],
-            ['name' => 'Sữa Enfamil A+', 'description' => 'Sữa bột cho trẻ từ 0-6 tháng', 'price' => 659000, 'category' => 'Mẹ & Bé', 'stock' => 80, 'image' => 'sua-enfamil.jpg'],
-
-            // Trang sức
-            ['name' => 'Nhẫn vàng 18K', 'description' => 'Nhẫn vàng trơn cao cấp', 'price' => 8999000, 'category' => 'Trang sức', 'stock' => 10, 'image' => 'nhan-vang-18k.jpg'],
-            ['name' => 'Đồng hồ Citizen', 'description' => 'Đồng hồ Eco-Drive năng lượng mặt trời', 'price' => 5999000, 'category' => 'Trang sức', 'stock' => 15, 'image' => 'dong-ho-citizen.jpg'],
-            ['name' => 'Dây chuyền bạc 925', 'description' => 'Dây chuyền bạc thật cao cấp', 'price' => 799000, 'category' => 'Trang sức', 'stock' => 45, 'image' => 'day-chuyen-bac.jpg'],
-
-            // Văn phòng phẩm
-            ['name' => 'Bút Parker cao cấp', 'description' => 'Bút bi Parker Jotter Steel', 'price' => 899000, 'category' => 'Văn phòng phẩm', 'stock' => 60, 'image' => 'but-parker.jpg'],
-            ['name' => 'Máy in HP LaserJet', 'description' => 'Máy in laser đen trắng', 'price' => 3999000, 'category' => 'Văn phòng phẩm', 'stock' => 25, 'image' => 'may-in-hp.jpg'],
-            ['name' => 'Ghế văn phòng ergonomic', 'description' => 'Ghế xoay chống mỏi lưng', 'price' => 2799000, 'category' => 'Văn phòng phẩm', 'stock' => 30, 'image' => 'ghe-van-phong.jpg'],
-
-            // Thực phẩm & Đồ uống
-            ['name' => 'Cà phê Trung Nguyên', 'description' => 'Cà phê rang xay cao cấp 500g', 'price' => 199000, 'category' => 'Thực phẩm & Đồ uống', 'stock' => 200, 'image' => 'ca-phe-trung-nguyen.jpg'],
-            ['name' => 'Mật ong rừng nguyên chất', 'description' => 'Mật ong hoa rừng 500ml', 'price' => 299000, 'category' => 'Thực phẩm & Đồ uống', 'stock' => 100, 'image' => 'mat-ong-rung.jpg'],
-            ['name' => 'Trà Oolong Đài Loan', 'description' => 'Trà Oolong cao cấp 200g', 'price' => 499000, 'category' => 'Thực phẩm & Đồ uống', 'stock' => 80, 'image' => 'tra-oolong.jpg'],
-
-            // Thú cưng
-            ['name' => 'Thức ăn cho chó Royal Canin', 'description' => 'Thức ăn khô cho chó trưởng thành 15kg', 'price' => 1899000, 'category' => 'Thú cưng', 'stock' => 50, 'image' => 'thuc-an-cho.jpg'],
-            ['name' => 'Cát vệ sinh cho mèo', 'description' => 'Cát bentonite khử mùi 10L', 'price' => 299000, 'category' => 'Thú cưng', 'stock' => 90, 'image' => 'cat-ve-sinh-meo.jpg'],
-            ['name' => 'Lồng chó inox', 'description' => 'Lồng chó inox 304 size M', 'price' => 1599000, 'category' => 'Thú cưng', 'stock' => 25, 'image' => 'long-cho-inox.jpg'],
-
-            // Vườn & Ngoài trời
-            ['name' => 'Cây xanh phong thủy', 'description' => 'Cây kim ngân để bàn', 'price' => 199000, 'category' => 'Vườn & Ngoài trời', 'stock' => 100, 'image' => 'cay-kim-ngan.jpg'],
-            ['name' => 'Máy cắt cỏ điện', 'description' => 'Máy cắt cỏ cầm tay 1200W', 'price' => 2599000, 'category' => 'Vườn & Ngoài trời', 'stock' => 20, 'image' => 'may-cat-co.jpg'],
+            // Smartwatch
+            ['name' => 'Apple Watch Series 9 GPS 45mm', 'description' => 'Apple Watch S9 chip mới, màn hình sáng hơn', 'price' => 11990000, 'category' => 'Smartwatch', 'stock' => 35, 'image' => 'https://cdn.tgdd.vn/Products/Images/7077/309732/apple-watch-s9-gps-45mm-vien-nhom-day-cao-su-thumb-600x600.jpg'],
+            ['name' => 'Samsung Galaxy Watch6 Classic', 'description' => 'Galaxy Watch6 Classic vòng bezel xoay', 'price' => 9990000, 'category' => 'Smartwatch', 'stock' => 40, 'image' => 'https://cdn.tgdd.vn/Products/Images/7077/309108/samsung-galaxy-watch6-classic-47mm-den-thumb-600x600.jpg'],
+            ['name' => 'Xiaomi Watch 2 Pro', 'description' => 'Xiaomi Watch 2 Pro HyperOS, pin 14 ngày', 'price' => 5490000, 'category' => 'Smartwatch', 'stock' => 55, 'image' => 'https://via.placeholder.com/600x600/00d4aa/ffffff?text=Xiaomi+Watch'],
         ];
 
         foreach ($products as $productData) {
-            $category = $categories->where('name', $productData['category'])->first();
+            $category = $categories->firstWhere('name', $productData['category']);
+            
             if ($category) {
-                Product::create([
-                    'name' => $productData['name'],
-                    'description' => $productData['description'],
-                    'price' => $productData['price'],
-                    'category_id' => $category->category_id,
-                    'stock_quantity' => $productData['stock'],
-                    'image_url' => 'images/products/'.$productData['image'],
-                ]);
+                Product::updateOrCreate(
+                    ['name' => $productData['name']],
+                    [
+                        'category_id' => $category->category_id,
+                        'description' => $productData['description'],
+                        'price' => $productData['price'],
+                        'stock_quantity' => $productData['stock'],
+                        'image_url' => $productData['image'],
+                    ]
+                );
             }
         }
     }

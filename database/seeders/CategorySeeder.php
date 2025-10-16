@@ -13,21 +13,18 @@ class CategorySeeder extends Seeder
     public function run(): void
     {
         $categories = [
-            ['name' => 'Điện tử', 'description' => 'Thiết bị điện tử, máy tính, điện thoại'],
-            ['name' => 'Thời trang', 'description' => 'Quần áo, giày dép, phụ kiện thời trang'],
-            ['name' => 'Nhà cửa & Đời sống', 'description' => 'Đồ gia dụng, nội thất, trang trí'],
-            ['name' => 'Sách', 'description' => 'Sách văn học, giáo khoa, tham khảo'],
-            ['name' => 'Thể thao & Du lịch', 'description' => 'Dụng cụ thể thao, đồ du lịch'],
-            ['name' => 'Làm đẹp & Sức khỏe', 'description' => 'Mỹ phẩm, chăm sóc sức khỏe'],
-            ['name' => 'Đồ chơi', 'description' => 'Đồ chơi trẻ em, game, puzzle'],
-            ['name' => 'Ô tô & Xe máy', 'description' => 'Phụ tùng, phụ kiện xe hơi, xe máy'],
-            ['name' => 'Mẹ & Bé', 'description' => 'Đồ dùng cho mẹ và trẻ em'],
-            ['name' => 'Trang sức', 'description' => 'Nhẫn, dây chuyền, đồng hồ'],
-            ['name' => 'Văn phòng phẩm', 'description' => 'Dụng cụ học tập, văn phòng'],
-            ['name' => 'Thực phẩm & Đồ uống', 'description' => 'Thực phẩm tươi sống, đồ uống'],
-            ['name' => 'Thú cưng', 'description' => 'Đồ dùng cho thú cưng'],
-            ['name' => 'Vườn & Ngoài trời', 'description' => 'Cây cảnh, dụng cụ làm vườn'],
-            ['name' => 'Nghệ thuật & Thủ công', 'description' => 'Đồ nghệ thuật, thủ công mỹ nghệ'],
+            ['name' => 'iPhone', 'description' => 'Điện thoại iPhone chính hãng Apple - Thiết kế sang trọng, hiệu năng mạnh mẽ'],
+            ['name' => 'Samsung', 'description' => 'Điện thoại Samsung Galaxy - Công nghệ tiên tiến, màn hình tuyệt đẹp'],
+            ['name' => 'Xiaomi', 'description' => 'Điện thoại Xiaomi - Giá tốt, cấu hình cao, pin trâu'],
+            ['name' => 'OPPO', 'description' => 'Điện thoại OPPO - Camera selfie đẹp, sạc nhanh VOOC'],
+            ['name' => 'Vivo', 'description' => 'Điện thoại Vivo - Thiết kế thời trang, âm thanh sống động'],
+            ['name' => 'Realme', 'description' => 'Điện thoại Realme - Hiệu năng gaming, giá phải chăng'],
+            ['name' => 'Nokia', 'description' => 'Điện thoại Nokia - Độ bền cao, pin khủng, Android One'],
+            ['name' => 'Google Pixel', 'description' => 'Điện thoại Google Pixel - Android thuần, camera AI xuất sắc'],
+            ['name' => 'OnePlus', 'description' => 'Điện thoại OnePlus - Flagship killer, sạc cực nhanh'],
+            ['name' => 'Asus ROG Phone', 'description' => 'Điện thoại gaming Asus ROG - Chuyên game, hiệu năng khủng'],
+            ['name' => 'Phụ kiện điện thoại', 'description' => 'Ốp lưng, dán màn hình, sạc dự phòng, tai nghe'],
+            ['name' => 'Smartwatch', 'description' => 'Đồng hồ thông minh - Theo dõi sức khỏe, kết nối smartphone'],
         ];
 
         foreach ($categories as $category) {
