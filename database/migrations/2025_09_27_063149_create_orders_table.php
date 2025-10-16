@@ -16,7 +16,10 @@ return new class extends Migration
             $table->unsignedBigInteger('user_id');
             $table->dateTime('order_date');
             $table->decimal('total_amount', 12, 2);
+            $table->enum('status', ['pending', 'processing', 'shipped', 'delivered', 'cancelled'])
+                ->default('pending');
             $table->timestamps();
+            
 
             $table->foreign('user_id')->references('id')->on('users')->onDelete('restrict');
         });
