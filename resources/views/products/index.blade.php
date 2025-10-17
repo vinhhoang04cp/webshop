@@ -163,15 +163,15 @@
 
 @section('scripts')
 <script>
-function addToCart(productId) {
-    fetch(`/cart/add/${productId}`, {
-        method: 'POST',
-        headers: {
+function addToCart(productId) { // Hàm thêm sản phẩm vào giỏ hàng
+    fetch(`/cart/add/${productId}`, { // Gửi yêu cầu đến route thêm vào giỏ hàng
+        method: 'POST', // http method la post
+        headers: { 
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
             'Accept': 'application/json'
         },
-        body: JSON.stringify({ quantity: 1 })
+        body: JSON.stringify({ quantity: 1 }) 
     })
     .then(response => {
         // Kiểm tra nếu là lỗi 401 (chưa đăng nhập)

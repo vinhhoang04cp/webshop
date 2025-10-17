@@ -32,7 +32,7 @@ class CustomerCartController extends Controller
         ]);
 
         $cart = Auth::user()->cart; // $cart la gio hang cua user hien tai dang nhap
-        if (! $cart || $cart->items()->count() == 0) { // neu chua co gio hang hoac gio hang trong
+        if (! $cart || $cart->items()->count() == 0) { // ! $cart neu chua co cart, $cart->items()->count() == 0 neu so luong item trong gio hang bang 0
             return redirect()->route('cart.index')->with('error', 'Giỏ hàng trống!'); // chuyen huong den trang gio hang voi thong bao loi
         }
 
@@ -40,8 +40,8 @@ class CustomerCartController extends Controller
         try {
             // Tạo đơn hàng với thông tin giao hàng
             $order = new \App\Models\Order; // Su dung model Order de tao don hang moi
-            $order->user_id = Auth::id(); // lay id cua user hien tai dang nhap lam user_id
-            $order->total_amount = $cart->totalPrice(); // Su dung method totalPrice() de tinh tong tien gio hang
+            $order->user_id = Auth::id(); // Auth::id() lay id cua user hien tai dang nhap
+            $order->total_amount = $cart->totalPrice(); // $cart->totalPrice() goi den method totalPrice() trong model Cart de tinh tong tien gio hang
             $order->status = 'pending'; // trang thai don hang mac dinh la 'pending'
             $order->order_date = now();  // thoi gian dat hang la thoi diem hien tai
 
@@ -55,24 +55,25 @@ class CustomerCartController extends Controller
 
             // Thêm các sản phẩm vào order_items
             foreach ($cart->items as $item) {
-                $orderItem = new \App\Models\OrderItem;
-                $orderItem->order_id = $order->order_id;
-                $orderItem->product_id = $item->product_id;
-                $orderItem->quantity = $item->quantity;
-                $orderItem->price = $item->price ?? $item->product->price;
-                $orderItem->save();
+                $orderItem = new \App\Models\OrderItem; // Su dung model OrderItem de tao moi item trong don hang
+                $orderItem->order_id = $order->order_id; // gan order_id cua item trong don hang bang order_id cua don hang vua tao
+                $orderItem->product_id = $item->product_id; // gan product_id cua item trong don hang bang product_id cua item trong gio hang
+                $orderItem->quantity = $item->quantity; // gan so luong cua item trong don hang bang so luong cua item trong gio hang
+                $orderItem->price = $item->price ?? $item->product->price; // gan gia cua item trong don hang bang gia cua item trong gio hang, neu khong co thi lay gia cua san pham
+                $orderItem->save(); // luu item trong don hang vao database
             }
 
-            // Xóa giỏ hàng sau khi đặt hàng
-            $cart->items()->delete();
+            $cart->items()->delete(); // xoa toan bo item trong gio hang
+            // Không cần reset total_amount vì tính động
 
-            DB::commit();
+            DB::commit(); // ket thuc giao dich
 
             return redirect()->route('cart.index')->with('success', 'Đặt hàng thành công! Đơn hàng của bạn đã được ghi nhận. Chúng tôi sẽ liên hệ với bạn qua số điện thoại '.$request->shipping_phone.' để xác nhận.');
-        } catch (\Exception $e) {
-            DB::rollBack();
+            // chuyen huong den trang gio hang voi thong bao thanh cong
+        } catch (\Exception $e) { // neu co loi xay ra trong qua trinh dat hang
+            DB::rollBack(); // quay lai trang thai truoc khi bat dau giao dich
 
-            return redirect()->route('cart.index')->with('error', 'Có lỗi xảy ra khi đặt hàng: '.$e->getMessage());
+            return redirect()->route('cart.index')->with('error', 'Có lỗi xảy ra khi đặt hàng: '.$e->getMessage()); // chuyen huong den trang gio hang voi thong bao loi
         }
     }
 
@@ -95,15 +96,15 @@ class CustomerCartController extends Controller
                 ]);
             }
 
-            // Load cart items with better error handling
-            $cartItems = collect(); // Initialize empty collection
+            // Tải các mục trong giỏ hàng cùng với thông tin sản phẩm và danh mục
+            $cartItems = collect(); // Khởi tạo bộ sưu tập rỗng
 
             try {
-                $cartItems = $cart->items()
-                    ->with(['product' => function ($query) {
-                        $query->with('category');
-                    }])
-                    ->get();
+                $cartItems = $cart->items() // $cart->items() lay tat ca cac item trong gio hang
+                    ->with(['product' => function ($query) { // tai thong tin san pham cho moi item trong gio hang
+                        $query->with('category'); // tai thong tin danh muc cho san pham
+                    }]) // lay thong tin quan he product va category
+                    ->get(); // thuc thi truy van va lay ve ket qua
             } catch (\Exception $e) {
                 \Log::error('Error loading cart items: '.$e->getMessage());
                 // Return empty collection on error

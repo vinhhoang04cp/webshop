@@ -96,37 +96,38 @@
                         {{-- $product->description hien thi mo ta san pham --}}
                     </div>
 
-                    @if($product->details)
+                    @if($product->details) {{-- Kiểm tra nếu sản phẩm có thông tin chi tiết --}}
                         <div class="mb-4">
                             <h5>Thông tin chi tiết:</h5>
-                            <ul class="list-unstyled">
+                            <ul class="list-unstyled"> {{-- Hiển thị các chi tiết sản phẩm nếu có --}}
                                 @if($product->details->color)
-                                    <li class="mb-2"><strong>Màu sắc:</strong> {{ $product->details->color }}</li>
+                                    <li class="mb-2"><strong>Màu sắc:</strong> {{ $product->details->color }}</li> {{-- Neu co mau sac thi hien thi mau sac --}}
                                 @endif
                                 @if($product->details->size)
-                                    <li class="mb-2"><strong>Kích thước:</strong> {{ $product->details->size }}</li>
+                                    <li class="mb-2"><strong>Kích thước:</strong> {{ $product->details->size }}</li> {{-- Neu co kich thuoc thi hien thi kich thuoc --}}
                                 @endif
                                 @if($product->details->weight)
-                                    <li class="mb-2"><strong>Trọng lượng:</strong> {{ $product->details->weight }}</li>
+                                    <li class="mb-2"><strong>Trọng lượng:</strong> {{ $product->details->weight }}</li> {{-- Neu co trong luong thi hien thi trong luong --}}
                                 @endif
                                 @if($product->details->material)
-                                    <li class="mb-2"><strong>Chất liệu:</strong> {{ $product->details->material }}</li>
+                                    <li class="mb-2"><strong>Chất liệu:</strong> {{ $product->details->material }}</li> {{-- Neu co chat lieu thi hien thi chat lieu --}}
                                 @endif
                             </ul>
                         </div>
                     @endif
 
-                    <form action="{{ route('cart.add', $product->product_id) }}" method="POST">
-                        @csrf
+                    <form action="{{ route('cart.add', $product->product_id) }}" method="POST"> {{-- Form thêm vào giỏ hàng --}}
+                        @csrf {{-- Token bảo mật --}}
                         <div class="mb-4">
-                            <label class="mb-2"><strong>Số lượng:</strong></label>
-                            <div class="input-group" style="width: 150px;">
+                            <label class="mb-2"><strong>Số lượng:</strong></label> {{-- Nhãn số lượng --}}
+                            <div class="input-group" style="width: 150px;"> {{-- Nhập số lượng --}}
                                 <input type="number" name="quantity" class="form-control text-center" value="1" min="1" max="{{ $product->inventory ? $product->inventory->quantity : 1 }}">
+                                {{-- so luong toi da la so luong co trong inventory --}}
                             </div>
                         </div>
 
                         <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary btn-lg" style="border-radius: 25px; padding: 12px;">
+                            <button type="submit" class="btn btn-primary btn-lg" style="border-radius: 25px; padding: 12px;"> {{-- Nút thêm vào giỏ hàng click se gui request di --}}
                                 <i class="fas fa-cart-plus"></i> Thêm vào giỏ hàng
                             </button>
                         </div>
@@ -141,12 +142,12 @@
     </div>
 
     <!-- Related Products -->
-    @if($relatedProducts->count() > 0)
+    @if($relatedProducts->count() > 0) {{-- Kiểm tra nếu có sản phẩm liên quan --}}
     <section class="mb-5">
-        <h2 class="section-title">Sản phẩm liên quan</h2>
+        <h2 class="section-title">Sản phẩm liên quan</h2> {{-- Tiêu đề phần sản phẩm liên quan --}}
         <div class="row g-4">
-            @foreach($relatedProducts as $related)
-            <div class="col-md-3">
+            @foreach($relatedProducts as $related) {{-- Vòng lặp hiển thị từng sản phẩm liên quan --}}
+            <div class="col-md-3"> 
                 <div class="product-card">
                     <a href="{{ route('product.show', $related->product_id) }}">
                         <img src="{{ $related->image_url ?? 'https://via.placeholder.com/300x250/764ba2/ffffff?text=' . urlencode($related->name) }}" 
@@ -154,19 +155,19 @@
                              class="product-image">
                     </a>
                     <div class="product-body">
-                        @if($related->category)
-                            <span class="category-badge">{{ $related->category->name }}</span>
+                        @if($related->category) {{-- Kiểm tra nếu sản phẩm có danh mục --}}
+                            <span class="category-badge">{{ $related->category->name }}</span> {{-- Hiển thị tên danh mục --}}
                         @endif
                         <a href="{{ route('product.show', $related->product_id) }}" class="text-decoration-none">
-                            <h5 class="product-title">{{ $related->name }}</h5>
+                            <h5 class="product-title">{{ $related->name }}</h5> {{-- Tên sản phẩm --}}
                         </a>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="product-price">{{ number_format($related->price, 0, ',', '.') }}₫</span>
+                        <div class="d-flex justify-content-between align-items-center"> {{-- Giá sản phẩm --}}
+                            <span class="product-price">{{ number_format($related->price, 0, ',', '.') }}₫</span> {{-- Giá sản phẩm đã được định dạng --}}
                         </div>
                         <form action="{{ route('cart.add', $related->product_id) }}" method="POST" style="display: inline;">
-                            @csrf
-                            <input type="hidden" name="quantity" value="1">
-                            <button type="submit" class="btn-add-cart">
+                            @csrf {{-- Token bảo mật --}} 
+                            <input type="hidden" name="quantity" value="1"> {{-- Số lượng mặc định là 1 --}}
+                            <button type="submit" class="btn-add-cart"> 
                                 <i class="fas fa-cart-plus"></i> Thêm vào giỏ
                             </button>
                         </form>
