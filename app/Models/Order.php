@@ -18,6 +18,10 @@ class Order extends Model
         'order_date',
         'total_amount',
         'status',
+        'shipping_name',
+        'shipping_phone',
+        'shipping_address',
+        'note',
     ];
 
     protected $casts = [

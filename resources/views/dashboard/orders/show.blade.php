@@ -2,6 +2,40 @@
 
 @section('title', 'Chi tiết đơn hàng - WebShop Admin')
 
+@section('styles')
+<style>
+    /* Styling cho thông tin giao hàng */
+    .card-body .mb-3 strong {
+        color: #2c3e50;
+        display: flex;
+        align-items: center;
+    }
+    
+    .card-body .mb-3 p {
+        color: #34495e;
+        line-height: 1.6;
+    }
+    
+    .alert-info {
+        font-weight: 600;
+    }
+    
+    .ms-4 {
+        margin-left: 1.5rem !important;
+    }
+    
+    a[href^="tel:"] {
+        color: #10b981;
+        font-weight: 500;
+    }
+    
+    a[href^="tel:"]:hover {
+        color: #059669;
+        text-decoration: underline !important;
+    }
+</style>
+@endsection
+
 @section('content')
 <div class="container-fluid p-0">
     <div class="row g-0">
@@ -205,13 +239,56 @@
                                 <strong>Email:</strong>
                                 <p class="mb-0">{{ $order->user->email ?? 'N/A' }}</p>
                             </div>
-                            <div class="mb-3">
-                                <strong>Số điện thoại:</strong>
-                                <p class="mb-0">{{ $order->user->phone ?? 'Chưa cập nhật' }}</p>
+                            
+                            <hr class="my-3">
+                            
+                            <!-- Thông tin giao hàng COD -->
+                            <div class="alert alert-info mb-3" style="background: linear-gradient(135deg, #e0f7ff 0%, #b3e5fc 100%); border: 1px solid #0288d1;">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-shipping-fast me-2 text-primary"></i>
+                                    <strong>Thông tin giao hàng</strong>
+                                </div>
                             </div>
+                            
                             <div class="mb-3">
-                                <strong>Địa chỉ:</strong>
-                                <p class="mb-0">{{ $order->user->address ?? 'Chưa cập nhật' }}</p>
+                                <strong><i class="fas fa-user-circle me-2 text-primary"></i>Người nhận:</strong>
+                                <p class="mb-0 ms-4">{{ $order->shipping_name ?? $order->user->name ?? 'Chưa cập nhật' }}</p>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <strong><i class="fas fa-phone me-2 text-success"></i>Số điện thoại:</strong>
+                                <p class="mb-0 ms-4">
+                                    @if($order->shipping_phone)
+                                        <a href="tel:{{ $order->shipping_phone }}" class="text-decoration-none">
+                                            {{ $order->shipping_phone }}
+                                        </a>
+                                    @else
+                                        <span class="text-muted">{{ $order->user->phone ?? 'Chưa cập nhật' }}</span>
+                                    @endif
+                                </p>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <strong><i class="fas fa-map-marker-alt me-2 text-danger"></i>Địa chỉ:</strong>
+                                <p class="mb-0 ms-4">{{ $order->shipping_address ?? $order->user->address ?? 'Chưa cập nhật' }}</p>
+                            </div>
+                            
+                            @if($order->note)
+                                <div class="mb-3">
+                                    <strong><i class="fas fa-comment me-2 text-warning"></i>Ghi chú:</strong>
+                                    <p class="mb-0 ms-4 text-muted fst-italic">{{ $order->note }}</p>
+                                </div>
+                            @endif
+                            
+                            <!-- Phương thức thanh toán -->
+                            <div class="alert alert-warning mt-3 mb-0" style="background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%); border: 1px solid #ffd700;">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-money-bill-wave me-2"></i>
+                                    <div>
+                                        <strong>Thanh toán khi nhận hàng (COD)</strong>
+                                        <p class="mb-0 small">Khách hàng sẽ thanh toán khi nhận được hàng</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

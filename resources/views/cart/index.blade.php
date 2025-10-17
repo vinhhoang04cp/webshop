@@ -6,6 +6,21 @@
 <div class="container">
     <h2 class="section-title">Giỏ hàng của bạn</h2>
 
+    <!-- Hiển thị thông báo -->
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert" style="border-radius: 10px;">
+            <i class="fas fa-check-circle"></i> {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert" style="border-radius: 10px;">
+            <i class="fas fa-exclamation-circle"></i> {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
     <div class="row">
         <div class="col-md-8">
             <div class="card border-0 shadow-sm" style="border-radius: 12px;">
@@ -116,10 +131,79 @@
                     </div>
 
                     @if($cartItems->count() > 0)
-                        <form action="{{ route('cart.checkout') }}" method="POST">
+                        <!-- Form thông tin thanh toán COD -->
+                        <form action="{{ route('cart.checkout') }}" method="POST" id="checkout-form">
                             @csrf
+                            
+                            <div class="mb-3">
+                                <label for="shipping_name" class="form-label">
+                                    <i class="fas fa-user"></i> Họ và tên người nhận
+                                    <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" 
+                                       class="form-control @error('shipping_name') is-invalid @enderror" 
+                                       id="shipping_name" 
+                                       name="shipping_name" 
+                                       value="{{ old('shipping_name', Auth::user()->name) }}"
+                                       placeholder="Nhập họ và tên"
+                                       required>
+                                @error('shipping_name')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="shipping_phone" class="form-label">
+                                    <i class="fas fa-phone"></i> Số điện thoại
+                                    <span class="text-danger">*</span>
+                                </label>
+                                <input type="tel" 
+                                       class="form-control @error('shipping_phone') is-invalid @enderror" 
+                                       id="shipping_phone" 
+                                       name="shipping_phone" 
+                                       value="{{ old('shipping_phone', Auth::user()->phone) }}"
+                                       placeholder="Nhập số điện thoại"
+                                       required>
+                                @error('shipping_phone')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="shipping_address" class="form-label">
+                                    <i class="fas fa-map-marker-alt"></i> Địa chỉ giao hàng
+                                    <span class="text-danger">*</span>
+                                </label>
+                                <textarea class="form-control @error('shipping_address') is-invalid @enderror" 
+                                          id="shipping_address" 
+                                          name="shipping_address" 
+                                          rows="3" 
+                                          placeholder="Nhập địa chỉ chi tiết (số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố)"
+                                          required>{{ old('shipping_address', Auth::user()->address) }}</textarea>
+                                @error('shipping_address')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="note" class="form-label">
+                                    <i class="fas fa-comment"></i> Ghi chú đơn hàng
+                                </label>
+                                <textarea class="form-control" 
+                                          id="note" 
+                                          name="note" 
+                                          rows="2" 
+                                          placeholder="Ghi chú thêm về đơn hàng (không bắt buộc)">{{ old('note') }}</textarea>
+                            </div>
+
+                            <div class="alert alert-warning mb-3" style="border-radius: 10px;">
+                                <i class="fas fa-money-bill-wave"></i>
+                                <strong>Thanh toán khi nhận hàng (COD)</strong>
+                                <p class="mb-0 mt-2 small">Bạn sẽ thanh toán bằng tiền mặt khi nhận được hàng</p>
+                            </div>
+
                             <button type="submit" class="btn btn-primary w-100 mb-3" style="padding: 12px; border-radius: 25px;">
-                                <i class="fas fa-check"></i> Thanh toán
+                                <i class="fas fa-check"></i> Đặt hàng
                             </button>
                         </form>
                         
@@ -133,14 +217,58 @@
                         </form>
                     @endif
 
-                    <div class="alert alert-info" style="border-radius: 10px;">
-                        <i class="fas fa-info-circle"></i> Miễn phí vận chuyển cho đơn hàng trên 500k
-                    </div>
+                    @if($cartItems->count() == 0)
+                        <div class="alert alert-info" style="border-radius: 10px;">
+                            <i class="fas fa-info-circle"></i> Miễn phí vận chuyển cho đơn hàng trên 500k
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
     </div>
 </div>
+@endsection
+
+@section('styles')
+<style>
+    /* Styling cho form thông tin giao hàng */
+    #checkout-form .form-label {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+    }
+    
+    #checkout-form .form-control {
+        border-radius: 8px;
+        border: 1.5px solid #e0e0e0;
+        padding: 10px 15px;
+        transition: all 0.3s ease;
+    }
+    
+    #checkout-form .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.15);
+    }
+    
+    #checkout-form .form-label i {
+        color: #667eea;
+        margin-right: 5px;
+    }
+    
+    #checkout-form .text-danger {
+        font-weight: 600;
+    }
+    
+    #checkout-form textarea.form-control {
+        resize: vertical;
+        min-height: 80px;
+    }
+    
+    .alert-warning {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+        border: 1px solid #ffd700;
+    }
+</style>
 @endsection
 
 @section('scripts')

@@ -19,6 +19,18 @@ class CustomerCartController extends Controller
             return redirect()->route('login')->with('error', 'Vui lòng đăng nhập để thanh toán!'); // chuyen huong den trang dang nhap voi thong bao loi
         }
 
+        // Validate thông tin giao hàng
+        $request->validate([
+            'shipping_name' => 'required|string|max:255',
+            'shipping_phone' => 'required|string|max:20',
+            'shipping_address' => 'required|string|max:1000',
+            'note' => 'nullable|string|max:500',
+        ], [
+            'shipping_name.required' => 'Vui lòng nhập họ và tên người nhận',
+            'shipping_phone.required' => 'Vui lòng nhập số điện thoại',
+            'shipping_address.required' => 'Vui lòng nhập địa chỉ giao hàng',
+        ]);
+
         $cart = Auth::user()->cart; // $cart la gio hang cua user hien tai dang nhap
         if (! $cart || $cart->items()->count() == 0) { // neu chua co gio hang hoac gio hang trong
             return redirect()->route('cart.index')->with('error', 'Giỏ hàng trống!'); // chuyen huong den trang gio hang voi thong bao loi
@@ -26,12 +38,19 @@ class CustomerCartController extends Controller
 
         DB::beginTransaction();
         try {
-            // Tạo đơn hàng
+            // Tạo đơn hàng với thông tin giao hàng
             $order = new \App\Models\Order; // Su dung model Order de tao don hang moi
             $order->user_id = Auth::id(); // lay id cua user hien tai dang nhap lam user_id
             $order->total_amount = $cart->totalPrice(); // Su dung method totalPrice() de tinh tong tien gio hang
             $order->status = 'pending'; // trang thai don hang mac dinh la 'pending'
             $order->order_date = now();  // thoi gian dat hang la thoi diem hien tai
+
+            // Thêm thông tin giao hàng COD
+            $order->shipping_name = $request->shipping_name; // Lấy tên người nhận từ form
+            $order->shipping_phone = $request->shipping_phone; // Lấy số điện thoại từ form
+            $order->shipping_address = $request->shipping_address; // Lấy địa chỉ từ form
+            $order->note = $request->note; // Lấy ghi chú từ form (có thể null)
+
             $order->save(); // luu don hang vao database
 
             // Thêm các sản phẩm vào order_items
@@ -49,7 +68,7 @@ class CustomerCartController extends Controller
 
             DB::commit();
 
-            return redirect()->route('cart.index')->with('success', 'Đặt hàng thành công! Đơn hàng của bạn đã được ghi nhận.');
+            return redirect()->route('cart.index')->with('success', 'Đặt hàng thành công! Đơn hàng của bạn đã được ghi nhận. Chúng tôi sẽ liên hệ với bạn qua số điện thoại '.$request->shipping_phone.' để xác nhận.');
         } catch (\Exception $e) {
             DB::rollBack();
 

@@ -133,8 +133,33 @@
                                                 <strong>#{{ $order->order_id }}</strong>
                                             </td>
                                             <td>
-                                                <div>{{ $order->user->name ?? 'N/A' }}</div>
-                                                <small class="text-muted">{{ $order->user->email ?? '' }}</small>
+                                                <div>
+                                                    <strong>{{ $order->user->name ?? 'N/A' }}</strong>
+                                                    @if($order->shipping_name && $order->shipping_name != $order->user->name)
+                                                        <span class="badge bg-info ms-1" style="font-size: 0.7rem;">
+                                                            <i class="fas fa-shipping-fast"></i> {{ $order->shipping_name }}
+                                                        </span>
+                                                    @endif
+                                                </div>
+                                                <small class="text-muted">
+                                                    <i class="fas fa-envelope me-1"></i>{{ $order->user->email ?? '' }}
+                                                </small>
+                                                @if($order->shipping_phone)
+                                                    <br>
+                                                    <small class="text-success">
+                                                        <i class="fas fa-phone me-1"></i>{{ $order->shipping_phone }}
+                                                    </small>
+                                                @endif
+                                                @if($order->shipping_address)
+                                                    <br>
+                                                    <small class="text-muted" 
+                                                           data-bs-toggle="tooltip" 
+                                                           data-bs-placement="top" 
+                                                           title="{{ $order->shipping_address }}">
+                                                        <i class="fas fa-map-marker-alt me-1"></i>
+                                                        {{ Str::limit($order->shipping_address, 30) }}
+                                                    </small>
+                                                @endif
                                             </td>
                                             <td>
                                                 {{ $order->order_date->format('d/m/Y H:i') }}
@@ -237,5 +262,35 @@ function confirmDelete(orderId) {
     const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
     modal.show();
 }
+
+// Kích hoạt Bootstrap tooltips
+document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
 </script>
+
+<style>
+    /* Styling cho thông tin khách hàng trong bảng */
+    table td small {
+        display: block;
+        line-height: 1.4;
+        margin-top: 2px;
+    }
+    
+    table td small i {
+        width: 14px;
+        text-align: center;
+    }
+    
+    .text-success {
+        color: #10b981 !important;
+    }
+    
+    .badge.bg-info {
+        background-color: #3b82f6 !important;
+    }
+</style>
 @endsection
