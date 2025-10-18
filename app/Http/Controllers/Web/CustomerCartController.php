@@ -40,14 +40,14 @@ class CustomerCartController extends Controller
         try {
             // Kiểm tra tồn kho trước khi tạo đơn hàng
             foreach ($cart->items as $item) { // duyet qua tung item trong gio hang
-                $product = $item->product;
-                if (! $product) {
+                $product = $item->product; // $product la san pham cua item trong gio hang
+                if (! $product) { // neu khong tim thay san pham
                     throw new \Exception('Sản phẩm không tồn tại!');
                 }
 
                 // Kiểm tra số lượng tồn kho
-                if ($product->stock_quantity < $item->quantity) {
-                    throw new \Exception("Sản phẩm '{$product->name}' chỉ còn {$product->stock_quantity} sản phẩm trong kho!");
+                if ($product->stock_quantity < $item->quantity) { // neu so luong ton kho cua san pham nho hon so luong trong gio hang
+                    throw new \Exception("Sản phẩm '{$product->name}' chỉ còn {$product->stock_quantity} sản phẩm trong kho!"); // thong bao loi so luong ton kho khong du
                 }
             }
 
@@ -67,8 +67,8 @@ class CustomerCartController extends Controller
             $order->save(); // luu don hang vao database
 
             // Thêm các sản phẩm vào order_items VÀ TRỪ TỒN KHO NGAY
-            foreach ($cart->items as $item) {
-                $product = $item->product;
+            foreach ($cart->items as $item) { // voi moi item trong gio hang
+                $product = $item->product; // $product la san pham cua item trong gio hang
 
                 // Tạo order item
                 $orderItem = new \App\Models\OrderItem; // Su dung model OrderItem de tao moi item trong don hang
@@ -79,19 +79,20 @@ class CustomerCartController extends Controller
                 $orderItem->save(); // luu item trong don hang vao database
 
                 // TRỪ TỒN KHO NGAY KHI ĐẶT HÀNG (giữ hàng cho khách)
-                $product->decrement('stock_quantity', $item->quantity);
+                $product->decrement('stock_quantity', $item->quantity); // decrement la giam so luong ton kho cua san pham
 
                 // Cập nhật inventory - tăng stock_out và giảm current_stock
-                $inventory = \App\Models\Inventory::firstOrCreate(
-                    ['product_id' => $product->product_id],
+                $inventory = \App\Models\Inventory::firstOrCreate( // firstOrCreate tim kiem hoac tao moi inventory cho san pham
+                    ['product_id' => $product->product_id], // dieu kien tim kiem inventory theo product_id
                     [
-                        'stock_in' => 0,
-                        'stock_out' => 0,
-                        'current_stock' => 0,
+                        'stock_in' => 0, // neu khong tim thay thi tao moi voi stock_in = 0
+                        'stock_out' => 0, // neu khong tim thay thi tao moi voi stock_out = 0
+                        'current_stock' => 0, // neu khong tim thay thi tao moi voi current_stock = 0
                     ]
                 );
-                $inventory->increment('stock_out', $item->quantity);
-                $inventory->decrement('current_stock', $item->quantity);
+                $inventory->increment('stock_out', $item->quantity); // increment la tang so luong stock_out cua inventory
+                $inventory->decrement('current_stock', $item->quantity); // decrement la giam so luong current_stock cua inventory
+                $inventory->save(); // luu thay doi inventory vao database
             }
 
             $cart->items()->delete(); // xoa toan bo item trong gio hang
