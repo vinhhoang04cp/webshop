@@ -211,37 +211,17 @@ class OrderController extends Controller
 
     /**
      * Cập nhật inventory khi đơn hàng được giao thành công
+     * LƯU Ý: Tồn kho đã được trừ khi đặt hàng (checkout)
+     * Hàm này CHỈ để tracking và logging, KHÔNG trừ tồn kho nữa
      */
     private function updateInventoryOnDelivered(Order $order)
     {
-        // Lấy tất cả items trong đơn hàng
-        $orderItems = $order->items()->with('product')->get();
+        // Tồn kho đã được giảm khi khách đặt hàng (checkout)
+        // Khi delivered, chúng ta chỉ cần log hoặc cập nhật trạng thái
+        // KHÔNG cần trừ stock_quantity và inventory nữa vì đã trừ rồi
 
-        foreach ($orderItems as $item) {
-            if (! $item->product) {
-                continue; // Bỏ qua nếu sản phẩm không tồn tại
-            }
-
-            $product = $item->product;
-            $quantity = $item->quantity;
-
-            // Giảm stock_quantity trong bảng products
-            $product->decrement('stock_quantity', $quantity);
-
-            // Cập nhật inventory
-            $inventory = Inventory::firstOrCreate(
-                ['product_id' => $product->product_id],
-                [
-                    'stock_in' => 0,
-                    'stock_out' => 0,
-                    'current_stock' => 0,
-                ]
-            );
-
-            // Tăng số lượng xuất kho và giảm tồn kho hiện tại
-            $inventory->increment('stock_out', $quantity);
-            $inventory->decrement('current_stock', $quantity);
-        }
+        // Nếu cần logging:
+        \Log::info("Order #{$order->order_id} delivered successfully. Stock was already deducted at checkout.");
     }
 
     /**

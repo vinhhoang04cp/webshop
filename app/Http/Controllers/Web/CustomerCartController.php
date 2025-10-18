@@ -38,6 +38,19 @@ class CustomerCartController extends Controller
 
         DB::beginTransaction();
         try {
+            // Kiểm tra tồn kho trước khi tạo đơn hàng
+            foreach ($cart->items as $item) { // duyet qua tung item trong gio hang
+                $product = $item->product;
+                if (! $product) {
+                    throw new \Exception('Sản phẩm không tồn tại!');
+                }
+
+                // Kiểm tra số lượng tồn kho
+                if ($product->stock_quantity < $item->quantity) {
+                    throw new \Exception("Sản phẩm '{$product->name}' chỉ còn {$product->stock_quantity} sản phẩm trong kho!");
+                }
+            }
+
             // Tạo đơn hàng với thông tin giao hàng
             $order = new \App\Models\Order; // Su dung model Order de tao don hang moi
             $order->user_id = Auth::id(); // Auth::id() lay id cua user hien tai dang nhap
@@ -53,14 +66,32 @@ class CustomerCartController extends Controller
 
             $order->save(); // luu don hang vao database
 
-            // Thêm các sản phẩm vào order_items
+            // Thêm các sản phẩm vào order_items VÀ TRỪ TỒN KHO NGAY
             foreach ($cart->items as $item) {
+                $product = $item->product;
+
+                // Tạo order item
                 $orderItem = new \App\Models\OrderItem; // Su dung model OrderItem de tao moi item trong don hang
                 $orderItem->order_id = $order->order_id; // gan order_id cua item trong don hang bang order_id cua don hang vua tao
                 $orderItem->product_id = $item->product_id; // gan product_id cua item trong don hang bang product_id cua item trong gio hang
                 $orderItem->quantity = $item->quantity; // gan so luong cua item trong don hang bang so luong cua item trong gio hang
-                $orderItem->price = $item->price ?? $item->product->price; // gan gia cua item trong don hang bang gia cua item trong gio hang, neu khong co thi lay gia cua san pham
+                $orderItem->price = $item->price ?? $product->price; // gan gia cua item trong don hang bang gia cua item trong gio hang, neu khong co thi lay gia cua san pham
                 $orderItem->save(); // luu item trong don hang vao database
+
+                // TRỪ TỒN KHO NGAY KHI ĐẶT HÀNG (giữ hàng cho khách)
+                $product->decrement('stock_quantity', $item->quantity);
+
+                // Cập nhật inventory - tăng stock_out và giảm current_stock
+                $inventory = \App\Models\Inventory::firstOrCreate(
+                    ['product_id' => $product->product_id],
+                    [
+                        'stock_in' => 0,
+                        'stock_out' => 0,
+                        'current_stock' => 0,
+                    ]
+                );
+                $inventory->increment('stock_out', $item->quantity);
+                $inventory->decrement('current_stock', $item->quantity);
             }
 
             $cart->items()->delete(); // xoa toan bo item trong gio hang
