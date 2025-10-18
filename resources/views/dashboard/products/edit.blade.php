@@ -172,6 +172,23 @@
                                     @enderror
                                 </div>
 
+                                <div class="mb-3">
+                                    <label for="stock_quantity" class="form-label">Số lượng tồn kho <span class="text-danger">*</span></label>
+                                    <input type="number" 
+                                           class="form-control @error('stock_quantity') is-invalid @enderror" 
+                                           id="stock_quantity" 
+                                           name="stock_quantity" 
+                                           value="{{ old('stock_quantity', $product->stock_quantity) }}" 
+                                           required 
+                                           min="0"
+                                           step="1"
+                                           placeholder="0">
+                                    @error('stock_quantity')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                    <small class="text-muted">Nhập số lượng sản phẩm có sẵn trong kho</small>
+                                </div>
+
                                 <!-- Preview hình ảnh -->
                                 <div class="mb-3">
                                     <label class="form-label">Xem trước hình ảnh</label>

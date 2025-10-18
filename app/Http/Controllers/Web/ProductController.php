@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\Inventory;
 use App\Models\Product;
 use Illuminate\Http\Request;
 
@@ -81,7 +82,7 @@ class ProductController extends Controller
             'price' => 'required|numeric|min:0',
             'category_id' => 'required|integer|exists:categories,category_id',
             'image_url' => 'nullable|url',
-            'stock_quantity' => 'nullable|integer|min:0',
+            'stock_quantity' => 'required|integer|min:0',
         ]);
 
         try {
@@ -92,11 +93,19 @@ class ProductController extends Controller
                 'price' => $request->price,
                 'category_id' => $request->category_id,
                 'image_url' => $request->image_url,
-                'stock_quantity' => $request->stock_quantity ?? 0,
+                'stock_quantity' => $request->stock_quantity,
+            ]);
+
+            // Tự động tạo bản ghi inventory cho sản phẩm mới
+            Inventory::create([
+                'product_id' => $product->product_id,
+                'stock_in' => $request->stock_quantity, // Số lượng nhập kho ban đầu
+                'stock_out' => 0, // Chưa có xuất kho
+                'current_stock' => $request->stock_quantity, // Tồn kho hiện tại = số lượng nhập
             ]);
 
             return redirect()->route('dashboard.products.index')
-                ->with('success', 'Sản phẩm đã được tạo thành công!');
+                ->with('success', 'Sản phẩm và tồn kho đã được tạo thành công!');
 
         } catch (\Exception $e) {
             return redirect()->route('dashboard.products.create')
@@ -153,12 +162,17 @@ class ProductController extends Controller
             'price' => 'required|numeric|min:0',
             'category_id' => 'required|integer|exists:categories,category_id',
             'image_url' => 'nullable|url',
-            'stock_quantity' => 'nullable|integer|min:0',
+            'stock_quantity' => 'required|integer|min:0',
         ]);
 
         try {
             // Tìm và cập nhật product
             $product = Product::findOrFail($id);
+
+            // Lưu số lượng cũ để tính toán thay đổi
+            $oldQuantity = $product->stock_quantity;
+            $newQuantity = $request->stock_quantity;
+            $quantityDifference = $newQuantity - $oldQuantity;
 
             $product->update([
                 'name' => $request->name,
@@ -166,11 +180,34 @@ class ProductController extends Controller
                 'price' => $request->price,
                 'category_id' => $request->category_id,
                 'image_url' => $request->image_url,
-                'stock_quantity' => $request->stock_quantity ?? $product->stock_quantity,
+                'stock_quantity' => $request->stock_quantity,
             ]);
 
+            // Cập nhật hoặc tạo bản ghi inventory
+            $inventory = Inventory::firstOrCreate(
+                ['product_id' => $product->product_id],
+                [
+                    'stock_in' => 0,
+                    'stock_out' => 0,
+                    'current_stock' => 0,
+                ]
+            );
+
+            // Điều chỉnh inventory dựa trên sự thay đổi số lượng
+            if ($quantityDifference > 0) {
+                // Tăng số lượng - coi như nhập kho thêm
+                $inventory->stock_in += $quantityDifference;
+                $inventory->current_stock += $quantityDifference;
+            } elseif ($quantityDifference < 0) {
+                // Giảm số lượng - coi như xuất kho
+                $inventory->stock_out += abs($quantityDifference);
+                $inventory->current_stock += $quantityDifference; // Trừ đi (vì $quantityDifference âm)
+            }
+
+            $inventory->save();
+
             return redirect()->route('dashboard.products.index')
-                ->with('success', 'Sản phẩm đã được cập nhật thành công!');
+                ->with('success', 'Sản phẩm và tồn kho đã được cập nhật thành công!');
 
         } catch (\Exception $e) {
             return redirect()->route('dashboard.products.edit', $id)
@@ -187,10 +224,15 @@ class ProductController extends Controller
         try {
             // Tìm và xóa product
             $product = Product::findOrFail($id);
+
+            // Xóa inventory liên quan (nếu có)
+            Inventory::where('product_id', $product->product_id)->delete();
+
+            // Xóa product
             $product->delete();
 
             return redirect()->route('dashboard.products.index')
-                ->with('success', 'Sản phẩm đã được xóa thành công!');
+                ->with('success', 'Sản phẩm và tồn kho đã được xóa thành công!');
 
         } catch (\Exception $e) {
             return redirect()->route('dashboard.products.index')

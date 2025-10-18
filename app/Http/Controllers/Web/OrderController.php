@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Models\Inventory;
 use App\Models\Order;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
@@ -107,17 +109,32 @@ class OrderController extends Controller
 
         try {
             $order = Order::findOrFail($id);
+            $oldStatus = $order->status;
+            $newStatus = $request->status;
 
             // Kiểm tra xem có thể chuyển đổi trạng thái không
-            if (! $order->canTransitionTo($request->status)) {
+            if (! $order->canTransitionTo($newStatus)) {
                 return redirect()->route('dashboard.orders.edit', $id)
-                    ->with('error', 'Không thể chuyển đổi trạng thái đơn hàng từ "'.$this->getStatusLabel($order->status).'" sang "'.$this->getStatusLabel($request->status).'"');
+                    ->with('error', 'Không thể chuyển đổi trạng thái đơn hàng từ "'.$this->getStatusLabel($oldStatus).'" sang "'.$this->getStatusLabel($newStatus).'"');
             }
 
-            // Cập nhật trạng thái đơn hàng
-            $order->update([
-                'status' => $request->status,
-            ]);
+            // Sử dụng transaction để đảm bảo tính toàn vẹn dữ liệu
+            DB::transaction(function () use ($order, $newStatus, $oldStatus) {
+                // Cập nhật trạng thái đơn hàng
+                $order->update([
+                    'status' => $newStatus,
+                ]);
+
+                // Nếu đơn hàng chuyển sang "Đã giao hàng", tự động cập nhật inventory
+                if ($newStatus === Order::STATUS_DELIVERED && $oldStatus !== Order::STATUS_DELIVERED) {
+                    $this->updateInventoryOnDelivered($order);
+                }
+
+                // Nếu đơn hàng bị hủy, hoàn trả số lượng vào kho
+                if ($newStatus === Order::STATUS_CANCELLED && $oldStatus !== Order::STATUS_CANCELLED) {
+                    $this->restoreInventoryOnCancelled($order);
+                }
+            });
 
             return redirect()->route('dashboard.orders.show', $id)
                 ->with('success', 'Trạng thái đơn hàng đã được cập nhật thành công!');
@@ -190,5 +207,77 @@ class OrderController extends Controller
         ];
 
         return $labels[$status] ?? $status; // neu co labels thi tra ve labels, khong co thi tra ve status
+    }
+
+    /**
+     * Cập nhật inventory khi đơn hàng được giao thành công
+     */
+    private function updateInventoryOnDelivered(Order $order)
+    {
+        // Lấy tất cả items trong đơn hàng
+        $orderItems = $order->items()->with('product')->get();
+
+        foreach ($orderItems as $item) {
+            if (! $item->product) {
+                continue; // Bỏ qua nếu sản phẩm không tồn tại
+            }
+
+            $product = $item->product;
+            $quantity = $item->quantity;
+
+            // Giảm stock_quantity trong bảng products
+            $product->decrement('stock_quantity', $quantity);
+
+            // Cập nhật inventory
+            $inventory = Inventory::firstOrCreate(
+                ['product_id' => $product->product_id],
+                [
+                    'stock_in' => 0,
+                    'stock_out' => 0,
+                    'current_stock' => 0,
+                ]
+            );
+
+            // Tăng số lượng xuất kho và giảm tồn kho hiện tại
+            $inventory->increment('stock_out', $quantity);
+            $inventory->decrement('current_stock', $quantity);
+        }
+    }
+
+    /**
+     * Hoàn trả inventory khi đơn hàng bị hủy
+     */
+    private function restoreInventoryOnCancelled(Order $order)
+    {
+        // Lấy tất cả items trong đơn hàng
+        $orderItems = $order->items()->with('product')->get();
+
+        foreach ($orderItems as $item) {
+            if (! $item->product) {
+                continue; // Bỏ qua nếu sản phẩm không tồn tại
+            }
+
+            $product = $item->product;
+            $quantity = $item->quantity;
+
+            // Tăng lại stock_quantity trong bảng products
+            $product->increment('stock_quantity', $quantity);
+
+            // Cập nhật inventory
+            $inventory = Inventory::firstOrCreate(
+                ['product_id' => $product->product_id],
+                [
+                    'stock_in' => 0,
+                    'stock_out' => 0,
+                    'current_stock' => 0,
+                ]
+            );
+
+            // Giảm số lượng xuất kho và tăng tồn kho hiện tại
+            if ($inventory->stock_out >= $quantity) {
+                $inventory->decrement('stock_out', $quantity);
+            }
+            $inventory->increment('current_stock', $quantity);
+        }
     }
 }
