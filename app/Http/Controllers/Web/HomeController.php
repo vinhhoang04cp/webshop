@@ -15,18 +15,18 @@ class HomeController extends Controller
     public function index() // ham index de hien thi trang chu
     {
         // Lấy danh sách danh mục với số lượng sản phẩm
-        $categories = Category::withCount('products') // query builder de dem so luong san pham trong tung danh muc
+        $categories = Category::withCount('products') // eloquent lay ve danh sach danh muc voi so luong san pham trong tung danh muc
             ->orderBy('name') // sap xep theo ten
             ->get(); // lay ve danh sach danh muc voi so luong san pham trong tung danh muc
 
         // Lấy sản phẩm nổi bật (8 sản phẩm random)
-        $featuredProducts = Product::with('category') // lay ve san pham voi category
+        $featuredProducts = Product::with('category') // lay ve san pham voi eloquent va quan he voi category
             ->inRandomOrder() // sap xep ngau nhien
             ->take(8)
             ->get();
 
         // Lấy sản phẩm mới nhất (8 sản phẩm)
-        $newProducts = Product::with('category')
+        $newProducts = Product::with('category') // lay ve san pham voi eloquent va quan he voi category
             ->latest('created_at') // sap xep theo ngay tao moi nhat
             ->take(8)
             ->get();

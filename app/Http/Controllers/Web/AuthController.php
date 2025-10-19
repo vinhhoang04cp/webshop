@@ -45,17 +45,19 @@ class AuthController extends Controller
     public function login(Request $request) // (Request $request) la tham so truyen vao ham , duoc gui tu form login
     {
         // $request la doi tuong chua cac tham so truyen tu client qua URL den controller se duoc su dung de lay du lieu tu form
-        $request->validate([ // Validate du lieu dau vao
+        $request->validate([ // Validate du lieu dau vao duoc truyen tu form login
             'email' => 'required|email', // email bat buoc va phai dung dinh dang email
             'password' => 'required', // password bat buoc
         ]);
 
         // Tìm user theo email
-        $user = User::where('email', $request->email)->first(); // User lay tu model User, tim user dau tien co email giong voi email tu form, ham first() de lay user dau tien neu co nhieu user trung email
+        $user = User::where('email', $request->email)->first(); // su dung query builder de tim user theo email
+        // User lay tu model User, tim user dau tien co email giong voi email tu form, ham first() de lay user dau tien neu co nhieu user trung email
 
         // Kiểm tra credentials
-        if (! $user || ! Hash::check($request->password, $user->password)) { // !user neu khong tim thay user hoac password khong dung, Hash::check de kiem tra password neu khong trung
-            return back()->withErrors([ // Quay lai trang truoc do voi loi
+        if (! $user || ! Hash::check($request->password, $user->password)) { // ! $user neu khong tim thay user hoac password khong dung, Hash::check de kiem tra password neu khong trung
+            // !user neu khong tim thay user hoac password khong dung, Hash::check de kiem tra password neu khong trung
+            return back()->withErrors([ // Quay lai trang truoc do voi loi, withErrors de truyen loi ve view
                 'email' => 'Thông tin đăng nhập không chính xác.', // Thong bao loi
             ])->withInput(); // withInput de giu lai du lieu nguoi dung da nhap
         }
@@ -63,16 +65,16 @@ class AuthController extends Controller
         // Đăng nhập user
         Auth::login($user); // Auth::login de dang nhap user
 
-        // Chuyển hướng dựa trên role
-        if ($user->hasRole('admin') || $user->hasRole('manager')) {
+        // Chuyển hướng dựa trên vai trò của user
+        if ($user->hasRole('admin') || $user->hasRole('manager')) { // neu nguoi dung co role admin hoac manager
             // Admin và Manager vào dashboard
-            return redirect()->route('dashboard')->with('success', 'Đăng nhập thành công!');
-        } elseif ($user->hasRole('customer')) {
+            return redirect()->route('dashboard')->with('success', 'Đăng nhập thành công!'); // Chuyen huong ve trang dashboard voi thong bao thanh cong
+        } elseif ($user->hasRole('customer')) { // neu nguoi dung co role customer
             // Customer vào trang sản phẩm
-            return redirect()->route('products.index')->with('success', 'Đăng nhập thành công!');
-        } else {
+            return redirect()->route('products.index')->with('success', 'Đăng nhập thành công!'); // Chuyen huong ve trang products.index voi thong bao thanh cong
+        } else { // neu nguoi dung khong co role nao
             // User thông thường vào trang chủ
-            return redirect()->route('home')->with('success', 'Đăng nhập thành công!');
+            return redirect()->route('home')->with('success', 'Đăng nhập thành công!'); // Chuyen huong ve trang home voi thong bao thanh cong
         }
     }
 
@@ -90,7 +92,7 @@ class AuthController extends Controller
         ]);
 
         // Tạo user mới
-        $user = User::create([
+        $user = User::create([ // su dung model User de tao user moi voi eloquent
             'name' => $request->name, // Lay name tu form
             'email' => $request->email, // Lay email tu form
             'password' => Hash::make($request->password), // Ma hoa password truoc khi luu vao database
@@ -100,7 +102,7 @@ class AuthController extends Controller
 
         // Tự động gán role customer cho user mới đăng ký
         try {
-            DB::beginTransaction();
+            DB::beginTransaction(); // Bat dau giao dich database
 
             $customerRole = Role::where('role_name', 'customer')->first();
             if ($customerRole) {

@@ -20,8 +20,9 @@ class Category extends Model
         'description',
     ];
 
-    public function products()
+    public function products() // Quan he 1-n voi Product
     {
         return $this->hasMany(Product::class, 'category_id', 'category_id'); // Quan he voi model Product
+        // (Product::class: model Product, 'category_id': khoa ngoai trong bang products tham chieu den khoa chinh cua bang categories)
     }
 }

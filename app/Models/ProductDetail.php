@@ -29,22 +29,22 @@ class ProductDetail extends Model
         'special_features',
     ];
 
-    public function product()
+    public function product() // quan he 1-1 voi Product
     {
         return $this->belongsTo(Product::class, 'product_id', 'product_id');
     }
 
-    public function orderItems()
+    public function orderItems() // quan he 1-n voi OrderItem
     {
         return $this->hasMany(OrderItem::class, 'detail_id', 'detail_id');
     }
 
-    public function stocks()
+    public function stocks() // quan he 1-n voi Stock
     {
         return $this->hasMany(Stock::class, 'detail_id', 'detail_id');
     }
 
-    public function images()
+    public function images() // quan he 1-n voi ProductImage
     {
         return $this->hasMany(ProductImage::class, 'detail_id', 'detail_id');
     }

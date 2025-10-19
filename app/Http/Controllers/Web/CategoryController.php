@@ -15,7 +15,7 @@ class CategoryController extends Controller
     {
         try {
             // Lấy danh sách categories với search
-            $query = Category::query(); // Category lay tu model Category
+            $query = Category::query(); // Category lay tu model Category voi eloquent
 
             // Nếu có search, filter dữ liệu
             if ($request->has('search') && $request->search) { // $request->has('search') kiem tra xem co tham so search khong, && $request->search kiem tra xem gia tri search co khac rong khong
@@ -60,7 +60,7 @@ class CategoryController extends Controller
         ]);
 
         try {
-            // Tạo category mới sử dụng Eloquent
+            // Tạo category mới sử dụng model Category voi eloquent
             Category::create([    // Category lay tu model Category
                 'name' => $request->name,   // $request->name lay gia tri name tu form
                 'description' => $request->description,  // $request->description lay gia tri description tu form

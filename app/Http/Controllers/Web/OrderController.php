@@ -20,9 +20,9 @@ class OrderController extends Controller
             $query = Order::with(['user', 'items.product']);
 
             // Nếu có search, filter dữ liệu
-            if ($request->has('search') && $request->search) {
-                $searchTerm = $request->search;
-                $query->where('order_id', 'LIKE', "%{$searchTerm}%")
+            if ($request->has('search') && $request->search) { // neu request co tham so search va search khac rong
+                $searchTerm = $request->search; // searchTerm la bien chua lay gia tri search tu request
+                $query->where('order_id', 'LIKE', "%{$searchTerm}%") // tim kiem theo order_id
                     ->orWhereHas('user', function ($q) use ($searchTerm) {
                         $q->where('name', 'LIKE', "%{$searchTerm}%")
                             ->orWhere('email', 'LIKE', "%{$searchTerm}%");

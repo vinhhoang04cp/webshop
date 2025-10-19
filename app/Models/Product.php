@@ -22,27 +22,27 @@ class Product extends Model
         'image_url',
     ];
 
-    public function category()
+    public function category() // quan he 1-1 voi Category
     {
         return $this->belongsTo(Category::class, 'category_id', 'category_id');
     }
 
-    public function details()
+    public function details() // quan he 1-1 voi ProductDetail
     {
         return $this->hasOne(ProductDetail::class, 'product_id', 'product_id');
     }
 
-    public function inventory()
+    public function inventory() // quan he 1-1 voi Inventory
     {
         return $this->hasOne(Inventory::class, 'product_id', 'product_id');
     }
 
-    public function orderItems()
+    public function orderItems() // quan he 1-n voi OrderItem
     {
         return $this->hasMany(OrderItem::class, 'product_id', 'product_id');
     }
 
-    public function cartItems()
+    public function cartItems() // quan he 1-n voi CartItem
     {
         return $this->hasMany(CartItem::class, 'product_id', 'product_id');
     }
