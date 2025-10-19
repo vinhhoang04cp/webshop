@@ -11,7 +11,24 @@ use Illuminate\Http\Request;
 class ProductController extends Controller
 {
     /**
-     * Display a listing of products for admin UI.
+     * Hiển thị danh sách sản phẩm cho admin
+     *
+     * Chức năng: Hiển thị tất cả sản phẩm với tính năng tìm kiếm và phân trang
+     * Hoạt động:
+     * - Query products với eager loading category
+     * - Tìm kiếm theo tên hoặc mô tả sản phẩm (LIKE search)
+     * - Phân trang với 12 sản phẩm mỗi trang
+     * - Lấy tất cả products không phân trang (cho dropdown, export, v.v.)
+     * - Lấy tất cả categories
+     * - Trả về view với:
+     *   + paginatedProducts: sản phẩm trên trang hiện tại
+     *   + products: tất cả sản phẩm
+     *   + categories: danh sách danh mục
+     *   + pagination: thông tin phân trang
+     * - Xử lý exception và trả về view với danh sách rỗng nếu có lỗi
+     *
+     * @param  \Illuminate\Http\Request  $request  Chứa tham số search
+     * @return \Illuminate\View\View
      */
     public function index(Request $request) // Request $request de lay du lieu tu Http request
     {
@@ -57,7 +74,15 @@ class ProductController extends Controller
     }
 
     /**
-     * Show the form for creating a new product.
+     * Hiển thị form tạo sản phẩm mới
+     *
+     * Chức năng: Hiển thị form để nhập thông tin sản phẩm mới
+     * Hoạt động:
+     * - Lấy danh sách tất cả categories cho dropdown
+     * - Trả về view form tạo sản phẩm với danh sách categories
+     * - Redirect về danh sách với thông báo lỗi nếu có exception
+     *
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
      */
     public function create()
     {
@@ -73,10 +98,27 @@ class ProductController extends Controller
     }
 
     /**
-     * Ham xu ly luu san pham moi vao database.
-     * dau tien se validate du lieu tu request
-     * sau do tao product moi va luu vao database
-     * cuoi cung tao ban ghi inventory cho product moi tao
+     * Lưu sản phẩm mới vào database
+     *
+     * Chức năng: Xử lý tạo sản phẩm mới trong hệ thống
+     * Hoạt động:
+     * - Validate dữ liệu đầu vào:
+     *   + name: bắt buộc, string, max 255 ký tự
+     *   + description: nullable, string
+     *   + price: bắt buộc, numeric, >= 0
+     *   + category_id: bắt buộc, integer, phải tồn tại trong bảng categories
+     *   + image_url: nullable, phải là URL hợp lệ
+     *   + stock_quantity: bắt buộc, integer, >= 0
+     * - Tạo product mới sử dụng Eloquent
+     * - Tự động tạo bản ghi inventory cho sản phẩm:
+     *   + stock_in = stock_quantity
+     *   + stock_out = 0
+     *   + current_stock = stock_quantity
+     * - Redirect về danh sách với thông báo thành công
+     * - Redirect về form create với lỗi và giữ input nếu có exception
+     *
+     * @param  \Illuminate\Http\Request  $request  Dữ liệu từ form tạo product
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function store(Request $request) // Request $request de lay du lieu tu Http request
     {
@@ -120,7 +162,17 @@ class ProductController extends Controller
     }
 
     /**
-     * Display the specified product.
+     * Hiển thị chi tiết sản phẩm cho admin
+     *
+     * Chức năng: Hiển thị thông tin chi tiết của một sản phẩm cụ thể
+     * Hoạt động:
+     * - Tìm product theo ID với eager loading category
+     * - Throw exception nếu không tìm thấy
+     * - Trả về view chi tiết với thông tin product và category
+     * - Redirect về danh sách với thông báo lỗi nếu có exception
+     *
+     * @param  int  $id  ID của product cần hiển thị
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
      */
     public function show($id)
     {
@@ -139,7 +191,17 @@ class ProductController extends Controller
     }
 
     /**
-     * Show the form for editing the specified product.
+     * Hiển thị form chỉnh sửa sản phẩm
+     *
+     * Chức năng: Hiển thị form để chỉnh sửa thông tin sản phẩm
+     * Hoạt động:
+     * - Tìm product theo ID
+     * - Lấy danh sách tất cả categories cho dropdown
+     * - Trả về view form edit với product và categories
+     * - Redirect về danh sách với thông báo lỗi nếu không tìm thấy
+     *
+     * @param  int  $id  ID của product cần chỉnh sửa
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
      */
     public function edit($id)
     {
@@ -159,7 +221,23 @@ class ProductController extends Controller
     }
 
     /**
-     * Update the specified product.
+     * Cập nhật thông tin sản phẩm
+     *
+     * Chức năng: Xử lý cập nhật thông tin sản phẩm trong database
+     * Hoạt động:
+     * - Validate dữ liệu đầu vào (name, description, price, category_id, image_url, stock_quantity)
+     * - Tìm product theo ID
+     * - Lưu số lượng cũ để tính toán sự thay đổi tồn kho
+     * - Cập nhật thông tin product
+     * - Cập nhật hoặc tạo bản ghi inventory:
+     *   + Nếu tăng số lượng: cập nhật stock_in và current_stock
+     *   + Nếu giảm số lượng: cập nhật stock_out và current_stock
+     * - Redirect về trang danh sách với thông báo thành công
+     * - Redirect về form edit với lỗi và giữ input nếu có exception
+     *
+     * @param  \Illuminate\Http\Request  $request  Dữ liệu cập nhật
+     * @param  int  $id  ID của product cần cập nhật
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function update(Request $request, $id)
     // Request $request de lay du lieu tu Http request, $id la id cua product can update
@@ -225,7 +303,20 @@ class ProductController extends Controller
     }
 
     /**
-     * Remove the specified product.
+     * Xóa sản phẩm khỏi database
+     *
+     * Chức năng: Xóa một sản phẩm cụ thể khỏi hệ thống
+     * Hoạt động:
+     * - Tìm product theo ID
+     * - Xóa các bản ghi inventory liên quan đến product (nếu có)
+     * - Xóa product khỏi database
+     * - Redirect về danh sách với thông báo thành công
+     * - Xử lý exception và hiển thị lỗi nếu có (ví dụ: sản phẩm có ràng buộc với đơn hàng)
+     *
+     * Lưu ý: Cần cân nhắc soft delete thay vì hard delete để giữ dữ liệu lịch sử
+     *
+     * @param  int  $id  ID của product cần xóa
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function destroy($id)
     {

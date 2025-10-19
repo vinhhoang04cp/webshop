@@ -11,7 +11,21 @@ use Illuminate\Support\Facades\DB;
 class OrderController extends Controller
 {
     /**
-     * Display a listing of orders for admin UI.
+     * Hiển thị danh sách đơn hàng cho admin
+     *
+     * Chức năng: Hiển thị tất cả đơn hàng với tính năng tìm kiếm và lọc
+     * Hoạt động:
+     * - Query orders với eager loading user, items, và product
+     * - Tìm kiếm theo order_id hoặc thông tin user (name, email)
+     * - Lọc theo trạng thái đơn hàng (pending, processing, shipped, delivered, cancelled)
+     * - Sắp xếp theo order_date giảm dần (mới nhất trước)
+     * - Phân trang 15 đơn hàng mỗi trang
+     * - Lấy danh sách trạng thái đơn hàng để hiển thị filter
+     * - Trả về view với orders và statuses
+     * - Xử lý exception và trả về danh sách rỗng nếu có lỗi
+     *
+     * @param  \Illuminate\Http\Request  $request  Chứa tham số search và filter
+     * @return \Illuminate\View\View
      */
     public function index(Request $request)
     {
@@ -62,7 +76,18 @@ class OrderController extends Controller
     }
 
     /**
-     * Display the specified order.
+     * Hiển thị chi tiết đơn hàng
+     *
+     * Chức năng: Hiển thị thông tin chi tiết của một đơn hàng cụ thể
+     * Hoạt động:
+     * - Tìm order theo ID với eager loading user, items, product, productDetail
+     * - Throw exception nếu không tìm thấy
+     * - Lấy danh sách trạng thái có thể chuyển đổi dựa trên trạng thái hiện tại
+     * - Trả về view chi tiết với order và availableStatuses
+     * - Redirect về danh sách với thông báo lỗi nếu có exception
+     *
+     * @param  int  $id  ID của order cần hiển thị
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
      */
     public function show($id)
     {
@@ -81,7 +106,17 @@ class OrderController extends Controller
     }
 
     /**
-     * Show the form for editing the specified order.
+     * Hiển thị form chỉnh sửa đơn hàng
+     *
+     * Chức năng: Hiển thị form để chỉnh sửa trạng thái đơn hàng
+     * Hoạt động:
+     * - Tìm order theo ID với eager loading user, items, product
+     * - Lấy danh sách trạng thái có thể chuyển đổi từ trạng thái hiện tại
+     * - Trả về view form edit với order và availableStatuses
+     * - Redirect về danh sách với thông báo lỗi nếu không tìm thấy
+     *
+     * @param  int  $id  ID của order cần chỉnh sửa
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
      */
     public function edit($id)
     {
@@ -99,7 +134,23 @@ class OrderController extends Controller
     }
 
     /**
-     * Update the specified order.
+     * Cập nhật trạng thái đơn hàng
+     *
+     * Chức năng: Xử lý thay đổi trạng thái của đơn hàng
+     * Hoạt động:
+     * - Validate trạng thái mới (phải thuộc: pending, processing, shipped, delivered, cancelled)
+     * - Tìm order theo ID
+     * - Kiểm tra có thể chuyển từ trạng thái cũ sang trạng thái mới không
+     * - Sử dụng database transaction:
+     *   + Cập nhật trạng thái đơn hàng
+     *   + Nếu chuyển sang 'delivered': tự động cập nhật inventory
+     *   + Nếu chuyển sang 'cancelled': hoàn trả số lượng vào kho
+     * - Redirect về trang chi tiết với thông báo thành công
+     * - Redirect về form edit với thông báo lỗi nếu có exception
+     *
+     * @param  \Illuminate\Http\Request  $request  Trạng thái mới
+     * @param  int  $id  ID của order cần cập nhật
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function update(Request $request, $id)
     {
@@ -146,7 +197,19 @@ class OrderController extends Controller
     }
 
     /**
-     * Remove the specified order.
+     * Xóa đơn hàng
+     *
+     * Chức năng: Xóa đơn hàng khỏi hệ thống
+     * Hoạt động:
+     * - Tìm order theo ID
+     * - Kiểm tra trạng thái: chỉ cho phép xóa đơn đã hủy hoặc đã giao
+     * - Nếu trạng thái không hợp lệ, trả về lỗi
+     * - Xóa order khỏi database
+     * - Redirect về danh sách với thông báo thành công
+     * - Xử lý exception và hiển thị lỗi nếu có
+     *
+     * @param  int  $id  ID của order cần xóa
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function destroy($id)
     {
@@ -171,7 +234,16 @@ class OrderController extends Controller
     }
 
     /**
-     * Get available statuses for transition
+     * Lấy danh sách trạng thái có thể chuyển đổi
+     *
+     * Chức năng: Xác định các trạng thái mà đơn hàng có thể chuyển sang
+     * Hoạt động:
+     * - Lấy tất cả các trạng thái có thể có
+     * - Dựa vào trạng thái hiện tại, lấy danh sách trạng thái hợp lệ từ STATUS_TRANSITIONS
+     * - Trả về mảng các trạng thái có thể chuyển đổi với label tiếng Việt
+     *
+     * @param  string  $currentStatus  Trạng thái hiện tại của đơn hàng
+     * @return array Danh sách trạng thái có thể chuyển đổi
      */
     private function getAvailableStatuses($currentStatus) // $currentStatus lay tu bang orders
     {
@@ -194,7 +266,15 @@ class OrderController extends Controller
     }
 
     /**
-     * Get status label in Vietnamese
+     * Lấy nhãn trạng thái bằng tiếng Việt
+     *
+     * Chức năng: Chuyển đổi mã trạng thái sang tên tiếng Việt
+     * Hoạt động:
+     * - Map các mã trạng thái (pending, processing, ...) sang tên tiếng Việt
+     * - Trả về tên tiếng Việt nếu có, hoặc trả về mã trạng thái nếu không tìm thấy
+     *
+     * @param  string  $status  Mã trạng thái của đơn hàng
+     * @return string Tên trạng thái bằng tiếng Việt
      */
     private function getStatusLabel($status) // $status lay tu bang orders
     {
@@ -211,8 +291,17 @@ class OrderController extends Controller
 
     /**
      * Cập nhật inventory khi đơn hàng được giao thành công
-     * LƯU Ý: Tồn kho đã được trừ khi đặt hàng (checkout)
-     * Hàm này CHỈ để tracking và logging, KHÔNG trừ tồn kho nữa
+     *
+     * Chức năng: Cập nhật số liệu tồn kho khi đơn hàng chuyển sang trạng thái "Đã giao hàng"
+     * Hoạt động:
+     * - Không thực hiện gì vì đã trừ tồn kho khi đặt hàng
+     * - Chỉ để placeholder cho logic nghiệp vụ tương lai
+     *
+     * Lưu ý: Hệ thống đã trừ tồn kho ngay khi khách đặt hàng (giữ hàng cho khách)
+     *        Hàm này CHỈ để tracking và logging, KHÔNG trừ tồn kho nữa
+     *
+     * @param  Order  $order  Đơn hàng đã được giao
+     * @return void
      */
     private function updateInventoryOnDelivered(Order $order)
     {
@@ -226,6 +315,20 @@ class OrderController extends Controller
 
     /**
      * Hoàn trả inventory khi đơn hàng bị hủy
+     *
+     * Chức năng: Hoàn trả số lượng sản phẩm vào kho khi khách hủy đơn
+     * Hoạt động:
+     * - Lấy tất cả order items với thông tin product
+     * - Duyệt qua từng item trong đơn hàng:
+     *   + Bỏ qua nếu product không tồn tại
+     *   + Tăng stock_quantity của product
+     *   + Tìm hoặc tạo inventory cho product
+     *   + Giảm stock_out (nếu đủ)
+     *   + Tăng current_stock
+     * - Đảm bảo tồn kho được phục hồi đúng như trước khi đặt hàng
+     *
+     * @param  Order  $order  Đơn hàng bị hủy
+     * @return void
      */
     private function restoreInventoryOnCancelled(Order $order)
     {

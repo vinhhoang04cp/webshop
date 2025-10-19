@@ -11,7 +11,22 @@ use Illuminate\Support\Facades\Auth;
 class CustomerProductController extends Controller
 {
     /**
-     * Hiển thị danh sách sản phẩm
+     * Hiển thị danh sách sản phẩm cho khách hàng
+     *
+     * Chức năng: Hiển thị trang danh sách sản phẩm với các tính năng tìm kiếm, lọc và sắp xếp
+     * Hoạt động:
+     * - Khởi tạo query với eager loading category
+     * - Tìm kiếm theo tên hoặc mô tả sản phẩm (tham số 'q')
+     * - Lọc theo danh mục (tham số 'category')
+     * - Lọc theo khoảng giá (min_price, max_price)
+     * - Sắp xếp theo nhiều tiêu chí: latest, price_asc, price_desc, name_asc, name_desc
+     * - Phân trang 12 sản phẩm mỗi trang
+     * - Lấy danh sách categories kèm số lượng sản phẩm
+     * - Đếm số lượng sản phẩm trong giỏ hàng nếu user đã đăng nhập
+     * - Trả về view với đầy đủ dữ liệu
+     *
+     * @param  \Illuminate\Http\Request  $request  Chứa các tham số search, filter, sort
+     * @return \Illuminate\View\View
      */
     public function index(Request $request) // Request $request la cac tham so truyen vao de loc, tim kiem, sap xep san pham
     {
@@ -72,7 +87,19 @@ class CustomerProductController extends Controller
     }
 
     /**
-     * Hiển thị chi tiết sản phẩm
+     * Hiển thị chi tiết sản phẩm cho khách hàng
+     *
+     * Chức năng: Hiển thị trang chi tiết một sản phẩm cụ thể với thông tin đầy đủ
+     * Hoạt động:
+     * - Tìm sản phẩm theo ID với eager loading (category, details, inventory)
+     * - Throw 404 exception nếu không tìm thấy
+     * - Lấy 4 sản phẩm liên quan cùng danh mục (loại trừ sản phẩm hiện tại)
+     * - Đếm số lượng sản phẩm trong giỏ hàng nếu user đã đăng nhập
+     * - Lấy danh sách categories để hiển thị menu
+     * - Trả về view chi tiết với product, relatedProducts, categories, cartCount
+     *
+     * @param  int  $id  ID của sản phẩm cần hiển thị
+     * @return \Illuminate\View\View
      */
     public function show($id) // $id la tham so cua san pham can hien thi chi tiet
     {

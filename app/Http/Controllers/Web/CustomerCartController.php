@@ -13,6 +13,28 @@ use Illuminate\Support\Facades\DB;
 
 class CustomerCartController extends Controller
 {
+    /**
+     * Xử lý thanh toán giỏ hàng (Checkout)
+     *
+     * Chức năng: Xử lý việc đặt hàng và thanh toán COD (Cash on Delivery)
+     * Hoạt động:
+     * - Kiểm tra người dùng đã đăng nhập chưa
+     * - Validate thông tin giao hàng (tên, SĐT, địa chỉ, ghi chú)
+     * - Lấy giỏ hàng của user hiện tại
+     * - Kiểm tra giỏ hàng có rỗng không
+     * - Sử dụng database transaction để đảm bảo tính toàn vẹn dữ liệu:
+     *   + Kiểm tra tồn kho của từng sản phẩm
+     *   + Tạo đơn hàng mới với thông tin giao hàng
+     *   + Tạo các order items từ cart items
+     *   + TRỪ TỒN KHO NGAY (giữ hàng cho khách)
+     *   + Cập nhật inventory (tăng stock_out, giảm current_stock)
+     *   + Xóa items trong giỏ hàng
+     * - Redirect đến trang chi tiết đơn hàng với thông báo thành công
+     * - Rollback và hiển thị lỗi nếu có vấn đề xảy ra
+     *
+     * @param  \Illuminate\Http\Request  $request  Thông tin giao hàng từ form
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function checkout(Request $request) // Ham checkout de xu ly thanh toan gio hang
     {
         if (! Auth::check()) { // neu user chua dang nhap
@@ -110,7 +132,19 @@ class CustomerCartController extends Controller
     }
 
     /**
-     * Hiển thị giỏ hàng
+     * Hiển thị giỏ hàng của khách hàng
+     *
+     * Chức năng: Hiển thị danh sách sản phẩm trong giỏ hàng của user
+     * Hoạt động:
+     * - Kiểm tra người dùng đã đăng nhập chưa
+     * - Lấy giỏ hàng của user, nếu chưa có thì tạo mới
+     * - Load cart items kèm theo thông tin product và category (eager loading)
+     * - Xử lý exception khi load cart items
+     * - Tính tổng số lượng sản phẩm trong giỏ hàng
+     * - Lấy danh sách categories để hiển thị menu
+     * - Trả về view giỏ hàng với đầy đủ dữ liệu
+     *
+     * @return \Illuminate\Http\RedirectResponse|\Illuminate\View\View
      */
     public function index() // ham index de hien thi gio hang
     {
@@ -157,6 +191,22 @@ class CustomerCartController extends Controller
 
     /**
      * Thêm sản phẩm vào giỏ hàng
+     *
+     * Chức năng: Thêm một sản phẩm vào giỏ hàng của khách hàng
+     * Hoạt động:
+     * - Kiểm tra người dùng đã đăng nhập (hỗ trợ cả AJAX và normal request)
+     * - Validate số lượng sản phẩm (tối thiểu 1)
+     * - Tìm sản phẩm theo ID, kiểm tra tồn tại
+     * - Kiểm tra tồn kho sản phẩm có đủ không
+     * - Lấy hoặc tạo giỏ hàng cho user
+     * - Kiểm tra sản phẩm đã có trong giỏ hàng chưa:
+     *   + Nếu có: tăng số lượng
+     *   + Nếu chưa: tạo cart item mới
+     * - Trả về response phù hợp (JSON cho AJAX, redirect cho normal request)
+     *
+     * @param  \Illuminate\Http\Request  $request  Chứa thông tin số lượng
+     * @param  int  $productId  ID của sản phẩm cần thêm
+     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\RedirectResponse
      */
     public function add(Request $request, $productId) // ham add de them san pham vao gio hang voi tham so truyen vao la Request $request va $productId
     {
@@ -243,7 +293,22 @@ class CustomerCartController extends Controller
     }
 
     /**
-     * Cập nhật số lượng sản phẩm trong giỏ
+     * Cập nhật số lượng sản phẩm trong giỏ hàng
+     *
+     * Chức năng: Thay đổi số lượng của một sản phẩm đã có trong giỏ hàng
+     * Hoạt động:
+     * - Kiểm tra người dùng đã đăng nhập
+     * - Validate số lượng mới (phải là số nguyên >= 1)
+     * - Tìm cart item theo ID
+     * - Kiểm tra cart item có thuộc về user hiện tại không (bảo mật)
+     * - Kiểm tra tồn kho sản phẩm có đủ cho số lượng mới không
+     * - Cập nhật số lượng mới vào cart item
+     * - Lưu thay đổi vào database
+     * - Trả về response tương ứng (JSON hoặc redirect)
+     *
+     * @param  \Illuminate\Http\Request  $request  Chứa số lượng mới
+     * @param  int  $cartItemId  ID của cart item cần cập nhật
+     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\RedirectResponse
      */
     public function update(Request $request, $cartItemId) // ham update de cap nhat so luong san pham trong gio hang voi tham so truyen vao la Request $request va $cartItemId
     {
@@ -300,6 +365,19 @@ class CustomerCartController extends Controller
 
     /**
      * Xóa sản phẩm khỏi giỏ hàng
+     *
+     * Chức năng: Loại bỏ một sản phẩm cụ thể ra khỏi giỏ hàng
+     * Hoạt động:
+     * - Kiểm tra người dùng đã đăng nhập
+     * - Tìm cart item theo ID
+     * - Kiểm tra quyền sở hữu (cart item phải thuộc về user hiện tại)
+     * - Xóa cart item khỏi database
+     * - Tính lại tổng số lượng và tổng tiền trong giỏ hàng
+     * - Trả về JSON response với thông tin cập nhật
+     * - Sử dụng transaction để đảm bảo tính toàn vẹn dữ liệu
+     *
+     * @param  int  $cartItemId  ID của cart item cần xóa
+     * @return \Illuminate\Http\JsonResponse
      */
     public function remove($cartItemId)
     {

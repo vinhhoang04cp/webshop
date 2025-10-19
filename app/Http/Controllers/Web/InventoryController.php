@@ -10,7 +10,23 @@ use Illuminate\Http\Request;
 class InventoryController extends Controller
 {
     /**
-     * Display a listing of inventory records for admin UI.
+     * Hiển thị danh sách tồn kho cho admin
+     *
+     * Chức năng: Hiển thị danh sách inventory của tất cả sản phẩm với tính năng tìm kiếm và lọc
+     * Hoạt động:
+     * - Query inventory với eager loading product và category
+     * - Tìm kiếm theo tên sản phẩm (whereHas với callback)
+     * - Lọc theo trạng thái tồn kho:
+     *   + 'low': current_stock < 10 (tồn kho thấp)
+     *   + 'out': current_stock = 0 (hết hàng)
+     *   + 'available': current_stock >= 10 (còn hàng)
+     * - Sắp xếp theo sort_by và sort_order (mặc định: updated_at desc)
+     * - Phân trang 15 bản ghi mỗi trang
+     * - Trả về view với paginatedInventory, pagination, search, filters
+     * - Xử lý exception và trả về danh sách rỗng nếu có lỗi
+     *
+     * @param  \Illuminate\Http\Request  $request  Chứa tham số search, filter, sort
+     * @return \Illuminate\View\View
      */
     public function index(Request $request) // Request $request chua cac tham so truyen vao de search, filter, sort
     {
@@ -71,7 +87,17 @@ class InventoryController extends Controller
     }
 
     /**
-     * Display the specified inventory record.
+     * Hiển thị chi tiết một bản ghi tồn kho
+     *
+     * Chức năng: Hiển thị thông tin chi tiết tồn kho của một sản phẩm cụ thể
+     * Hoạt động:
+     * - Tìm inventory theo ID với eager loading product và category
+     * - Throw exception nếu không tìm thấy
+     * - Trả về view chi tiết với thông tin inventory, product, category
+     * - Redirect về danh sách với thông báo lỗi nếu có exception
+     *
+     * @param  int  $id  ID của inventory cần hiển thị
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
      */
     public function show($id)
     {
@@ -87,7 +113,17 @@ class InventoryController extends Controller
     }
 
     /**
-     * Show the form for editing the specified inventory record.
+     * Hiển thị form chỉnh sửa tồn kho
+     *
+     * Chức năng: Hiển thị form để chỉnh sửa thông tin tồn kho
+     * Hoạt động:
+     * - Tìm inventory theo ID với thông tin product
+     * - Throw exception nếu không tìm thấy
+     * - Trả về view form edit với dữ liệu inventory hiện tại
+     * - Redirect về danh sách với thông báo lỗi nếu có exception
+     *
+     * @param  int  $id  ID của inventory cần chỉnh sửa
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
      */
     public function edit($id)
     {
@@ -103,7 +139,19 @@ class InventoryController extends Controller
     }
 
     /**
-     * Update the specified inventory record.
+     * Cập nhật thông tin tồn kho
+     *
+     * Chức năng: Xử lý cập nhật số liệu tồn kho trong database
+     * Hoạt động:
+     * - Validate dữ liệu đầu vào (stock_in, stock_out, current_stock phải >= 0)
+     * - Tìm inventory theo ID
+     * - Cập nhật các giá trị mới vào database
+     * - Redirect về trang chi tiết với thông báo thành công
+     * - Quay lại form với lỗi và giữ input nếu có exception
+     *
+     * @param  \Illuminate\Http\Request  $request  Dữ liệu cập nhật
+     * @param  int  $id  ID của inventory cần cập nhật
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function update(Request $request, $id)
     {
@@ -133,7 +181,25 @@ class InventoryController extends Controller
     }
 
     /**
-     * ham dieu chinh ton kho (nhap kho / xuat kho)
+     * Điều chỉnh tồn kho (nhập/xuất kho)
+     *
+     * Chức năng: Xử lý việc nhập kho hoặc xuất kho sản phẩm
+     * Hoạt động:
+     * - Validate dữ liệu: adjustment_type (in/out), quantity (>= 1), note (optional)
+     * - Tìm inventory theo ID
+     * - Nếu adjustment_type = 'in' (nhập kho):
+     *   + Tăng stock_in và current_stock theo quantity
+     *   + Cập nhật stock_quantity của product
+     * - Nếu adjustment_type = 'out' (xuất kho):
+     *   + Kiểm tra current_stock có đủ không
+     *   + Tăng stock_out và giảm current_stock theo quantity
+     *   + Cập nhật stock_quantity của product
+     * - Sử dụng transaction để đảm bảo tính toàn vẹn
+     * - Redirect về trang chi tiết với thông báo thành công
+     *
+     * @param  \Illuminate\Http\Request  $request  Thông tin điều chỉnh
+     * @param  int  $id  ID của inventory cần điều chỉnh
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function adjustStock(Request $request, $id)
     {

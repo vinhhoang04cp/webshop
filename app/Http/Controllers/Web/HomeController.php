@@ -10,7 +10,17 @@ use Illuminate\Support\Facades\Auth;
 class HomeController extends Controller
 {
     /**
-     * Hiển thị trang chủ
+     * Hiển thị trang chủ website
+     *
+     * Chức năng: Hiển thị trang chủ với các sản phẩm nổi bật và danh mục
+     * Hoạt động:
+     * - Lấy danh sách tất cả categories kèm số lượng sản phẩm, sắp xếp theo tên
+     * - Lấy 8 sản phẩm nổi bật ngẫu nhiên với thông tin category
+     * - Lấy 8 sản phẩm mới nhất (theo created_at) với thông tin category
+     * - Đếm số lượng sản phẩm trong giỏ hàng nếu user đã đăng nhập
+     * - Trả về view trang chủ với categories, featuredProducts, newProducts, cartCount
+     *
+     * @return \Illuminate\View\View
      */
     public function index() // ham index de hien thi trang chu
     {

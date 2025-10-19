@@ -9,7 +9,19 @@ use Illuminate\Http\Request; // Import Request de lay du lieu tu form
 class CategoryController extends Controller
 {
     /**
-     * Display a listing of categories for admin UI.
+     * Hiển thị danh sách danh mục cho admin
+     *
+     * Chức năng: Hiển thị danh sách tất cả danh mục với tính năng tìm kiếm và phân trang
+     * Hoạt động:
+     * - Khởi tạo query builder để lấy danh sách categories
+     * - Nếu có tham số search, lọc categories theo tên (LIKE search)
+     * - Phân trang kết quả với 10 danh mục mỗi trang
+     * - Lấy tất cả categories để sử dụng cho các dropdown
+     * - Trả về view với dữ liệu categories đã phân trang
+     * - Xử lý exception và hiển thị thông báo lỗi nếu có
+     *
+     * @param  \Illuminate\Http\Request  $request  Chứa tham số search và filter
+     * @return \Illuminate\View\View
      */
     public function index(Request $request) // (Request $request) la tham so truyen vao ham , duoc gui tu form index
     {
@@ -42,7 +54,14 @@ class CategoryController extends Controller
     }
 
     /**
-     * Show the form for creating a new category.
+     * Hiển thị form tạo danh mục mới
+     *
+     * Chức năng: Hiển thị giao diện form để nhập thông tin danh mục mới
+     * Hoạt động:
+     * - Trả về view chứa form tạo category
+     * - Form bao gồm các trường: tên danh mục, mô tả
+     *
+     * @return \Illuminate\View\View
      */
     public function create()
     {
@@ -50,7 +69,18 @@ class CategoryController extends Controller
     }
 
     /**
-     * Store a newly created category.
+     * Lưu danh mục mới vào database
+     *
+     * Chức năng: Xử lý dữ liệu từ form và tạo danh mục mới trong hệ thống
+     * Hoạt động:
+     * - Validate dữ liệu đầu vào (name bắt buộc, unique, max 150 ký tự; description nullable)
+     * - Tạo category mới sử dụng Eloquent model
+     * - Lưu vào database
+     * - Redirect về trang danh sách categories với thông báo thành công
+     * - Xử lý exception và redirect với thông báo lỗi nếu có
+     *
+     * @param  \Illuminate\Http\Request  $request  Dữ liệu từ form tạo category
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function store(Request $request) // (Request $request) la tham so truyen vao ham , duoc gui tu form create
     {
@@ -76,7 +106,17 @@ class CategoryController extends Controller
     }
 
     /**
-     * Display the specified category.
+     * Hiển thị chi tiết một danh mục
+     *
+     * Chức năng: Hiển thị thông tin chi tiết của một danh mục cụ thể và danh sách sản phẩm thuộc danh mục đó
+     * Hoạt động:
+     * - Tìm category theo ID sử dụng findOrFail (throw exception nếu không tìm thấy)
+     * - Load eager relationship 'products' để lấy tất cả sản phẩm thuộc danh mục
+     * - Trả về view chi tiết với thông tin category và products
+     * - Xử lý exception và redirect về danh sách với thông báo lỗi nếu có
+     *
+     * @param  int  $id  ID của category cần hiển thị
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
      */
     public function show($id) // $id la tham so truyen vao ham , duoc gui tu form index
     {
@@ -91,7 +131,16 @@ class CategoryController extends Controller
     }
 
     /**
-     * Show the form for editing the specified category.
+     * Hiển thị form chỉnh sửa danh mục
+     *
+     * Chức năng: Hiển thị form để chỉnh sửa thông tin danh mục đã tồn tại
+     * Hoạt động:
+     * - Tìm category theo ID sử dụng findOrFail
+     * - Trả về view form edit với dữ liệu category hiện tại
+     * - Xử lý exception và redirect về danh sách nếu không tìm thấy
+     *
+     * @param  int  $id  ID của category cần chỉnh sửa
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
      */
     public function edit($id)
     {
@@ -106,7 +155,19 @@ class CategoryController extends Controller
     }
 
     /**
-     * Update the specified category.
+     * Cập nhật thông tin danh mục
+     *
+     * Chức năng: Xử lý cập nhật thông tin danh mục trong database
+     * Hoạt động:
+     * - Validate dữ liệu đầu vào (name unique ngoại trừ ID hiện tại, description nullable)
+     * - Tìm category theo ID
+     * - Cập nhật thông tin mới vào database sử dụng Eloquent
+     * - Redirect về trang danh sách với thông báo thành công
+     * - Xử lý exception và hiển thị lỗi nếu có
+     *
+     * @param  \Illuminate\Http\Request  $request  Dữ liệu cập nhật từ form
+     * @param  int  $id  ID của category cần cập nhật
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function update(Request $request, $id) // (Request $request, $id) la tham so truyen vao ham , duoc gui tu form edit
     {
@@ -133,7 +194,19 @@ class CategoryController extends Controller
     }
 
     /**
-     * Remove the specified category.
+     * Xóa danh mục khỏi database
+     *
+     * Chức năng: Xóa một danh mục cụ thể khỏi hệ thống
+     * Hoạt động:
+     * - Tìm category theo ID sử dụng findOrFail
+     * - Thực hiện xóa category khỏi database
+     * - Redirect về trang danh sách với thông báo thành công
+     * - Xử lý exception nếu có lỗi (ví dụ: danh mục có ràng buộc với sản phẩm)
+     *
+     * Lưu ý: Cần kiểm tra ràng buộc với sản phẩm trước khi xóa để tránh lỗi foreign key
+     *
+     * @param  int  $id  ID của category cần xóa
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function destroy($id) // $id la tham so truyen vao ham , duoc gui tu form index
     {

@@ -13,7 +13,18 @@ use Illuminate\Support\Facades\DB;
 class UserManagementController extends Controller
 {
     /**
-     * Hiển thị danh sách users
+     * Hiển thị danh sách người dùng cho admin
+     *
+     * Chức năng: Hiển thị tất cả người dùng trong hệ thống với tính năng tìm kiếm
+     * Hoạt động:
+     * - Query users với eager loading roles
+     * - Tìm kiếm theo tên hoặc email (LIKE search) nếu có tham số search
+     * - Sắp xếp theo created_at giảm dần (mới nhất trước)
+     * - Phân trang 15 users mỗi trang
+     * - Trả về view với danh sách users đã phân trang
+     *
+     * @param  \Illuminate\Http\Request  $request  Chứa tham số search
+     * @return \Illuminate\View\View
      */
     public function index(Request $request) // Request $request de lay du lieu tim kiem
     {
@@ -34,7 +45,16 @@ class UserManagementController extends Controller
     }
 
     /**
-     * Hiển thị chi tiết user
+     * Hiển thị chi tiết người dùng
+     *
+     * Chức năng: Hiển thị thông tin chi tiết của một người dùng cụ thể
+     * Hoạt động:
+     * - Sử dụng route model binding để tự động load user
+     * - Eager load relationships: roles và orders
+     * - Trả về view chi tiết với thông tin user, roles, orders
+     *
+     * @param  User  $user  Instance của user (tự động inject bởi route model binding)
+     * @return \Illuminate\View\View
      */
     public function show(User $user) // User $user: user can hien thi
     {
@@ -44,7 +64,16 @@ class UserManagementController extends Controller
     }
 
     /**
-     * Hiển thị form chỉnh sửa quyền user
+     * Hiển thị form chỉnh sửa quyền người dùng
+     *
+     * Chức năng: Hiển thị form để quản lý roles của user
+     * Hoạt động:
+     * - Load roles hiện tại của user
+     * - Lấy tất cả roles có trong hệ thống
+     * - Trả về view form edit với user và danh sách roles
+     *
+     * @param  User  $user  Instance của user cần chỉnh sửa
+     * @return \Illuminate\View\View
      */
     public function edit(User $user)
     {
@@ -55,7 +84,22 @@ class UserManagementController extends Controller
     }
 
     /**
-     * Cập nhật quyền user
+     * Cập nhật quyền của người dùng
+     *
+     * Chức năng: Xử lý cập nhật roles cho user
+     * Hoạt động:
+     * - Validate dữ liệu: roles phải là mảng, mỗi role_id phải tồn tại trong bảng roles
+     * - Sử dụng database transaction:
+     *   + Xóa tất cả roles cũ của user
+     *   + Thêm các roles mới được chọn
+     *   + Ghi nhận thời gian gán role (assigned_at)
+     * - Commit transaction nếu thành công
+     * - Rollback nếu có lỗi
+     * - Redirect về danh sách users với thông báo kết quả
+     *
+     * @param  \Illuminate\Http\Request  $request  Chứa danh sách role_ids mới
+     * @param  User  $user  Instance của user cần cập nhật
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function update(Request $request, User $user) // User $user: user can cap nhat
     {
@@ -94,7 +138,19 @@ class UserManagementController extends Controller
     }
 
     /**
-     * Gán role cho user
+     * Gán role mới cho người dùng
+     *
+     * Chức năng: Thêm một role cụ thể cho user
+     * Hoạt động:
+     * - Validate role_id phải tồn tại trong bảng roles
+     * - Kiểm tra user đã có role này chưa
+     * - Nếu đã có, trả về thông báo lỗi
+     * - Nếu chưa có, tạo bản ghi UserRole mới với assigned_at = now()
+     * - Quay lại trang trước với thông báo thành công
+     *
+     * @param  \Illuminate\Http\Request  $request  Chứa role_id cần gán
+     * @param  User  $user  Instance của user cần gán role
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function assignRole(Request $request, User $user)
     {
@@ -121,7 +177,18 @@ class UserManagementController extends Controller
     }
 
     /**
-     * Gỡ role khỏi user
+     * Gỡ bỏ role khỏi người dùng
+     *
+     * Chức năng: Xóa một role cụ thể của user
+     * Hoạt động:
+     * - Tìm bản ghi UserRole theo user_id và role_id
+     * - Nếu không tìm thấy, trả về thông báo lỗi
+     * - Nếu tìm thấy, xóa bản ghi UserRole
+     * - Quay lại trang trước với thông báo thành công
+     *
+     * @param  User  $user  Instance của user cần gỡ role
+     * @param  Role  $role  Instance của role cần gỡ
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function removeRole(User $user, Role $role)
     {
@@ -139,7 +206,22 @@ class UserManagementController extends Controller
     }
 
     /**
-     * Xóa user
+     * Xóa người dùng khỏi hệ thống
+     *
+     * Chức năng: Xóa một user cụ thể khỏi database
+     * Hoạt động:
+     * - Kiểm tra không được xóa chính mình (user đang đăng nhập)
+     * - Sử dụng database transaction:
+     *   + Xóa tất cả roles của user
+     *   + Xóa user khỏi database
+     * - Commit transaction nếu thành công
+     * - Rollback nếu có lỗi
+     * - Redirect về danh sách users với thông báo kết quả
+     *
+     * Lưu ý: Cần cân nhắc xử lý các dữ liệu liên quan (orders, cart) trước khi xóa
+     *
+     * @param  User  $user  Instance của user cần xóa
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function destroy(User $user) // User $user lay tu Model
     {

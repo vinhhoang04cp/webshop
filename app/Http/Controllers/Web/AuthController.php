@@ -14,7 +14,15 @@ use Illuminate\Support\Facades\Hash; // Thu vien Hash dung de ma hoa password
 class AuthController extends Controller
 {
     /**
-     * Hiển thị form login
+     * Hiển thị form đăng nhập
+     *
+     * Chức năng: Hiển thị giao diện form đăng nhập cho người dùng
+     * Hoạt động:
+     * - Kiểm tra xem người dùng đã đăng nhập chưa
+     * - Nếu đã đăng nhập, chuyển hướng về trang dashboard
+     * - Nếu chưa đăng nhập, hiển thị view form đăng nhập
+     *
+     * @return \Illuminate\Http\RedirectResponse|\Illuminate\View\View
      */
     public function showLogin() // Ham hien thi form login
     {
@@ -28,7 +36,15 @@ class AuthController extends Controller
     }
 
     /**
-     * Hiển thị form register
+     * Hiển thị form đăng ký
+     *
+     * Chức năng: Hiển thị giao diện form đăng ký tài khoản mới
+     * Hoạt động:
+     * - Kiểm tra trạng thái đăng nhập của người dùng
+     * - Nếu đã đăng nhập, chuyển hướng về dashboard
+     * - Nếu chưa đăng nhập, hiển thị view form đăng ký
+     *
+     * @return \Illuminate\Http\RedirectResponse|\Illuminate\View\View
      */
     public function showRegister() // Ham hien thi form register
     {
@@ -40,7 +56,19 @@ class AuthController extends Controller
     }
 
     /**
-     * Xử lý login thông qua web form
+     * Xử lý đăng nhập qua web form
+     *
+     * Chức năng: Xác thực thông tin đăng nhập và cho phép người dùng truy cập hệ thống
+     * Hoạt động:
+     * - Validate dữ liệu đầu vào (email, password)
+     * - Tìm kiếm user trong database theo email
+     * - So sánh mật khẩu đã mã hóa với password người dùng nhập
+     * - Nếu thông tin chính xác, thực hiện đăng nhập
+     * - Chuyển hướng user dựa trên vai trò (admin/manager -> dashboard, customer -> products, other -> home)
+     * - Nếu thông tin sai, trả về lỗi và giữ lại dữ liệu đã nhập
+     *
+     * @param  \Illuminate\Http\Request  $request  Dữ liệu từ form đăng nhập
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function login(Request $request) // (Request $request) la tham so truyen vao ham , duoc gui tu form login
     {
@@ -79,7 +107,21 @@ class AuthController extends Controller
     }
 
     /**
-     * Xử lý register thông qua web form
+     * Xử lý đăng ký tài khoản mới qua web form
+     *
+     * Chức năng: Tạo tài khoản người dùng mới trong hệ thống
+     * Hoạt động:
+     * - Validate dữ liệu đầu vào (name, email, password, phone, address)
+     * - Kiểm tra email đã tồn tại chưa (unique)
+     * - Mã hóa mật khẩu trước khi lưu vào database
+     * - Tạo user mới với Eloquent
+     * - Tự động gán role 'customer' cho user mới
+     * - Đăng nhập user ngay sau khi đăng ký thành công
+     * - Chuyển hướng đến trang danh sách sản phẩm
+     * - Tạo giỏ hàng trống cho user mới
+     *
+     * @param  \Illuminate\Http\Request  $request  Dữ liệu từ form đăng ký
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function register(Request $request) // (request $request) la tham so truyen vao ham , duoc gui tu form register
     {
@@ -123,7 +165,16 @@ class AuthController extends Controller
     }
 
     /**
-     * Đăng xuất
+     * Đăng xuất người dùng
+     *
+     * Chức năng: Kết thúc phiên đăng nhập của người dùng hiện tại
+     * Hoạt động:
+     * - Hủy session đăng nhập của user
+     * - Xóa thông tin authentication
+     * - Chuyển hướng về trang đăng nhập
+     * - Hiển thị thông báo đăng xuất thành công
+     *
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function logout()
     {
@@ -133,7 +184,18 @@ class AuthController extends Controller
     }
 
     /**
-     * Hiển thị dashboard
+     * Hiển thị trang dashboard cho admin và manager
+     *
+     * Chức năng: Hiển thị trang quản trị với thống kê tổng quan
+     * Hoạt động:
+     * - Lấy thông tin user đang đăng nhập
+     * - Kiểm tra quyền truy cập (phải có role admin hoặc manager)
+     * - Nếu không có quyền, đăng xuất và chuyển về trang login
+     * - Tính toán các thống kê: tổng sản phẩm, đơn hàng, người dùng, doanh thu
+     * - Lấy danh sách đơn hàng gần nhất
+     * - Hiển thị view dashboard với dữ liệu thống kê
+     *
+     * @return \Illuminate\Http\RedirectResponse|\Illuminate\View\View
      */
     public function dashboard()
     {
