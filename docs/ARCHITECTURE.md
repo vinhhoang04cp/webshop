@@ -1,14 +1,14 @@
-# 🏗️ System Architecture - Kiến trúc Hệ thống
+# 🏗️ Kiến trúc Hệ thống - System Architecture
 
-> **Mục đích**: Mô tả kiến trúc tổng thể, luồng dữ liệu, và design patterns
+> **Mục đích**: Mô tả kiến trúc tổng thể, luồng dữ liệu, và các mẫu thiết kế
 
 ## 📋 Mục lục
 1. [Tổng quan kiến trúc](#tổng-quan-kiến-trúc)
-2. [Layers Architecture](#layers-architecture)
-3. [Request Flow](#request-flow)
-4. [Database Architecture](#database-architecture)
-5. [Authentication Architecture](#authentication-architecture)
-6. [Caching Strategy](#caching-strategy)
+2. [Kiến trúc phân lớp](#kiến-trúc-phân-lớp)
+3. [Luồng xử lý yêu cầu](#luồng-xử-lý-yêu-cầu)
+4. [Kiến trúc cơ sở dữ liệu](#kiến-trúc-cơ-sở-dữ-liệu)
+5. [Kiến trúc xác thực](#kiến-trúc-xác-thực)
+6. [Chiến lược Cache](#chiến-lược-cache)
 
 ---
 
@@ -18,24 +18,24 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                         CLIENT LAYER                         │
+│                         TẦNG GIAO DIỆN                       │
 ├──────────────────┬──────────────────┬──────────────────────┤
-│   Web Browser    │   Mobile App     │   Third-party API    │
-│   (Blade Views)  │   (API Client)   │   Consumer           │
+│   Trình duyệt    │   Ứng dụng di    │   API bên thứ ba     │
+│   (Blade Views)  │   động (Client)  │   (Consumer)         │
 └────────┬─────────┴────────┬─────────┴──────────┬───────────┘
          │                  │                     │
          │ HTTP/HTTPS       │ HTTP/HTTPS         │ HTTP/HTTPS
          │                  │ + Bearer Token     │ + API Token
          │                  │                     │
 ┌────────▼──────────────────▼─────────────────────▼───────────┐
-│                      APPLICATION LAYER                       │
+│                      TẦNG ỨNG DỤNG                          │
 │  ┌────────────────┐              ┌─────────────────────┐   │
-│  │  Web Routes    │              │     API Routes      │   │
-│  │  (routes/web)  │              │   (routes/api.php)  │   │
+│  │  Định tuyến    │              │   Định tuyến API    │   │
+│  │  Web (routes)  │              │   (routes/api.php)  │   │
 │  └───────┬────────┘              └──────────┬──────────┘   │
 │          │                                   │               │
 │  ┌───────▼───────────────────────────────────▼──────────┐  │
-│  │              MIDDLEWARE LAYER                        │  │
+│  │              TẦNG MIDDLEWARE                         │  │
 │  │  • auth:sanctum  • admin  • throttle  • cors        │  │
 │  └───────┬───────────────────────────────────┬──────────┘  │
 │          │                                   │               │
@@ -46,97 +46,98 @@
 │  └───────┬──────────┘              └────────┬──────────┘   │
 │          │                                   │               │
 │  ┌───────▼───────────────────────────────────▼──────────┐  │
-│  │                  SERVICE LAYER                       │  │
-│  │  • Business Logic  • Validation  • Authorization    │  │
+│  │                  TẦNG DỊCH VỤ                        │  │
+│  │  • Logic nghiệp vụ  • Xác thực  • Phần quyền       │  │
 │  └───────┬──────────────────────────────────┬──────────┘  │
 │          │                                   │               │
 │  ┌───────▼───────────────────────────────────▼──────────┐  │
-│  │              MODEL LAYER (Eloquent ORM)              │  │
+│  │              TẦNG MODEL (Eloquent ORM)              │  │
 │  │  User • Product • Order • Cart • Category • etc     │  │
 │  └───────┬──────────────────────────────────┬──────────┘  │
 └──────────┼──────────────────────────────────┼──────────────┘
            │                                   │
 ┌──────────▼───────────────────────────────────▼──────────────┐
-│                      DATA LAYER                              │
+│                      TẦNG DỮ LIỆU                           │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
-│  │    MySQL     │  │    Redis     │  │  File Storage│     │
-│  │  (Database)  │  │ (Cache/Queue)│  │   (Images)   │     │
+│  │    MySQL     │  │    Redis     │  │  Lưu trữ     │     │
+│  │ (Cơ sở dữ    │  │ (Cache/Queue)│  │  tệp tin     │     │
+│  │  liệu)       │  │              │  │  (Hình ảnh)  │     │
 │  └──────────────┘  └──────────────┘  └──────────────┘     │
 └──────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 📚 Layers Architecture
+## 📚 Kiến trúc phân lớp
 
-### 1. Client Layer (Tầng Giao diện)
+### 1. Tầng Giao diện (Client Layer)
 
 **Thành phần**:
-- **Web Browser**: Blade templates + Tailwind CSS
-- **Mobile App**: API client (JSON)
-- **Third-party**: External API consumers
+- **Trình duyệt Web**: Blade templates + Tailwind CSS
+- **Ứng dụng di động**: API client (JSON)
+- **Bên thứ ba**: External API consumers
 
 **Trách nhiệm**:
-- Hiển thị UI/UX
-- Gửi request đến server
-- Xử lý response và hiển thị kết quả
+- Hiển thị giao diện người dùng
+- Gửi yêu cầu đến máy chủ
+- Xử lý phản hồi và hiển thị kết quả
 
 ---
 
-### 2. Application Layer (Tầng Ứng dụng)
+### 2. Tầng Ứng dụng (Application Layer)
 
-#### 2.1 Routes (Định tuyến)
+#### 2.1 Định tuyến (Routes)
 
-**Web Routes** (`routes/web.php`):
+**Định tuyến Web** (`routes/web.php`):
 ```php
-// Public routes
+// Định tuyến công khai
 Route::get('/', [HomeController::class, 'index']);
 Route::get('/products', [CustomerProductController::class, 'index']);
 
-// Auth routes
+// Định tuyến xác thực
 Route::get('/login', [AuthController::class, 'showLogin']);
 Route::post('/login', [AuthController::class, 'login']);
 
-// Protected routes
+// Định tuyến được bảo vệ
 Route::middleware(['auth'])->group(function () {
     Route::get('/cart', [CustomerCartController::class, 'index']);
     Route::post('/cart/checkout', [CustomerCartController::class, 'checkout']);
 });
 
-// Admin routes
+// Định tuyến Admin
 Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::resource('dashboard/products', ProductController::class);
 });
 ```
 
-**API Routes** (`routes/api.php`):
+**Định tuyến API** (`routes/api.php`):
 ```php
-// Public API
+// API công khai
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/products', [ProductController::class, 'index']);
 
-// Protected API
+// API được bảo vệ
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/user', fn(Request $r) => $r->user());
     Route::apiResource('orders', OrderController::class);
 });
 
-// Admin-only API
+// API chỉ dành cho Admin
 Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::apiResource('categories', CategoryController::class);
 });
 ```
 
-#### 2.2 Middleware (Bộ lọc Request)
+#### 2.2 Middleware (Bộ lọc Yêu cầu)
 
-**Built-in Middleware**:
-- `auth:sanctum` - Token authentication
-- `throttle:60,1` - Rate limiting (60 req/min)
-- `cors` - Cross-Origin Resource Sharing
+**Middleware có sẵn**:
+- `auth:sanctum` - Xác thực bằng token
+- `throttle:60,1` - Giới hạn tốc độ (60 yêu cầu/phút)
+- `cors` - Chia sẻ tài nguyên giữa các nguồn gốc
 
-**Custom Middleware**:
-- `AdminMiddleware` - Kiểm tra role admin
-- `RolePermissionMiddleware` - Kiểm tra permissions
+**Middleware tùy chỉnh**:
+- `AdminMiddleware` - Kiểm tra vai trò admin
+- `RolePermissionMiddleware` - Kiểm tra quyền hạn
 
 #### 2.3 Controllers (Điều khiển)
 
@@ -144,61 +145,61 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
 ```
 app/Http/Controllers/Web/
 ├── HomeController.php           # Trang chủ
-├── AuthController.php           # Login/Register
-├── CustomerProductController.php # Xem sản phẩm (customer)
-├── CustomerCartController.php   # Giỏ hàng (customer)
-├── ProductController.php        # Quản lý SP (admin)
-├── OrderController.php          # Quản lý đơn (admin)
+├── AuthController.php           # Đăng nhập/Đăng ký
+├── CustomerProductController.php # Xem sản phẩm (khách hàng)
+├── CustomerCartController.php   # Giỏ hàng (khách hàng)
+├── ProductController.php        # Quản lý sản phẩm (admin)
+├── OrderController.php          # Quản lý đơn hàng (admin)
 └── ...
 ```
 
 **API Controllers**:
 ```
 app/Http/Controllers/Api/
-├── AuthController.php           # API Auth
-├── ProductController.php        # Product API
-├── OrderController.php          # Order API
+├── AuthController.php           # API Xác thực
+├── ProductController.php        # API Sản phẩm
+├── OrderController.php          # API Đơn hàng
 └── ...
 ```
 
 ---
 
-### 3. Service Layer (Tầng Nghiệp vụ)
+### 3. Tầng Dịch vụ (Service Layer)
 
 **Chức năng**:
-- Business logic
-- Data validation
-- Authorization checks
-- Complex operations
+- Logic nghiệp vụ
+- Xác thực dữ liệu
+- Kiểm tra phân quyền
+- Các thao tác phức tạp
 
 **Ví dụ** (trong Controller):
 ```php
 public function checkout(Request $request)
 {
-    // Validation
+    // Xác thực dữ liệu
     $validated = $request->validate([...]);
     
-    // Business logic
+    // Logic nghiệp vụ
     DB::transaction(function () use ($request) {
         // 1. Kiểm tra tồn kho
-        // 2. Tạo Order
-        // 3. Trừ stock
-        // 4. Xóa cart
+        // 2. Tạo đơn hàng
+        // 3. Trừ kho
+        // 4. Xóa giỏ hàng
     });
     
-    // Response
+    // Phản hồi
     return redirect()->route('orders.success');
 }
 ```
 
 ---
 
-### 4. Model Layer (Tầng Dữ liệu)
+### 4. Tầng Model (Model Layer)
 
 **Eloquent ORM Models**:
 ```
 app/Models/
-├── User.php           # HasApiTokens, roles relationship
+├── User.php           # HasApiTokens, quan hệ roles
 ├── Product.php        # belongsTo Category, hasOne Inventory
 ├── Category.php       # hasMany Products
 ├── Order.php          # belongsTo User, hasMany OrderItems
@@ -206,7 +207,7 @@ app/Models/
 └── ...
 ```
 
-**Relationships**:
+**Quan hệ (Relationships)**:
 ```php
 // User.php
 public function roles() {
@@ -229,45 +230,45 @@ public function inventory() {
 
 ---
 
-### 5. Data Layer (Tầng Lưu trữ)
+### 5. Tầng Dữ liệu (Data Layer)
 
-#### 5.1 MySQL Database
-- **Primary storage**: Relational data
-- **Tables**: users, products, orders, etc.
-- **Transactions**: ACID compliance
+#### 5.1 Cơ sở dữ liệu MySQL
+- **Lưu trữ chính**: Dữ liệu quan hệ
+- **Bảng**: users, products, orders, v.v.
+- **Giao dịch**: Tuân thủ ACID
 
 #### 5.2 Redis Cache
-- **Sessions**: User sessions
-- **Cache**: Query results, config
-- **Queue**: Background jobs
+- **Phiên làm việc**: User sessions
+- **Cache**: Kết quả truy vấn, cấu hình
+- **Hàng đợi**: Background jobs
 
-#### 5.3 File Storage
-- **Public**: Product images
-- **Storage**: Private files
+#### 5.3 Lưu trữ tệp tin
+- **Công khai**: Hình ảnh sản phẩm
+- **Riêng tư**: Tệp tin cá nhân
 
 ---
 
-## 🔄 Request Flow
+## 🔄 Luồng xử lý yêu cầu
 
-### Web Request Flow
+### Luồng yêu cầu Web
 
 ```
-1. User truy cập browser → http://localhost/products
+1. Người dùng truy cập trình duyệt → http://localhost/products
    ↓
-2. Web Route → CustomerProductController@index
+2. Định tuyến Web → CustomerProductController@index
    ↓
 3. Controller:
-   - Query products từ database (eager load category)
-   - Apply filters, pagination
+   - Truy vấn sản phẩm từ cơ sở dữ liệu (eager load category)
+   - Áp dụng bộ lọc, phân trang
    ↓
 4. Blade template render HTML
-   - Loop products
-   - Display với Tailwind CSS
+   - Lặp qua các sản phẩm
+   - Hiển thị với Tailwind CSS
    ↓
-5. Response HTML → Browser
+5. Phản hồi HTML → Trình duyệt
 ```
 
-**Code Example**:
+**Ví dụ mã**:
 ```php
 // routes/web.php
 Route::get('/products', [CustomerProductController::class, 'index']);
@@ -288,31 +289,31 @@ public function index(Request $request) {
 
 ---
 
-### API Request Flow
+### Luồng yêu cầu API
 
 ```
 1. Client → POST /api/products
    Headers: Authorization: Bearer {token}
    Body: {"name": "iPhone 15", ...}
    ↓
-2. Middleware chain:
-   - throttle:60,1 (rate limit check)
-   - auth:sanctum (authenticate token)
-   - admin (check role)
+2. Chuỗi Middleware:
+   - throttle:60,1 (kiểm tra giới hạn tốc độ)
+   - auth:sanctum (xác thực token)
+   - admin (kiểm tra vai trò)
    ↓
 3. ProductController@store:
-   - Validate request
-   - Create product
-   - Create inventory
+   - Xác thực yêu cầu
+   - Tạo sản phẩm
+   - Tạo inventory
    ↓
-4. JSON Response
+4. Phản hồi JSON
    {
      "success": true,
      "data": {...}
    }
 ```
 
-**Code Example**:
+**Ví dụ mã**:
 ```php
 // routes/api.php
 Route::middleware(['auth:sanctum', 'admin'])
@@ -339,9 +340,9 @@ public function store(Request $request) {
 
 ---
 
-## 🗄️ Database Architecture
+## 🗄️ Kiến trúc cơ sở dữ liệu
 
-### Entity Relationship Diagram
+### Sơ đồ quan hệ thực thể
 
 ```
 users ────────┬──── user_roles ──── roles
@@ -354,29 +355,29 @@ categories ──── products ────┬──── product_details
                              │
                              └──── inventory
 
-revenue_reports (standalone)
+revenue_reports (độc lập)
 
 personal_access_tokens (Laravel Sanctum)
 ```
 
-### Key Relationships
+### Quan hệ chính
 
-| Parent | Child | Type | Description |
-|--------|-------|------|-------------|
-| users | roles | Many-to-Many | User có nhiều roles |
-| users | cart | One-to-One | Mỗi user có 1 cart |
-| users | orders | One-to-Many | User có nhiều orders |
-| categories | products | One-to-Many | Category có nhiều products |
-| products | inventory | One-to-One | Product có 1 inventory record |
-| products | product_details | One-to-One | Product có 1 detail record |
-| carts | cart_items | One-to-Many | Cart có nhiều items |
-| orders | order_items | One-to-Many | Order có nhiều items |
+| Cha | Con | Loại | Mô tả |
+|-----|-----|------|-------|
+| users | roles | Nhiều-nhiều | User có nhiều vai trò |
+| users | cart | Một-một | Mỗi user có 1 giỏ hàng |
+| users | orders | Một-nhiều | User có nhiều đơn hàng |
+| categories | products | Một-nhiều | Danh mục có nhiều sản phẩm |
+| products | inventory | Một-một | Sản phẩm có 1 bản ghi tồn kho |
+| products | product_details | Một-một | Sản phẩm có 1 bản ghi chi tiết |
+| carts | cart_items | Một-nhiều | Giỏ hàng có nhiều mục |
+| orders | order_items | Một-nhiều | Đơn hàng có nhiều mục |
 
 ---
 
-## 🔐 Authentication Architecture
+## 🔐 Kiến trúc xác thực
 
-### Token-based Authentication Flow
+### Luồng xác thực dựa trên Token
 
 ```
 ┌──────────────┐
@@ -387,37 +388,37 @@ personal_access_tokens (Laravel Sanctum)
        ▼
 ┌──────────────────┐
 │ AuthController   │
-│  - Validate      │ 2. Check credentials
-│  - Authenticate  │    against users table
+│  - Xác thực      │ 2. Kiểm tra thông tin đăng nhập
+│  - Authenticate  │    với bảng users
 └──────┬───────────┘
-       │ 3. Create token
+       │ 3. Tạo token
        ▼
 ┌──────────────────────────┐
-│ personal_access_tokens   │ 4. Store hashed token
+│ personal_access_tokens   │ 4. Lưu token đã băm
 │  - tokenable_id (user)   │
 │  - token (hashed)        │
 └──────┬───────────────────┘
-       │ 5. Return plaintext token
+       │ 5. Trả về token gốc
        ▼
 ┌──────────────┐
-│   Client     │ 6. Store token locally
-│  localStorage│    Future requests:
+│   Client     │ 6. Lưu token cục bộ
+│  localStorage│    Các yêu cầu tiếp theo:
 └──────┬───────┘    Authorization: Bearer {token}
        │
-       │ 7. Subsequent requests
+       │ 7. Các yêu cầu tiếp theo
        ▼
 ┌──────────────────┐
-│ auth:sanctum     │ 8. Verify token
-│  Middleware      │    Load user
+│ auth:sanctum     │ 8. Xác minh token
+│  Middleware      │    Tải user
 └──────┬───────────┘
-       │ 9. User authenticated
+       │ 9. User đã được xác thực
        ▼
 ┌──────────────────┐
-│   Controller     │ 10. Access $request->user()
+│   Controller     │ 10. Truy cập $request->user()
 └──────────────────┘
 ```
 
-### Role-Based Access Control (RBAC)
+### Kiểm soát truy cập dựa trên vai trò (RBAC)
 
 ```
 ┌─────────────┐
@@ -426,66 +427,68 @@ personal_access_tokens (Laravel Sanctum)
        │ belongsToMany
        ▼
 ┌──────────────┐
-│  user_roles  │ (pivot table)
+│  user_roles  │ (bảng trung gian)
 └──────┬───────┘
        │
        ▼
 ┌──────────────┐
 │    Roles     │
-│  - admin     │ → Full permissions
-│  - manager   │ → View + Edit (no delete)
-│  - customer  │ → Buy products only
+│  - admin     │ → Toàn quyền
+│  - manager   │ → Xem + Sửa (không xóa)
+│  - customer  │ → Chỉ mua hàng
 └──────────────┘
 ```
 
-**Permission Matrix**:
+**Ma trận phân quyền**:
 
-| Resource | Admin | Manager | Customer |
-|----------|-------|---------|----------|
-| Products | ✅ CRUD | ✅ RU | ✅ R |
-| Categories | ✅ CRUD | ✅ RU | ✅ R |
-| Orders | ✅ CRUD | ✅ RU | ✅ R (own) |
-| Users | ✅ CRUD | ❌ | ❌ |
-| Inventory | ✅ CRUD | ✅ RU | ❌ |
+| Tài nguyên | Admin | Manager | Customer |
+|------------|-------|---------|----------|
+| Sản phẩm | ✅ CRUD | ✅ RU | ✅ R |
+| Danh mục | ✅ CRUD | ✅ RU | ✅ R |
+| Đơn hàng | ✅ CRUD | ✅ RU | ✅ R (riêng) |
+| Người dùng | ✅ CRUD | ❌ | ❌ |
+| Tồn kho | ✅ CRUD | ✅ RU | ❌ |
 
 ---
 
-## 💾 Caching Strategy
+## 💾 Chiến lược Cache
 
-### Multi-level Caching
+### Cache đa cấp
 
 ```
-Request
+Yêu cầu
    ↓
 ┌──────────────────┐
-│  Browser Cache   │ (Static assets)
+│  Cache trình     │ (Tài nguyên tĩnh)
+│  duyệt           │
 └────────┬─────────┘
          │ Miss
          ▼
 ┌──────────────────┐
-│  Redis Cache     │ (Query results, sessions)
+│  Redis Cache     │ (Kết quả truy vấn, phiên)
 └────────┬─────────┘
          │ Miss
          ▼
 ┌──────────────────┐
-│  MySQL Database  │ (Source of truth)
+│  Cơ sở dữ liệu   │ (Nguồn chính thức)
+│  MySQL           │
 └──────────────────┘
 ```
 
-### Cache Keys
+### Khóa Cache
 
 ```php
-// Product list cache
+// Cache danh sách sản phẩm
 Cache::remember('products:all', 3600, function () {
     return Product::with('category')->get();
 });
 
-// Category tree cache
+// Cache cây danh mục
 Cache::remember('categories:tree', 3600, function () {
     return Category::tree();
 });
 
-// User-specific cart cache
+// Cache giỏ hàng theo user
 Cache::remember("cart:user:{$userId}", 600, function () use ($userId) {
     return Cart::with('items.product')
         ->where('user_id', $userId)
@@ -493,69 +496,69 @@ Cache::remember("cart:user:{$userId}", 600, function () use ($userId) {
 });
 ```
 
-### Cache Invalidation
+### Xóa Cache
 
 ```php
-// Khi tạo/sửa/xóa product
+// Khi tạo/sửa/xóa sản phẩm
 Cache::forget('products:all');
 Cache::tags(['products'])->flush();
 
-// Khi tạo/sửa category
+// Khi tạo/sửa danh mục
 Cache::forget('categories:tree');
 ```
 
 ---
 
-## 🔀 Transaction Flow
+## 🔀 Luồng giao dịch
 
-### Checkout Transaction (Critical)
+### Giao dịch thanh toán (Quan trọng)
 
 ```php
 DB::transaction(function () use ($cart, $request) {
-    // 1. Validate stock
+    // 1. Xác thực tồn kho
     foreach ($cart->items as $item) {
         if ($item->product->stock_quantity < $item->quantity) {
-            throw new Exception('Insufficient stock');
+            throw new Exception('Không đủ tồn kho');
         }
     }
     
-    // 2. Create order
+    // 2. Tạo đơn hàng
     $order = Order::create([...]);
     
-    // 3. Create order items
+    // 3. Tạo các mục đơn hàng
     foreach ($cart->items as $item) {
         OrderItem::create([...]);
     }
     
-    // 4. ⚠️ Decrease stock IMMEDIATELY
+    // 4. ⚠️ Trừ tồn kho NGAY LẬP TỨC
     foreach ($cart->items as $item) {
         $item->product->decrement('stock_quantity', $item->quantity);
         
-        // Update inventory
+        // Cập nhật inventory
         $inventory = $item->product->inventory;
         $inventory->increment('stock_out', $item->quantity);
         $inventory->decrement('current_stock', $item->quantity);
     }
     
-    // 5. Clear cart
+    // 5. Xóa giỏ hàng
     $cart->items()->delete();
     
-    // All or nothing - if any step fails, rollback all
+    // Tất cả hoặc không gì - nếu bước nào thất bại, rollback tất cả
 });
 ```
 
 ---
 
-## 🎯 Design Patterns sử dụng
+## 🎯 Mẫu thiết kế sử dụng
 
-### 1. **MVC Pattern**
+### 1. **Mẫu MVC**
 - Model: Eloquent ORM
 - View: Blade templates
-- Controller: Handle requests
+- Controller: Xử lý yêu cầu
 
-### 2. **Repository Pattern** (via Eloquent)
+### 2. **Mẫu Repository** (qua Eloquent)
 ```php
-// Eloquent as repository
+// Eloquent như repository
 class ProductRepository extends Product {
     public function findWithCategory($id) {
         return $this->with('category')->findOrFail($id);
@@ -572,7 +575,7 @@ class OrderController {
 }
 ```
 
-### 4. **Observer Pattern**
+### 4. **Mẫu Observer**
 ```php
 // Product Observer
 class ProductObserver {
@@ -582,7 +585,7 @@ class ProductObserver {
 }
 ```
 
-### 5. **Factory Pattern**
+### 5. **Mẫu Factory**
 ```php
 // Database seeders
 Product::factory()->count(50)->create();
@@ -590,22 +593,22 @@ Product::factory()->count(50)->create();
 
 ---
 
-## 📊 Performance Considerations
+## 📊 Cân nhắc về hiệu suất
 
-### Database Optimization
-- ✅ Indexes on foreign keys
-- ✅ Eager loading (`with()`) to avoid N+1
-- ✅ Pagination for large datasets
-- ✅ Query caching with Redis
+### Tối ưu hóa cơ sở dữ liệu
+- ✅ Chỉ mục trên khóa ngoại
+- ✅ Eager loading (`with()`) để tránh N+1
+- ✅ Phân trang cho tập dữ liệu lớn
+- ✅ Cache truy vấn với Redis
 
-### Caching Strategy
-- ✅ Redis for sessions & cache
-- ✅ Config/route/view caching in production
-- ✅ Opcache enabled for PHP
+### Chiến lược Cache
+- ✅ Redis cho phiên & cache
+- ✅ Cache config/route/view trong production
+- ✅ Opcache được bật cho PHP
 
-### Asset Optimization
-- ✅ Vite for bundling & minification
-- ✅ Code splitting
+### Tối ưu hóa tài nguyên
+- ✅ Vite cho đóng gói & minification
+- ✅ Tách mã
 - ✅ Asset hashing (cache busting)
 
 ---
@@ -614,11 +617,11 @@ Product::factory()->count(50)->create();
 
 - **[TECH_STACK.md](./TECH_STACK.md)** - Danh sách công nghệ
 - **[DATABASE.md](./DATABASE.md)** - Chi tiết schema
-- **[AUTHENTICATION.md](./AUTHENTICATION.md)** - Auth system
-- **[BUSINESS_LOGIC.md](./BUSINESS_LOGIC.md)** - Business rules
+- **[AUTHENTICATION.md](./AUTHENTICATION.md)** - Hệ thống xác thực
+- **[BUSINESS_LOGIC.md](./BUSINESS_LOGIC.md)** - Quy tắc nghiệp vụ
 
 ---
 
 **Cập nhật lần cuối**: 19/10/2025  
-**Version**: 2.0  
-**Author**: Hoàng Quang Vinh
+**Phiên bản**: 2.0  
+**Tác giả**: Hoàng Quang Vinh

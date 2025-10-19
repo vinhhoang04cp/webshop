@@ -1,23 +1,23 @@
-# 🔐 Authentication & Authorization System
+# 🔐 Hệ thống Xác thực & Phân quyền
 
 > **Mục đích**: Tài liệu chi tiết về hệ thống xác thực và phân quyền
 
 ## 📋 Mục lục
 1. [Tổng quan](#tổng-quan)
 2. [Laravel Sanctum](#laravel-sanctum)
-3. [Authentication Flow](#authentication-flow)
-4. [Middleware System](#middleware-system)
-5. [Role-Based Access Control](#role-based-access-control-rbac)
-6. [Code Examples](#code-examples)
+3. [Luồng xác thực](#luồng-xác-thực)
+4. [Hệ thống Middleware](#hệ-thống-middleware)
+5. [Kiểm soát truy cập dựa trên vai trò](#kiểm-soát-truy-cập-dựa-trên-vai-trò-rbac)
+6. [Ví dụ code](#ví-dụ-code)
 
 ---
 
 ## 🎯 Tổng quan
 
 ### Công nghệ sử dụng
-- **Laravel Sanctum**: Token-based authentication
-- **RBAC**: Role-Based Access Control
-- **Middleware**: Request filtering & authorization
+- **Laravel Sanctum**: Xác thực dựa trên token
+- **RBAC**: Kiểm soát truy cập dựa trên vai trò
+- **Middleware**: Lọc yêu cầu & phân quyền
 
 ### Các vai trò (Roles)
 - **Admin**: Toàn quyền hệ thống
@@ -86,9 +86,9 @@ CREATE TABLE personal_access_tokens (
 
 ---
 
-## 🔄 Authentication Flow
+## 🔄 Luồng xác thực
 
-### 1. Register (Đăng ký)
+### 1. Đăng ký (Register)
 
 **Endpoint**: `POST /api/register`
 
@@ -156,7 +156,7 @@ public function register(Request $request)
 
 ---
 
-### 2. Login (Đăng nhập)
+### 2. Đăng nhập (Login) 
 
 **Endpoint**: `POST /api/login`
 
@@ -215,7 +215,7 @@ public function login(Request $request)
 
 ---
 
-### 3. Logout (Đăng xuất)
+### 3. Đăng xuất (Logout)
 
 **Endpoint**: `POST /api/logout`
 
@@ -240,7 +240,7 @@ public function logout(Request $request)
 
 ---
 
-### 4. Get Current User
+### 4. Lấy thông tin người dùng hiện tại
 
 **Endpoint**: `GET /api/user`
 
@@ -269,22 +269,22 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 ---
 
-## 🛡️ Middleware System
+## 🛡️ Hệ thống Middleware
 
-### 1. Built-in Middleware
+### 1. Middleware có sẵn
 
 #### auth:sanctum
 **Chức năng**: Xác thực API token
 
-**Flow**:
+**Luồng xử lý**:
 ```
-1. Extract token from header: Authorization: Bearer {token}
-2. Hash token and search in personal_access_tokens
-3. Verify token validity (not expired, not deleted)
-4. Load user from tokenable_id
-5. Inject user into $request->user()
-6. Update last_used_at
-7. Continue to controller
+1. Trích xuất token từ header: Authorization: Bearer {token}
+2. Băm token và tìm kiếm trong personal_access_tokens
+3. Xác minh tính hợp lệ của token (chưa hết hạn, chưa bị xóa)
+4. Tải user từ tokenable_id
+5. Inject user vào $request->user()
+6. Cập nhật last_used_at
+7. Tiếp tục đến controller
 ```
 
 **Usage**:
@@ -297,24 +297,24 @@ Route::middleware('auth:sanctum')->group(function () {
 ---
 
 #### throttle
-**Chức năng**: Rate limiting
+**Chức năng**: Giới hạn tốc độ
 
-**Syntax**: `throttle:{max_attempts},{decay_minutes}`
+**Cú pháp**: `throttle:{max_attempts},{decay_minutes}`
 
-**Examples**:
+**Ví dụ**:
 ```php
-// 60 requests per minute
+// 60 yêu cầu mỗi phút
 Route::middleware('throttle:60,1')->group(function () {
     Route::get('/products', [ProductController::class, 'index']);
 });
 
-// 30 requests per minute for specific group
+// 30 yêu cầu mỗi phút cho nhóm cụ thể
 Route::middleware('throttle:30,1')->group(function () {
-    // Sensitive operations
+    // Các thao tác nhạy cảm
 });
 ```
 
-**Response khi vượt limit (429)**:
+**Phản hồi khi vượt giới hạn (429)**:
 ```json
 {
   "message": "Too Many Attempts."
@@ -323,7 +323,7 @@ Route::middleware('throttle:30,1')->group(function () {
 
 ---
 
-### 2. Custom Middleware
+### 2. Middleware tùy chỉnh
 
 #### AdminMiddleware
 **File**: `app/Http/Middleware/AdminMiddleware.php`
@@ -334,11 +334,11 @@ class AdminMiddleware
 {
     public function handle(Request $request, Closure $next): Response
     {
-        // Check if user is authenticated and has admin role
+        // Kiểm tra nếu user đã xác thực và có vai trò admin
         if (!$request->user() || !$request->user()->hasRole('admin')) {
             return response()->json([
                 'status' => false,
-                'message': 'Access denied. Admin role required.',
+                'message': 'Truy cập bị từ chối. Yêu cầu vai trò admin.',
             ], 403);
         }
         
@@ -347,7 +347,7 @@ class AdminMiddleware
 }
 ```
 
-**Registration** (`bootstrap/app.php`):
+**Đăng ký** (`bootstrap/app.php`):
 ```php
 ->withMiddleware(function (Middleware $middleware): void {
     $middleware->alias([
@@ -365,11 +365,11 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
 
 ---
 
-## 👥 Role-Based Access Control (RBAC)
+## 👥 Kiểm soát truy cập dựa trên vai trò (RBAC)
 
-### Database Schema
+### Schema cơ sở dữ liệu
 
-#### Roles Table
+#### Bảng Roles
 ```sql
 CREATE TABLE roles (
     id BIGINT PRIMARY KEY,
@@ -379,15 +379,15 @@ CREATE TABLE roles (
     updated_at TIMESTAMP
 );
 
--- Default roles
+-- Vai trò mặc định
 INSERT INTO roles (role_name, description) VALUES
-('admin', 'Administrator - Full permissions'),
-('manager', 'Manager - View and edit'),
-('customer', 'Customer - Purchase products'),
-('user', 'Regular user - View only');
+('admin', 'Quản trị viên - Toàn quyền'),
+('manager', 'Quản lý - Xem và chỉnh sửa'),
+('customer', 'Khách hàng - Mua sản phẩm'),
+('user', 'Người dùng thường - Chỉ xem');
 ```
 
-#### User Roles (Pivot Table)
+#### User Roles (Bảng trung gian)
 ```sql
 CREATE TABLE user_roles (
     id BIGINT PRIMARY KEY,
@@ -402,13 +402,13 @@ CREATE TABLE user_roles (
 
 ---
 
-### Model Relationships
+### Quan hệ Model
 
 ```php
 // app/Models/User.php
 class User extends Authenticatable
 {
-    // Many-to-Many relationship
+    // Quan hệ nhiều-nhiều
     public function roles()
     {
         return $this->belongsToMany(
@@ -419,7 +419,7 @@ class User extends Authenticatable
         );
     }
     
-    // Helper methods
+    // Các phương thức trợ giúp
     public function hasRole(string $roleName): bool
     {
         return $this->roles()
@@ -451,40 +451,40 @@ class User extends Authenticatable
 
 ---
 
-### Permission Matrix
+### Ma trận phân quyền
 
-| Resource | Admin | Manager | Customer | Guest |
+| Tài nguyên | Admin | Manager | Customer | Guest |
 |----------|-------|---------|----------|-------|
-| **Products** |
-| View | ✅ | ✅ | ✅ | ✅ |
-| Create | ✅ | ❌ | ❌ | ❌ |
-| Edit | ✅ | ✅ | ❌ | ❌ |
-| Delete | ✅ | ❌ | ❌ | ❌ |
-| **Categories** |
-| View | ✅ | ✅ | ✅ | ✅ |
-| Create | ✅ | ❌ | ❌ | ❌ |
-| Edit | ✅ | ❌ | ❌ | ❌ |
-| Delete | ✅ | ❌ | ❌ | ❌ |
-| **Orders** |
-| View All | ✅ | ✅ | ❌ | ❌ |
-| View Own | ✅ | ✅ | ✅ | ❌ |
-| Create | ✅ | ✅ | ✅ | ❌ |
-| Edit | ✅ | ✅ | ❌ | ❌ |
-| Delete | ✅ | ❌ | ❌ | ❌ |
-| **Users** |
-| View | ✅ | ❌ | ❌ | ❌ |
-| Create | ✅ | ❌ | ❌ | ❌ |
-| Edit | ✅ | ❌ | ❌ | ❌ |
-| Delete | ✅ | ❌ | ❌ | ❌ |
-| **Inventory** |
-| View | ✅ | ✅ | ❌ | ❌ |
-| Adjust | ✅ | ✅ | ❌ | ❌ |
+| **Sản phẩm** |
+| Xem | ✅ | ✅ | ✅ | ✅ |
+| Tạo | ✅ | ❌ | ❌ | ❌ |
+| Sửa | ✅ | ✅ | ❌ | ❌ |
+| Xóa | ✅ | ❌ | ❌ | ❌ |
+| **Danh mục** |
+| Xem | ✅ | ✅ | ✅ | ✅ |
+| Tạo | ✅ | ❌ | ❌ | ❌ |
+| Sửa | ✅ | ❌ | ❌ | ❌ |
+| Xóa | ✅ | ❌ | ❌ | ❌ |
+| **Đơn hàng** |
+| Xem tất cả | ✅ | ✅ | ❌ | ❌ |
+| Xem của mình | ✅ | ✅ | ✅ | ❌ |
+| Tạo | ✅ | ✅ | ✅ | ❌ |
+| Sửa | ✅ | ✅ | ❌ | ❌ |
+| Xóa | ✅ | ❌ | ❌ | ❌ |
+| **Người dùng** |
+| Xem | ✅ | ❌ | ❌ | ❌ |
+| Tạo | ✅ | ❌ | ❌ | ❌ |
+| Sửa | ✅ | ❌ | ❌ | ❌ |
+| Xóa | ✅ | ❌ | ❌ | ❌ |
+| **Tồn kho** |
+| Xem | ✅ | ✅ | ❌ | ❌ |
+| Điều chỉnh | ✅ | ✅ | ❌ | ❌ |
 
 ---
 
-## 💡 Code Examples
+## 💡 Ví dụ code
 
-### 1. API Authentication Test
+### 1. Kiểm tra xác thực API
 
 ```bash
 # 1. Register
@@ -505,10 +505,10 @@ curl -X POST http://localhost/api/login \
     "password": "password123"
   }'
 
-# Save token from response
+# Lưu token từ phản hồi
 TOKEN="1|xxxxx..."
 
-# 3. Access protected route
+# 3. Truy cập route được bảo vệ
 curl -X GET http://localhost/api/user \
   -H "Authorization: Bearer $TOKEN"
 
@@ -519,21 +519,21 @@ curl -X POST http://localhost/api/logout \
 
 ---
 
-### 2. Check Role in Controller
+### 2. Kiểm tra vai trò trong Controller
 
 ```php
 public function index(Request $request)
 {
     $query = Order::query();
     
-    // Admin/Manager: View all orders
+    // Admin/Manager: Xem tất cả đơn hàng
     if ($request->user()->isAdmin() || $request->user()->isManager()) {
-        // Apply filters
+        // Áp dụng bộ lọc
         if ($request->has('status')) {
             $query->where('status', $request->status);
         }
     } 
-    // Customer: View own orders only
+    // Customer: Chỉ xem đơn hàng của mình
     else {
         $query->where('user_id', $request->user()->id);
     }
@@ -544,23 +544,23 @@ public function index(Request $request)
 
 ---
 
-### 3. Ownership Check
+### 3. Kiểm tra quyền sở hữu
 
 ```php
 public function show(Request $request, $id)
 {
     $order = Order::findOrFail($id);
     
-    // Admin can view any order
+    // Admin có thể xem bất kỳ đơn hàng nào
     if ($request->user()->isAdmin()) {
         return new OrderResource($order);
     }
     
-    // Others can only view their own orders
+    // Người khác chỉ có thể xem đơn hàng của mình
     if ($order->user_id !== $request->user()->id) {
         return response()->json([
             'status' => false,
-            'message': 'Access denied.',
+            'message': 'Truy cập bị từ chối.',
         ], 403);
     }
     
@@ -570,17 +570,17 @@ public function show(Request $request, $id)
 
 ---
 
-### 4. Multiple Roles Check
+### 4. Kiểm tra nhiều vai trò
 
 ```php
-// Allow admin OR manager
+// Cho phép admin HOẶC manager
 Route::middleware(['auth:sanctum', function ($request, $next) {
     $user = $request->user();
     
     if (!$user->isAdmin() && !$user->isManager()) {
         return response()->json([
             'status' => false,
-            'message': 'Requires admin or manager role.',
+            'message': 'Yêu cầu vai trò admin hoặc manager.',
         ], 403);
     }
     
@@ -592,41 +592,41 @@ Route::middleware(['auth:sanctum', function ($request, $next) {
 
 ---
 
-## 🔒 Security Best Practices
+## 🔒 Thực hành bảo mật tốt nhất
 
-### 1. Token Management
+### 1. Quản lý Token
 
-✅ **DO**:
-- Delete old tokens before creating new ones
-- Set meaningful token names
-- Use HTTPS in production
-- Store tokens securely on client-side
+✅ **NÊN**:
+- Xóa token cũ trước khi tạo token mới
+- Đặt tên token có ý nghĩa
+- Sử dụng HTTPS trong production
+- Lưu trữ token an toàn ở phía client
 
-❌ **DON'T**:
-- Log tokens in plain text
-- Share tokens between users
-- Send tokens via URL parameters
+❌ **KHÔNG NÊN**:
+- Log token dưới dạng plain text
+- Chia sẻ token giữa các user
+- Gửi token qua URL parameters
 
-### 2. Password Security
+### 2. Bảo mật password
 
-✅ **DO**:
+✅ **NÊN**:
 ```php
-// Hash passwords
+// Băm password
 'password' => Hash::make($request->password)
 
-// Verify passwords
+// Xác minh password
 Hash::check($plainPassword, $hashedPassword)
 ```
 
-❌ **DON'T**:
+❌ **KHÔNG NÊN**:
 ```php
-// Store plain text passwords
-'password' => $request->password // ❌ NEVER!
+// Lưu password dạng plain text
+'password' => $request->password // ❌ TUYỆT ĐỐI KHÔNG!
 ```
 
-### 3. Input Validation
+### 3. Xác thực đầu vào
 
-✅ **DO**:
+✅ **NÊN**:
 ```php
 $request->validate([
     'email' => 'required|email|unique:users',
@@ -634,18 +634,18 @@ $request->validate([
 ]);
 ```
 
-### 4. Rate Limiting
+### 4. Giới hạn tốc độ
 
-✅ **DO**:
+✅ **NÊN**:
 ```php
 Route::middleware('throttle:60,1')->group(function () {
-    // 60 requests per minute
+    // 60 yêu cầu mỗi phút
 });
 ```
 
 ---
 
-## 🧪 Testing Authentication
+## 🧪 Kiểm thử xác thực
 
 ```php
 // tests/Feature/AuthTest.php
@@ -708,17 +708,17 @@ public function test_customer_cannot_access_admin_route()
 
 ## 📚 Tài liệu liên quan
 
-- **[API_REFERENCE.md](./API_REFERENCE.md)** - API endpoints list
-- **[ARCHITECTURE.md](./ARCHITECTURE.md)** - System architecture
-- **[DATABASE.md](./DATABASE.md)** - Database schema
+- **[API_REFERENCE.md](./API_REFERENCE.md)** - Danh sách API endpoints
+- **[ARCHITECTURE.md](./ARCHITECTURE.md)** - Kiến trúc hệ thống
+- **[DATABASE.md](./DATABASE.md)** - Schema cơ sở dữ liệu
 
-### External Resources
-- [Laravel Sanctum Docs](https://laravel.com/docs/sanctum)
-- [Laravel Authentication Docs](https://laravel.com/docs/authentication)
-- [Laravel Authorization Docs](https://laravel.com/docs/authorization)
+### Tài nguyên bên ngoài
+- [Tài liệu Laravel Sanctum](https://laravel.com/docs/sanctum)
+- [Tài liệu Laravel Authentication](https://laravel.com/docs/authentication)
+- [Tài liệu Laravel Authorization](https://laravel.com/docs/authorization)
 
 ---
 
 **Cập nhật lần cuối**: 19/10/2025  
-**Version**: 2.0  
-**Author**: Hoàng Quang Vinh
+**Phiên bản**: 2.0  
+**Tác giả**: Hoàng Quang Vinh

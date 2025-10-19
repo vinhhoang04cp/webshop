@@ -1,21 +1,21 @@
-# 📡 API Reference
+# 📡 Tài liệu tham khảo API
 
-> **Mục đích**: Quick reference cho tất cả API endpoints
+> **Mục đích**: Tài liệu tham khảo nhanh cho tất cả các API endpoints
 
 ## 📋 Mục lục
-1. [Base Information](#base-information)
-2. [Authentication](#authentication)
-3. [Products](#products)
-4. [Categories](#categories)
-5. [Cart](#cart)
-6. [Orders](#orders)
-7. [Users](#users)
-8. [Inventory](#inventory)
-9. [Status Codes](#status-codes)
+1. [Thông tin cơ bản](#thông-tin-cơ-bản)
+2. [Xác thực](#xác-thực)
+3. [Sản phẩm](#sản-phẩm)
+4. [Danh mục](#danh-mục)
+5. [Giỏ hàng](#giỏ-hàng)
+6. [Đơn hàng](#đơn-hàng)
+7. [Người dùng](#người-dùng)
+8. [Tồn kho](#tồn-kho)
+9. [Mã trạng thái](#mã-trạng-thái)
 
 ---
 
-## 🌐 Base Information
+## 🌐 Thông tin cơ bản
 
 ```
 Base URL: http://localhost/api
@@ -23,12 +23,12 @@ Content-Type: application/json
 Accept: application/json
 ```
 
-### Authentication Header
+### Header xác thực
 ```
 Authorization: Bearer {token}
 ```
 
-### Pagination
+### Phân trang
 ```json
 {
   "data": [...],

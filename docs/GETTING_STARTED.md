@@ -135,20 +135,6 @@ Sau khi khởi động thành công:
 | **Mailpit** | http://localhost:8025 | Email testing |
 | **Vite Dev Server** | http://localhost:5173 | Frontend HMR |
 
----
-
-## 🔑 Tài khoản mẫu (Seeded Data)
-
-Sau khi chạy `migrate:fresh --seed`:
-
-| Role | Email | Password | Quyền |
-|------|-------|----------|-------|
-| **Admin** | admin@example.com | password | Full quyền |
-| **Manager** | manager@example.com | password | Quản lý (không xóa) |
-| **Customer** | customer@example.com | password | Mua hàng |
-
----
-
 ## 🐳 Docker Services
 
 Dự án sử dụng Laravel Sail với các services:
