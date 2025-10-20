@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Inventory;
 use App\Models\Product;
+use App\Models\ProductDetail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -134,6 +135,17 @@ class ProductController extends Controller
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // image co the khong co, neu co phai la anh, dinh dang jpeg,png,jpg,gif, kich thuoc toi da 2MB
             'image_url' => 'nullable|url', // image_url co the khong co, neu co phai la kieu url
             'stock_quantity' => 'required|integer|min:0', // stock_quantity bat buoc phai co, kieu integer, gia tri toi thieu 0
+            // Thêm validation cho ProductDetail fields
+            'color' => 'nullable|string|max:100',
+            'storage' => 'nullable|string|max:100',
+            'ram' => 'nullable|string|max:100',
+            'screen_size' => 'nullable|string|max:100',
+            'chip' => 'nullable|string|max:100',
+            'battery' => 'nullable|string|max:100',
+            'camera_main' => 'nullable|string|max:100',
+            'camera_front' => 'nullable|string|max:100',
+            'os' => 'nullable|string|max:100',
+            'special_features' => 'nullable|string',
         ]);
 
         try {
@@ -170,6 +182,28 @@ class ProductController extends Controller
                 'current_stock' => $request->stock_quantity, // Tồn kho hiện tại = số lượng nhập
             ]);
 
+            // Tạo ProductDetail nếu có thông tin chi tiết
+            $hasDetails = $request->color || $request->storage || $request->ram ||
+                         $request->screen_size || $request->chip || $request->battery ||
+                         $request->camera_main || $request->camera_front || $request->os ||
+                         $request->special_features;
+
+            if ($hasDetails) {
+                ProductDetail::create([
+                    'product_id' => $product->product_id,
+                    'color' => $request->color,
+                    'storage' => $request->storage,
+                    'ram' => $request->ram,
+                    'screen_size' => $request->screen_size,
+                    'chip' => $request->chip,
+                    'battery' => $request->battery,
+                    'camera_main' => $request->camera_main,
+                    'camera_front' => $request->camera_front,
+                    'os' => $request->os,
+                    'special_features' => $request->special_features,
+                ]);
+            }
+
             return redirect()->route('dashboard.products.index')
                 ->with('success', 'Sản phẩm và tồn kho đã được tạo thành công!'); // Thong bao thanh cong
 
@@ -196,9 +230,9 @@ class ProductController extends Controller
     public function show($id)
     {
         try {
-            // Lấy product với relationship category
-            $product = Product::with('category')->findOrFail($id);
-            // findOrFail($id) neu khong tim thay se throw exception, su dung eloquent de lay product voi relationship category
+            // Lấy product với relationship category và details
+            $product = Product::with(['category', 'details'])->findOrFail($id);
+            // findOrFail($id) neu khong tim thay se throw exception, su dung eloquent de lay product voi relationship category va details
 
             return view('dashboard.products.show', compact('product'));
             // Truyen du lieu sang view voi ham compact de tao mang tu bien
@@ -225,8 +259,8 @@ class ProductController extends Controller
     public function edit($id)
     {
         try {
-            // Lấy thông tin product
-            $product = Product::findOrFail($id);
+            // Lấy thông tin product với details
+            $product = Product::with('details')->findOrFail($id);
 
             // Lấy danh sách categories
             $categories = Category::all();
@@ -270,6 +304,17 @@ class ProductController extends Controller
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // image co the khong co, neu co phai la anh, dinh dang jpeg,png,jpg,gif, kich thuoc toi da 2MB
             'image_url' => 'nullable|url', // image_url co the khong co, neu co phai la kieu url
             'stock_quantity' => 'required|integer|min:0', // stock_quantity bat buoc phai co, kieu integer, gia tri toi thieu 0
+            // Thêm validation cho ProductDetail fields
+            'color' => 'nullable|string|max:100',
+            'storage' => 'nullable|string|max:100',
+            'ram' => 'nullable|string|max:100',
+            'screen_size' => 'nullable|string|max:100',
+            'chip' => 'nullable|string|max:100',
+            'battery' => 'nullable|string|max:100',
+            'camera_main' => 'nullable|string|max:100',
+            'camera_front' => 'nullable|string|max:100',
+            'os' => 'nullable|string|max:100',
+            'special_features' => 'nullable|string',
         ]);
 
         try {
@@ -336,6 +381,37 @@ class ProductController extends Controller
 
             $inventory->save(); // luu thay doi vao database
 
+            // Cập nhật hoặc tạo ProductDetail
+            $hasDetails = $request->color || $request->storage || $request->ram ||
+                         $request->screen_size || $request->chip || $request->battery ||
+                         $request->camera_main || $request->camera_front || $request->os ||
+                         $request->special_features;
+
+            if ($hasDetails) {
+                // Tìm hoặc tạo ProductDetail
+                $productDetail = ProductDetail::firstOrCreate(
+                    ['product_id' => $product->product_id],
+                    []
+                );
+
+                // Cập nhật thông tin
+                $productDetail->update([
+                    'color' => $request->color,
+                    'storage' => $request->storage,
+                    'ram' => $request->ram,
+                    'screen_size' => $request->screen_size,
+                    'chip' => $request->chip,
+                    'battery' => $request->battery,
+                    'camera_main' => $request->camera_main,
+                    'camera_front' => $request->camera_front,
+                    'os' => $request->os,
+                    'special_features' => $request->special_features,
+                ]);
+            } else {
+                // Nếu không có chi tiết nào, xóa ProductDetail (nếu có)
+                ProductDetail::where('product_id', $product->product_id)->delete();
+            }
+
             return redirect()->route('dashboard.products.index') // chuyen huong ve trang danh sach products
                 ->with('success', 'Sản phẩm và tồn kho đã được cập nhật thành công!'); // Thong bao thanh cong
 
@@ -376,6 +452,9 @@ class ProductController extends Controller
 
             // Xóa inventory liên quan (nếu có)
             Inventory::where('product_id', $product->product_id)->delete(); // xoa inventory theo product_id
+
+            // Xóa ProductDetail liên quan (nếu có)
+            ProductDetail::where('product_id', $product->product_id)->delete(); // xoa product detail theo product_id
 
             // Xóa product
             $product->delete(); // xoa product

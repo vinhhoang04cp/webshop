@@ -167,6 +167,88 @@
                         </div>
                     </div>
 
+                    <!-- Chi tiết sản phẩm -->
+                    @if($product->details)
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Chi tiết sản phẩm</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                @if($product->details->color)
+                                <div class="col-sm-6 mb-2">
+                                    <strong>Màu sắc:</strong><br>
+                                    <span class="text-muted">{{ $product->details->color }}</span>
+                                </div>
+                                @endif
+                                
+                                @if($product->details->storage)
+                                <div class="col-sm-6 mb-2">
+                                    <strong>Bộ nhớ trong:</strong><br>
+                                    <span class="text-muted">{{ $product->details->storage }}</span>
+                                </div>
+                                @endif
+                                
+                                @if($product->details->ram)
+                                <div class="col-sm-6 mb-2">
+                                    <strong>RAM:</strong><br>
+                                    <span class="text-muted">{{ $product->details->ram }}</span>
+                                </div>
+                                @endif
+                                
+                                @if($product->details->screen_size)
+                                <div class="col-sm-6 mb-2">
+                                    <strong>Màn hình:</strong><br>
+                                    <span class="text-muted">{{ $product->details->screen_size }}</span>
+                                </div>
+                                @endif
+                                
+                                @if($product->details->chip)
+                                <div class="col-sm-6 mb-2">
+                                    <strong>Chip:</strong><br>
+                                    <span class="text-muted">{{ $product->details->chip }}</span>
+                                </div>
+                                @endif
+                                
+                                @if($product->details->battery)
+                                <div class="col-sm-6 mb-2">
+                                    <strong>Pin:</strong><br>
+                                    <span class="text-muted">{{ $product->details->battery }}</span>
+                                </div>
+                                @endif
+                                
+                                @if($product->details->camera_main)
+                                <div class="col-sm-6 mb-2">
+                                    <strong>Camera chính:</strong><br>
+                                    <span class="text-muted">{{ $product->details->camera_main }}</span>
+                                </div>
+                                @endif
+                                
+                                @if($product->details->camera_front)
+                                <div class="col-sm-6 mb-2">
+                                    <strong>Camera trước:</strong><br>
+                                    <span class="text-muted">{{ $product->details->camera_front }}</span>
+                                </div>
+                                @endif
+                                
+                                @if($product->details->os)
+                                <div class="col-sm-6 mb-2">
+                                    <strong>Hệ điều hành:</strong><br>
+                                    <span class="text-muted">{{ $product->details->os }}</span>
+                                </div>
+                                @endif
+                                
+                                @if($product->details->special_features)
+                                <div class="col-12 mb-2">
+                                    <strong>Tính năng đặc biệt:</strong><br>
+                                    <span class="text-muted">{{ $product->details->special_features }}</span>
+                                </div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+
                     <!-- Hành động -->
                     <div class="card">
                         <div class="card-header">
