@@ -19,6 +19,11 @@
         <a class="nav-link {{ request()->routeIs('dashboard.inventory.*') ? 'active' : '' }}" href="{{ route('dashboard.inventory.index') }}">
             <i class="fas fa-boxes"></i> Tồn kho
         </a>
+        @if(auth()->user()->hasRole('manager') || auth()->user()->hasRole('admin'))
+        <a class="nav-link {{ request()->routeIs('dashboard.reports.*') ? 'active' : '' }}" href="{{ route('dashboard.reports.index') }}">
+            <i class="fas fa-chart-bar"></i> Báo cáo
+        </a>
+        @endif
         @if(auth()->user()->isAdmin())
         <a class="nav-link {{ request()->routeIs('dashboard.users.*') ? 'active' : '' }}" href="{{ route('dashboard.users.index') }}">
             <i class="fas fa-users"></i> Người dùng

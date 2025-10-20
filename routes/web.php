@@ -141,4 +141,18 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/dashboard/permissions', [UserManagementController::class, 'permissions'])
             ->name('dashboard.permissions');
     });
+
+    // Reports - Báo cáo thống kê (manager và admin có thể xem)
+    Route::middleware('role:manager')->group(function () {
+        Route::get('/dashboard/reports', [\App\Http\Controllers\Web\ReportController::class, 'index'])
+            ->name('dashboard.reports.index');
+        Route::get('/dashboard/reports/revenue', [\App\Http\Controllers\Web\ReportController::class, 'revenue'])
+            ->name('dashboard.reports.revenue');
+        Route::get('/dashboard/reports/products', [\App\Http\Controllers\Web\ReportController::class, 'products'])
+            ->name('dashboard.reports.products');
+        Route::get('/dashboard/reports/customers', [\App\Http\Controllers\Web\ReportController::class, 'customers'])
+            ->name('dashboard.reports.customers');
+        Route::get('/dashboard/reports/export', [\App\Http\Controllers\Web\ReportController::class, 'export'])
+            ->name('dashboard.reports.export');
+    });
 });
