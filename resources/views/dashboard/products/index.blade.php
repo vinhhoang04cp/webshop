@@ -55,7 +55,20 @@
                                             <td><strong>{{ $product->product_id }}</strong></td>
                                             <td>
                                                 @if($product->image_url)
-                                                    <img src="{{ $product->image_url }}" alt="{{ $product->name }}" class="rounded" style="width:60px;height:60px;object-fit:cover" onerror="this.style.display='none'">
+                                                    @php
+                                                        $imageSrc = $product->image_url;
+                                                        // Kiểm tra nếu là đường dẫn local (không có http)
+                                                        if (!str_starts_with($product->image_url, 'http')) {
+                                                            // Nếu bắt đầu với /storage/, sử dụng trực tiếp
+                                                            if (str_starts_with($product->image_url, '/storage/')) {
+                                                                $imageSrc = $product->image_url;
+                                                            } else {
+                                                                // Ngược lại, thêm /storage/ vào đầu
+                                                                $imageSrc = '/storage/' . ltrim($product->image_url, '/');
+                                                            }
+                                                        }
+                                                    @endphp
+                                                    <img src="{{ $imageSrc }}" alt="{{ $product->name }}" class="rounded" style="width:60px;height:60px;object-fit:cover" onerror="this.style.display='none'">
                                                 @else
                                                     <div class="bg-light rounded text-muted d-flex align-items-center justify-content-center" style="width:60px;height:60px"><i class="fas fa-image"></i></div>
                                                 @endif

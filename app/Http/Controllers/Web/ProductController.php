@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\Inventory;
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
@@ -107,8 +108,10 @@ class ProductController extends Controller
      *   + description: nullable, string
      *   + price: bắt buộc, numeric, >= 0
      *   + category_id: bắt buộc, integer, phải tồn tại trong bảng categories
-     *   + image_url: nullable, phải là URL hợp lệ
+     *   + image: nullable, file ảnh (jpg, png, gif), max 2MB
+     *   + image_url: nullable, phải là URL hợp lệ (nếu không upload file)
      *   + stock_quantity: bắt buộc, integer, >= 0
+     * - Upload và lưu file ảnh vào storage/app/public/products (nếu có)
      * - Tạo product mới sử dụng Eloquent
      * - Tự động tạo bản ghi inventory cho sản phẩm:
      *   + stock_in = stock_quantity
@@ -128,18 +131,34 @@ class ProductController extends Controller
             'description' => 'nullable|string', // description co the khong co, neu co phai la kieu string
             'price' => 'required|numeric|min:0', // price bat buoc phai co, kieu numeric, gia tri toi thieu 0
             'category_id' => 'required|integer|exists:categories,category_id', // category_id bat buoc phai co, kieu integer, phai ton tai trong bang categories cot category_id
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // image co the khong co, neu co phai la anh, dinh dang jpeg,png,jpg,gif, kich thuoc toi da 2MB
             'image_url' => 'nullable|url', // image_url co the khong co, neu co phai la kieu url
             'stock_quantity' => 'required|integer|min:0', // stock_quantity bat buoc phai co, kieu integer, gia tri toi thieu 0
         ]);
 
         try {
+            // Xử lý upload ảnh
+            $imagePath = null;
+            if ($request->hasFile('image')) { // Kiểm tra xem có file ảnh được upload không
+                // Tạo tên file unique để tránh trùng lặp
+                $imageName = time().'_'.$request->file('image')->getClientOriginalName();
+
+                // Lưu ảnh vào thư mục storage/app/public/products
+                $imagePath = $request->file('image')->storeAs('products', $imageName, 'public');
+
+                // Tạo URL để lưu vào database (sẽ là /storage/products/filename.jpg)
+                $imageUrl = '/storage/'.$imagePath;
+            } else {
+                // Nếu không upload file thì sử dụng image_url
+                $imageUrl = $request->image_url;
+            }
             // Tạo product mới sử dụng Eloquent
             $product = Product::create([ // Tao moi product su dung model Product voi phuong thuc create() eloquent
                 'name' => $request->name, // lay gia tri name da validate tu request
                 'description' => $request->description, // lay gia tri description da validate tu request
                 'price' => $request->price, // lay gia tri price da validate tu request
                 'category_id' => $request->category_id, // lay gia tri category_id da validate tu request
-                'image_url' => $request->image_url, // lay gia tri image_url da validate tu request
+                'image_url' => $imageUrl, // lay gia tri image_url da xu ly (co the la file upload hoac url)
                 'stock_quantity' => $request->stock_quantity, // lay gia tri stock_quantity da validate tu request
             ]);
 
@@ -225,8 +244,9 @@ class ProductController extends Controller
      *
      * Chức năng: Xử lý cập nhật thông tin sản phẩm trong database
      * Hoạt động:
-     * - Validate dữ liệu đầu vào (name, description, price, category_id, image_url, stock_quantity)
+     * - Validate dữ liệu đầu vào (name, description, price, category_id, image, image_url, stock_quantity)
      * - Tìm product theo ID
+     * - Xử lý upload ảnh mới (nếu có) và xóa ảnh cũ
      * - Lưu số lượng cũ để tính toán sự thay đổi tồn kho
      * - Cập nhật thông tin product
      * - Cập nhật hoặc tạo bản ghi inventory:
@@ -247,6 +267,7 @@ class ProductController extends Controller
             'description' => 'nullable|string', // description co the khong co, neu co phai la kieu string
             'price' => 'required|numeric|min:0', // price bat buoc phai co, kieu numeric, gia tri toi thieu 0
             'category_id' => 'required|integer|exists:categories,category_id', // category_id bat buoc phai co, kieu integer, phai ton tai trong bang categories cot category_id
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // image co the khong co, neu co phai la anh, dinh dang jpeg,png,jpg,gif, kich thuoc toi da 2MB
             'image_url' => 'nullable|url', // image_url co the khong co, neu co phai la kieu url
             'stock_quantity' => 'required|integer|min:0', // stock_quantity bat buoc phai co, kieu integer, gia tri toi thieu 0
         ]);
@@ -254,6 +275,29 @@ class ProductController extends Controller
         try {
             // Tìm và cập nhật product
             $product = Product::findOrFail($id); // dau tien tim product can update bang phuong thuc findOrFail($id) cua eloquent
+
+            // Xử lý upload ảnh mới
+            $imageUrl = $product->image_url; // Giữ ảnh cũ làm mặc định
+
+            if ($request->hasFile('image')) { // Nếu có upload file ảnh mới
+                // Xóa ảnh cũ nếu có (chỉ xóa file được upload, không xóa URL)
+                if ($product->image_url && strpos($product->image_url, '/storage/products/') !== false) {
+                    $oldImagePath = str_replace('/storage/', '', $product->image_url);
+                    Storage::disk('public')->delete($oldImagePath);
+                }
+
+                // Upload ảnh mới
+                $imageName = time().'_'.$request->file('image')->getClientOriginalName();
+                $imagePath = $request->file('image')->storeAs('products', $imageName, 'public');
+                $imageUrl = '/storage/'.$imagePath;
+            } elseif ($request->filled('image_url')) { // Nếu có URL mới
+                // Xóa ảnh cũ nếu có file upload (không xóa khi thay đổi từ URL này sang URL khác)
+                if ($product->image_url && strpos($product->image_url, '/storage/products/') !== false) {
+                    $oldImagePath = str_replace('/storage/', '', $product->image_url);
+                    Storage::disk('public')->delete($oldImagePath);
+                }
+                $imageUrl = $request->image_url;
+            }
 
             // Lưu số lượng cũ để tính toán thay đổi
             $oldQuantity = $product->stock_quantity; // lay so luong ton kho cu truoc khi update
@@ -265,7 +309,7 @@ class ProductController extends Controller
                 'description' => $request->description, // lay gia tri description da validate tu request
                 'price' => $request->price, // lay gia tri price da validate tu request
                 'category_id' => $request->category_id, // lay gia tri category_id da validate tu request
-                'image_url' => $request->image_url, // lay gia tri image_url da validate tu request
+                'image_url' => $imageUrl, // lay gia tri image_url da xu ly
                 'stock_quantity' => $request->stock_quantity, // lay gia tri stock_quantity da validate tu request
             ]);
 
@@ -323,6 +367,12 @@ class ProductController extends Controller
         try {
             // Tìm và xóa product
             $product = Product::findOrFail($id); // dau tien tim product can xoa bang phuong thuc findOrFail($id) cua eloquent
+
+            // Xóa file ảnh nếu có (chỉ xóa file được upload, không xóa URL bên ngoài)
+            if ($product->image_url && strpos($product->image_url, '/storage/products/') !== false) {
+                $imagePath = str_replace('/storage/', '', $product->image_url);
+                Storage::disk('public')->delete($imagePath);
+            }
 
             // Xóa inventory liên quan (nếu có)
             Inventory::where('product_id', $product->product_id)->delete(); // xoa inventory theo product_id

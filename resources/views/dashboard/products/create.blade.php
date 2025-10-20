@@ -19,7 +19,7 @@
                     <a href="{{ route('dashboard.products.index') }}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-2"></i>Quay lại</a>
                 </div>
                 <div class="card-body">
-                    <form method="POST" action="{{ route('dashboard.products.store') }}">
+                    <form method="POST" action="{{ route('dashboard.products.store') }}" enctype="multipart/form-data">
                         @csrf
                         <div class="row">
                             <div class="col-md-8">
@@ -33,10 +33,23 @@
                                     <textarea class="form-control @error('description') is-invalid @enderror" id="description" name="description" rows="3">{{ old('description') }}</textarea>
                                     @error('description')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 </div>
-                                <div class="mb-3">
-                                    <label for="image_url" class="form-label">URL hình ảnh</label>
-                                    <input type="url" class="form-control @error('image_url') is-invalid @enderror" id="image_url" name="image_url" value="{{ old('image_url') }}">
-                                    @error('image_url')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="image" class="form-label">Tải lên ảnh sản phẩm</label>
+                                            <input type="file" class="form-control @error('image') is-invalid @enderror" id="image" name="image" accept="image/*">
+                                            <small class="text-muted">Chấp nhận: JPG, JPEG, PNG, GIF. Tối đa: 2MB</small>
+                                            @error('image')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="image_url" class="form-label">Hoặc URL hình ảnh</label>
+                                            <input type="url" class="form-control @error('image_url') is-invalid @enderror" id="image_url" name="image_url" value="{{ old('image_url') }}">
+                                            <small class="text-muted">Nếu không tải file, có thể dùng URL</small>
+                                            @error('image_url')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <div class="col-md-4">
@@ -65,7 +78,7 @@
                                     <label class="form-label">Xem trước</label>
                                     <div class="border rounded p-3 text-center bg-light">
                                         <img id="preview" src="" alt="Preview" class="img-fluid rounded" style="max-height:150px;display:none">
-                                        <div id="no-image" class="text-muted"><i class="fas fa-image fa-2x mb-2"></i><p>Nhập URL để xem</p></div>
+                                        <div id="no-image" class="text-muted"><i class="fas fa-image fa-2x mb-2"></i><p>Chọn file hoặc nhập URL để xem</p></div>
                                     </div>
                                 </div>
                             </div>
@@ -83,9 +96,28 @@
 @endsection
 @section('scripts')
 <script>
+const imageInput = document.getElementById('image');
 const imageUrlInput = document.getElementById('image_url');
 const preview = document.getElementById('preview');
 const noImage = document.getElementById('no-image');
+
+// Preview ảnh từ file upload
+imageInput.addEventListener('change', function() {
+    const file = this.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+            noImage.style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+        // Xóa URL khi chọn file
+        imageUrlInput.value = '';
+    }
+});
+
+// Preview ảnh từ URL
 imageUrlInput.addEventListener('input', function() {
     const url = this.value.trim();
     if (url) {
@@ -97,9 +129,11 @@ imageUrlInput.addEventListener('input', function() {
             noImage.innerHTML = '<i class="fas fa-exclamation-triangle fa-2x mb-2 text-warning"></i><p>Không thể tải ảnh</p>';
             noImage.style.display = 'block';
         };
+        // Xóa file khi nhập URL
+        imageInput.value = '';
     } else {
         preview.style.display = 'none';
-        noImage.innerHTML = '<i class="fas fa-image fa-2x mb-2"></i><p>Nhập URL để xem</p>';
+        noImage.innerHTML = '<i class="fas fa-image fa-2x mb-2"></i><p>Chọn file hoặc nhập URL để xem</p>';
         noImage.style.display = 'block';
     }
 });
