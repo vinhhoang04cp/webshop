@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             ProductSeeder::class,
             ProductDetailSeeder::class,
             InventorySeeder::class,
+            CouponSeeder::class,
             CartSeeder::class,
             CartItemSeeder::class,
             OrderSeeder::class,

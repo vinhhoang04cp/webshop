@@ -13,6 +13,11 @@
         <a class="nav-link {{ request()->routeIs('dashboard.categories.*') ? 'active' : '' }}" href="{{ route('dashboard.categories.index') }}">
             <i class="fas fa-tags"></i> Danh mục
         </a>
+        @if(auth()->user()->hasRole('manager') || auth()->user()->hasRole('admin'))
+        <a class="nav-link {{ request()->routeIs('dashboard.coupons.*') ? 'active' : '' }}" href="{{ route('dashboard.coupons.index') }}">
+            <i class="fas fa-ticket-alt"></i> Coupon
+        </a>
+        @endif
         <a class="nav-link {{ request()->routeIs('dashboard.orders.*') ? 'active' : '' }}" href="{{ route('dashboard.orders.index') }}">
             <i class="fas fa-shopping-cart"></i> Đơn hàng
         </a>
