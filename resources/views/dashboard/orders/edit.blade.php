@@ -5,49 +5,15 @@
 @section('content')
 <div class="container-fluid p-0">
     <div class="row g-0">
-        <!-- Sidebar -->
-        <div class="col-md-3 col-lg-2 dashboard-sidebar d-flex flex-column">
-            <div class="sidebar-header">
-                <h3><i class="fas fa-shield-alt"></i> WebShop</h3>
-                <small class="text-muted" style="color: #9ca3af !important;">Admin Panel</small>
-            </div>
-            
-            <nav class="nav flex-column sidebar-menu">
-                <a class="nav-link" href="{{ route('dashboard') }}">
-                    <i class="fas fa-tachometer-alt"></i> Dashboard
-                </a>
-                <a class="nav-link" href="{{ route('dashboard.products.index') }}">
-                    <i class="fas fa-box"></i> Sản phẩm
-                </a>
-                <a class="nav-link" href="{{ route('dashboard.categories.index') }}">
-                    <i class="fas fa-tags"></i> Danh mục
-                </a>
-                <a class="nav-link active" href="{{ route('dashboard.orders.index') }}">
-                    <i class="fas fa-shopping-cart"></i> Đơn hàng
-                </a>
-                @if(auth()->user()->isAdmin())
-                <a class="nav-link" href="{{ route('dashboard.users.index') }}">
-                    <i class="fas fa-users"></i> Người dùng
-                </a>
-                @endif
-            </nav>
-            
-            <div class="user-info mt-auto">
-                <form method="POST" action="{{ route('logout') }}" class="mt-3">
-                    @csrf
-                    <button type="submit" class="btn btn-outline-light btn-sm w-100">
-                        <i class="fas fa-sign-out-alt me-2"></i> Đăng xuất
-                    </button>
-                </form>
-            </div>
-        </div>
-
+        @include('components.sidebar')
+        
         <!-- Main Content -->
         <div class="col-md-9 col-lg-10 dashboard-content">
-            <div class="dashboard-header">
-                <div>
-                    <h2>Cập nhật đơn hàng #{{ $order->order_id }}</h2>
-                    <p class="text-muted mb-0">
+            <div class="container-fluid">
+                <div class="dashboard-header">
+                    <div>
+                        <h2>Cập nhật đơn hàng #{{ $order->order_id }}</h2>
+                        <p class="text-muted mb-0">
                         <a href="{{ route('dashboard.orders.show', $order->order_id) }}" class="text-decoration-none">
                             <i class="fas fa-arrow-left me-2"></i>Quay lại chi tiết
                         </a>
@@ -205,6 +171,7 @@
                         </div>
                     </div>
                 </div>
+            </div>
             </div>
         </div>
     </div>

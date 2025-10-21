@@ -5,49 +5,13 @@
 @section('content')
 <div class="container-fluid p-0">
     <div class="row g-0">
-        <!-- Sidebar -->
-        <div class="col-md-3 col-lg-2 dashboard-sidebar d-flex flex-column">
-            <div class="sidebar-header">
-                <h3><i class="fas fa-shield-alt"></i> WebShop</h3>
-                <small class="text-muted" style="color: #9ca3af !important;">Admin Panel</small>
-            </div>
-            
-            <nav class="nav flex-column sidebar-menu">
-                <a class="nav-link" href="{{ route('dashboard') }}">
-                    <i class="fas fa-tachometer-alt"></i> Dashboard
-                </a>
-                <a class="nav-link" href="{{ route('dashboard.products.index') }}">
-                    <i class="fas fa-box"></i> Sản phẩm
-                </a>
-                <a class="nav-link" href="{{ route('dashboard.categories.index') }}">
-                    <i class="fas fa-tags"></i> Danh mục
-                </a>
-                <a class="nav-link" href="{{ route('dashboard.orders.index') }}">
-                    <i class="fas fa-shopping-cart"></i> Đơn hàng
-                </a>
-                @if(Auth::user()->isAdmin())
-                <a class="nav-link active" href="{{ route('dashboard.users.index') }}">
-                    <i class="fas fa-users"></i> Người dùng
-                </a>
-                @endif
-            </nav>
-            
-            <div class="user-info mt-auto">
-                <div class="user-name">{{ auth()->user()->name }}</div>
-                <div class="user-role">{{ auth()->user()->hasRole('admin') ? 'Administrator' : 'Manager' }}</div>
-                <form method="POST" action="{{ route('logout') }}" class="mt-3">
-                    @csrf
-                    <button type="submit" class="btn btn-outline-light btn-sm w-100">
-                        <i class="fas fa-sign-out-alt me-2"></i> Đăng xuất
-                    </button>
-                </form>
-            </div>
-        </div>
-
+        @include('components.sidebar')
+        
         <!-- Main Content -->
         <div class="col-md-9 col-lg-10 dashboard-content">
-            <div class="dashboard-header">
-                <div>
+            <div class="container-fluid">
+                <div class="dashboard-header">
+                    <div>
                     <h2>Chi tiết người dùng</h2>
                     <p class="text-muted mb-0">Thông tin chi tiết về "{{ $user->name }}"</p>
                 </div>
@@ -333,4 +297,8 @@
     font-size: 2rem;
 }
 </style>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
