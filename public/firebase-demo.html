@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Google Authentication Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .auth-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        
+        .user-info {
+            background-color: #e8f5e8;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        
+        .error {
+            background-color: #ffe8e8;
+            color: #d00;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        
+        .success {
+            background-color: #e8f5e8;
+            color: #080;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        
+        button {
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        
+        button:hover {
+            background-color: #3367d6;
+        }
+        
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .logout-btn {
+            background-color: #dc3545;
+        }
+        
+        .logout-btn:hover {
+            background-color: #c82333;
+        }
+        
+        .avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        
+        .user-display {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+        
+        pre {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔥 Firebase Google Authentication Demo</h1>
+        <p>Demo tích hợp Firebase Authentication với Laravel Backend</p>
+        
+        <div class="auth-section">
+            <h2>Authentication Status</h2>
+            <div id="authStatus">Checking authentication status...</div>
+            <div id="userInfo" style="display: none;"></div>
+        </div>
+        
+        <div class="auth-section">
+            <h2>Actions</h2>
+            <button id="signInBtn" onclick="signInWithGoogle()">
+                🔐 Sign in with Google
+            </button>
+            <button id="signOutBtn" onclick="signOut()" style="display: none;" class="logout-btn">
+                🚪 Sign Out
+            </button>
+            <button id="getUserProfileBtn" onclick="getUserProfile()" style="display: none;">
+                👤 Get Profile from Backend
+            </button>
+        </div>
+        
+        <div class="auth-section">
+            <h2>Messages</h2>
+            <div id="messages"></div>
+        </div>
+        
+        <div class="auth-section">
+            <h2>API Response</h2>
+            <pre id="apiResponse">No API calls made yet</pre>
+        </div>
+        
+        <div class="auth-section">
+            <h2>Setup Instructions</h2>
+            <ol>
+                <li><strong>Firebase Setup:</strong>
+                    <ul>
+                        <li>Tạo project mới trên <a href="https://console.firebase.google.com" target="_blank">Firebase Console</a></li>
+                        <li>Bật Authentication và cấu hình Google provider</li>
+                        <li>Thêm domain vào Authorized domains</li>
+                        <li>Copy config và thay thế trong <code>resources/js/firebase/auth.js</code></li>
+                    </ul>
+                </li>
+                <li><strong>Laravel Setup:</strong>
+                    <ul>
+                        <li>Download Service Account Key từ Firebase Console</li>
+                        <li>Cập nhật file <code>.env</code> với Firebase credentials</li>
+                        <li>Chạy: <code>./vendor/bin/sail artisan migrate</code></li>
+                    </ul>
+                </li>
+                <li><strong>Frontend Setup:</strong>
+                    <ul>
+                        <li>Cài đặt Firebase SDK: <code>npm install firebase</code></li>
+                        <li>Import và sử dụng FirebaseAuthService</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+    </div>
+
+    <!-- Import Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { 
+            getAuth, 
+            GoogleAuthProvider, 
+            signInWithPopup, 
+            signOut as firebaseSignOut,
+            onAuthStateChanged 
+        } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+
+        // THAY THẾ CONFIG NÀY BẰNG CONFIG THỰC TẾ CỦA BẠN
+        // Từ Firebase Console > Project Settings > Your apps > Web app config
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY_FROM_FIREBASE_CONSOLE",
+            authDomain: "webshop-3e0b4.firebaseapp.com", // Dựa vào project ID của bạn
+            projectId: "webshop-3e0b4", // Project ID từ Firebase Console
+            storageBucket: "webshop-3e0b4.appspot.com",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const googleProvider = new GoogleAuthProvider();
+
+        // Configure Google Provider
+        googleProvider.addScope('profile');
+        googleProvider.addScope('email');
+
+        // Global functions for buttons
+        window.signInWithGoogle = async function() {
+            try {
+                showMessage('Signing in with Google...', 'info');
+                const signInBtn = document.getElementById('signInBtn');
+                signInBtn.disabled = true;
+                
+                const result = await signInWithPopup(auth, googleProvider);
+                const user = result.user;
+                
+                // Get Firebase ID token
+                const idToken = await user.getIdToken();
+                
+                // Send to Laravel backend
+                const response = await fetch('/api/auth/google', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        firebase_token: idToken
+                    })
+                });
+
+                const data = await response.json();
+                document.getElementById('apiResponse').textContent = JSON.stringify(data, null, 2);
+                
+                if (data.status) {
+                    localStorage.setItem('auth_token', data.data.token);
+                    localStorage.setItem('user', JSON.stringify(data.data.user));
+                    showMessage('Google sign-in successful!', 'success');
+                    updateUI(true, data.data.user);
+                } else {
+                    throw new Error(data.message || 'Authentication failed');
+                }
+                
+            } catch (error) {
+                console.error('Google sign-in error:', error);
+                showMessage('Google sign-in failed: ' + error.message, 'error');
+                updateUI(false);
+            } finally {
+                document.getElementById('signInBtn').disabled = false;
+            }
+        };
+
+        window.signOut = async function() {
+            try {
+                showMessage('Signing out...', 'info');
+                
+                // Sign out from Firebase
+                await firebaseSignOut(auth);
+                
+                // Call Laravel logout
+                const token = localStorage.getItem('auth_token');
+                if (token) {
+                    const response = await fetch('/api/logout', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Accept': 'application/json',
+                        }
+                    });
+                    const data = await response.json();
+                    document.getElementById('apiResponse').textContent = JSON.stringify(data, null, 2);
+                }
+                
+                // Clear local storage
+                localStorage.removeItem('auth_token');
+                localStorage.removeItem('user');
+                
+                showMessage('Signed out successfully!', 'success');
+                updateUI(false);
+                
+            } catch (error) {
+                console.error('Sign-out error:', error);
+                showMessage('Sign-out failed: ' + error.message, 'error');
+            }
+        };
+
+        window.getUserProfile = async function() {
+            try {
+                const token = localStorage.getItem('auth_token');
+                if (!token) {
+                    throw new Error('No auth token found');
+                }
+                
+                const response = await fetch('/api/profile', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json',
+                    }
+                });
+
+                const data = await response.json();
+                document.getElementById('apiResponse').textContent = JSON.stringify(data, null, 2);
+                
+                if (data.status) {
+                    showMessage('Profile retrieved successfully!', 'success');
+                } else {
+                    throw new Error(data.message || 'Failed to get profile');
+                }
+                
+            } catch (error) {
+                console.error('Get profile error:', error);
+                showMessage('Failed to get profile: ' + error.message, 'error');
+            }
+        };
+
+        function showMessage(message, type) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = type;
+            messageDiv.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function updateUI(isSignedIn, userData = null) {
+            const signInBtn = document.getElementById('signInBtn');
+            const signOutBtn = document.getElementById('signOutBtn');
+            const getUserProfileBtn = document.getElementById('getUserProfileBtn');
+            const authStatus = document.getElementById('authStatus');
+            const userInfo = document.getElementById('userInfo');
+
+            if (isSignedIn) {
+                signInBtn.style.display = 'none';
+                signOutBtn.style.display = 'inline-block';
+                getUserProfileBtn.style.display = 'inline-block';
+                authStatus.textContent = '✅ Signed in';
+                authStatus.className = 'success';
+                
+                if (userData) {
+                    userInfo.innerHTML = `
+                        <div class="user-display">
+                            ${userData.avatar ? `<img src="${userData.avatar}" alt="Avatar" class="avatar">` : ''}
+                            <div>
+                                <div><strong>${userData.name}</strong></div>
+                                <div>${userData.email}</div>
+                                <div>Provider: ${userData.provider}</div>
+                            </div>
+                        </div>
+                    `;
+                    userInfo.style.display = 'block';
+                }
+            } else {
+                signInBtn.style.display = 'inline-block';
+                signOutBtn.style.display = 'none';
+                getUserProfileBtn.style.display = 'none';
+                authStatus.textContent = '❌ Not signed in';
+                authStatus.className = 'error';
+                userInfo.style.display = 'none';
+            }
+        }
+
+        // Listen to auth state changes
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                const storedUser = localStorage.getItem('user');
+                if (storedUser) {
+                    updateUI(true, JSON.parse(storedUser));
+                } else {
+                    updateUI(true);
+                }
+            } else {
+                updateUI(false);
+            }
+        });
+
+        // Initial UI update
+        const storedToken = localStorage.getItem('auth_token');
+        const storedUser = localStorage.getItem('user');
+        if (storedToken && storedUser) {
+            updateUI(true, JSON.parse(storedUser));
+        } else {
+            updateUI(false);
+        }
+    </script>
+</body>
+</html>

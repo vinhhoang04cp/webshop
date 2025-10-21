@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [\App\Http\Controllers\Api\AuthController::class, 'login']); // Route dang nhap
 Route::post('/register', [\App\Http\Controllers\Api\AuthController::class, 'register']); // Route dang ky
+Route::post('/auth/google', [\App\Http\Controllers\Api\AuthController::class, 'loginWithGoogle']); // Route đăng nhập Google Firebase
 
 // Public product routes - Khách có thể xem sản phẩm mà không cần đăng nhập
 Route::prefix('products')->middleware('throttle:60,1')->group(function () {
@@ -27,6 +28,9 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () { // boc
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
+
+    // Get user profile with additional info (alternative route)
+    Route::get('/profile', [\App\Http\Controllers\Api\AuthController::class, 'profile']);
 
     // Logout route
     Route::post('/logout', [\App\Http\Controllers\Api\AuthController::class, 'logout']);
