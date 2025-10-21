@@ -25,8 +25,11 @@ DB_PASSWORD=password
 2. **Quản lý sản phẩm**: `products`, `product_details`, `categories`, `inventory`
 3. **Quản lý giỏ hàng**: `carts`, `cart_items`
 4. **Quản lý đơn hàng**: `orders`, `order_items`
-5. **Báo cáo**: `revenue_reports`
-6. **Hệ thống**: `cache`, `cache_locks`, `jobs`, `job_batches`, `failed_jobs`, `personal_access_tokens`
+4. **Đánh giá**: `ratings`
+5. **Mã giảm giá**: `coupons` ✨ *Mới*
+5. **Mã giảm giá**: `coupons` ✨ *Mới*
+6. **Báo cáo**: `revenue_reports`
+7. **Hệ thống**: `cache`, `cache_locks`, `jobs`, `job_batches`, `failed_jobs`, `personal_access_tokens`
 
 ---
 
@@ -333,7 +336,43 @@ DB_PASSWORD=password
 
 ---
 
-### 12. Revenue Reports - Bảng báo cáo doanh thu
+### 12. Coupons - Bảng mã giảm giá ✨ *Mới*
+
+**Tên bảng**: `coupons`
+
+**Mô tả**: Lưu trữ thông tin mã giảm giá/coupon
+
+| Tên cột | Kiểu dữ liệu | Mô tả | Ràng buộc |
+|---------|-------------|-------|-----------|
+| `coupon_id` | BIGINT UNSIGNED | ID coupon (Primary Key) | AUTO_INCREMENT, NOT NULL |
+| `code` | VARCHAR(50) | Mã coupon | UNIQUE, NOT NULL |
+| `name` | VARCHAR(200) | Tên mô tả coupon | NOT NULL |
+| `description` | TEXT | Mô tả chi tiết | NULLABLE |
+| `discount_type` | ENUM('percentage','fixed') | Loại giảm giá | NOT NULL |
+| `discount_value` | DECIMAL(10,2) | Giá trị giảm giá | NOT NULL |
+| `min_order_amount` | DECIMAL(10,2) | Giá trị đơn hàng tối thiểu | DEFAULT 0 |
+| `max_discount_amount` | DECIMAL(10,2) | Số tiền giảm tối đa | NULLABLE |
+| `usage_limit` | INT UNSIGNED | Giới hạn số lần sử dụng | NULLABLE |
+| `used_count` | INT UNSIGNED | Số lần đã sử dụng | DEFAULT 0 |
+| `start_date` | DATETIME | Ngày bắt đầu hiệu lực | NOT NULL |
+| `end_date` | DATETIME | Ngày kết thúc hiệu lực | NOT NULL |
+| `is_active` | BOOLEAN | Trạng thái hoạt động | DEFAULT TRUE |
+| `created_at` | TIMESTAMP | Thời điểm tạo | NULLABLE |
+| `updated_at` | TIMESTAMP | Thời điểm cập nhật | NULLABLE |
+
+**Business Rules**:
+- `code` phải unique và được tự động convert sang uppercase
+- `discount_value`: 0-100 cho percentage, >0 cho fixed
+- `start_date` phải < `end_date`
+- `used_count` không được vượt quá `usage_limit`
+- `max_discount_amount` chỉ áp dụng cho percentage type
+
+**Quan hệ**:
+- Không có quan hệ foreign key trực tiếp (validation qua business logic)
+
+---
+
+### 13. Revenue Reports - Bảng báo cáo doanh thu
 
 **Tên bảng**: `revenue_reports`
 
@@ -567,4 +606,6 @@ php artisan db:seed --class=ProductSeeder
 
 ---
 
-**Cập nhật lần cuối**: 19/10/2025
+**Cập nhật lần cuối**: 21/10/2025  
+**Version**: 3.0  
+**Author**: Hoàng Quang Vinh

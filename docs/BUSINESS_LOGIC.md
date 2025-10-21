@@ -469,6 +469,80 @@ OrderItem::create([
 
 ---
 
+## 🎫 Hệ Thống Coupon & Giảm Giá
+
+### Loại Coupon
+
+**1. Coupon Phần Trăm**
+- Giảm theo tỷ lệ phần trăm (VD: 15%, 20%)
+- Có thể có giới hạn số tiền giảm tối đa
+- Áp dụng: `(Tổng đơn hàng × % giảm) ≤ Giảm tối đa`
+
+**2. Coupon Số Tiền Cố Định**
+- Giảm số tiền cố định (VD: 50.000 VND, 100.000 VND)
+- Trực tiếp trừ vào tổng đơn hàng
+
+### Quy Tắc Áp Dụng Coupon
+
+```php
+// Kiểm tra tính hợp lệ
+1. Coupon phải đang hoạt động (is_active = true)
+2. Trong thời gian hiệu lực (start_date ≤ now ≤ end_date)
+3. Chưa vượt quá lượt sử dụng (used_count < usage_limit)
+4. Đơn hàng đạt giá trị tối thiểu (order_total ≥ min_order_amount)
+
+// Tính toán giảm giá
+if (type === 'percentage') {
+    discount = (order_total * discount_value) / 100;
+    if (max_discount_amount) {
+        discount = min(discount, max_discount_amount);
+    }
+} else {
+    discount = discount_value;
+}
+
+// Đảm bảo không giảm quá tổng đơn hàng
+final_discount = min(discount, order_total);
+```
+
+### Workflow Áp Dụng Coupon
+
+```
+1. Khách hàng nhập mã coupon
+2. Hệ thống validate coupon:
+   ├── Kiểm tra mã có tồn tại không
+   ├── Kiểm tra trạng thái hoạt động
+   ├── Kiểm tra thời gian hiệu lực
+   ├── Kiểm tra lượt sử dụng
+   └── Kiểm tra giá trị đơn hàng tối thiểu
+3. Tính toán số tiền giảm
+4. Hiển thị preview cho khách hàng
+5. Khi thanh toán thành công:
+   ├── Tăng used_count của coupon
+   └── Lưu thông tin coupon vào order
+```
+
+### Ví Dụ Thực Tế
+
+**Coupon SUMMER2025:**
+- Loại: Phần trăm (15%)
+- Đơn tối thiểu: 500.000 VND
+- Giảm tối đa: 100.000 VND
+- Lượt sử dụng: 100 lần
+
+**Tình huống 1:** Đơn hàng 800.000 VND
+```
+Giảm = 800.000 × 15% = 120.000 VND
+Giảm thực tế = min(120.000, 100.000) = 100.000 VND
+```
+
+**Tình huống 2:** Đơn hàng 400.000 VND
+```
+Kết quả: Không áp dụng được (chưa đạt 500.000 VND)
+```
+
+---
+
 ## 📖 Trường Hợp Sử Dụng Cốt Lõi
 
 ### UC-01: Khách Duyệt Sản Phẩm
@@ -536,20 +610,30 @@ OrderItem::create([
 3. Khách hàng nhập:
    - Địa chỉ giao hàng
    - Phương thức thanh toán
+   - Mã coupon (tùy chọn)
    - Ghi chú (tùy chọn)
-4. Hệ thống kiểm tra kho (kiểm tra lại)
-5. **Hệ thống trừ kho ngay lập tức**
-6. Hệ thống tạo Order (status=pending)
-7. Hệ thống tạo OrderItems
-8. Hệ thống xóa giỏ hàng
-9. Hệ thống hiển thị xác nhận đơn hàng
+4. Hệ thống validate mã coupon (nếu có)
+5. Hệ thống kiểm tra kho (kiểm tra lại)
+6. Hệ thống tính toán:
+   - Tổng tiền sản phẩm
+   - Giảm giá từ coupon
+   - Phí vận chuyển
+   - Tổng cần thanh toán
+7. **Hệ thống trừ kho ngay lập tức**
+8. Hệ thống tạo Order (status=pending)
+9. Nếu có coupon, tăng used_count
+10. Hệ thống tạo OrderItems
+11. Hệ thống xóa giỏ hàng
+12. Hệ thống hiển thị xác nhận đơn hàng
 
 **Hậu Điều Kiện**:
 - Đơn hàng được tạo
 - **Kho bị trừ**
+- Coupon được sử dụng (nếu có)
 - Giỏ hàng được xóa
 
 **Luồng Thay Thế**:
+- Nếu mã coupon không hợp lệ → hiển thị thông báo lỗi
 - Nếu kho không đủ → rollback transaction, hiển thị lỗi
 - Nếu validation thất bại → hiển thị lỗi, giỏ hàng không thay đổi
 
@@ -686,6 +770,6 @@ $transitions = [
 
 ---
 
-**Cập nhật lần cuối**: 19/10/2025  
-**Version**: 2.0  
+**Cập nhật lần cuối**: 21/10/2025  
+**Version**: 3.0  
 **Author**: Hoàng Quang Vinh

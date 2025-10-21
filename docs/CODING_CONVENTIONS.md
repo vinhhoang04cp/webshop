@@ -1402,4 +1402,5 @@ Tài liệu này tổng hợp các quy tắc chung khi code Web Controllers và 
 ---
 
 **Tài liệu được tạo dựa trên phân tích code thực tế của dự án webshop**
-**Version: 1.0 - Date: 2025-10-16**
+**Version: 3.0 - Date: 2025-10-21**
+**Cập nhật: Thêm hướng dẫn cho Coupon system**

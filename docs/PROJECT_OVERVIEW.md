@@ -89,6 +89,7 @@ WebShop là một **nền tảng thương mại điện tử hoàn chỉnh** đ�
 **Tính năng:**
 - ✅ Giỏ hàng persistent (lưu trong database)
 - ✅ Cập nhật số lượng real-time
+- ✅ Áp dụng mã giảm giá/coupon ✨
 - ✅ Tính toán thuế và phí vận chuyển
 - ✅ Thanh toán COD (Cash on Delivery)
 - ✅ Xác nhận đơn hàng qua email
@@ -108,6 +109,7 @@ WebShop là một **nền tảng thương mại điện tử hoàn chỉnh** đ�
 ### 📊 Dashboard quản trị
 - 📈 **Báo cáo doanh thu** - Theo ngày, tuần, tháng
 - 📦 **Quản lý đơn hàng** - Theo dõi trạng thái đơn hàng
+- 🎫 **Quản lý mã giảm giá** - Tạo và quản lý coupon ✨
 - 📋 **Quản lý kho hàng** - Cảnh báo hết hàng, điều chỉnh tồn kho
 - 👥 **Quản lý khách hàng** - Thông tin và lịch sử mua hàng
 
@@ -131,7 +133,8 @@ WebShop là một **nền tảng thương mại điện tử hoàn chỉnh** đ�
 │  ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐ │
 │  │ Web Controllers │ │ API Controllers │ │ Admin Controllers│ │
 │  │ • HomeController│ │ • AuthController│ │ • ProductCtrl   │ │
-│  │ • CartController│ │ • ProductCtrl   │ │ • OrderCtrl     │ │
+│  │ • CartController│ │ • ProductCtrl   │ │ • CouponCtrl    │ │
+│  │ • CouponController│ │ • CouponCtrl  │ │ • OrderCtrl     │ │
 │  └─────────────────┘ └─────────────────┘ └─────────────────┘ │
 └─────────────────────┬─────────────────────────────────────────┘
                       │
@@ -252,6 +255,7 @@ webshop/
 │   │   ├── 📄 Category.php          # Danh mục
 │   │   ├── 📄 Cart.php              # Giỏ hàng
 │   │   ├── 📄 Order.php             # Đơn hàng
+│   │   ├── 📄 Coupon.php            # Mã giảm giá ✨
 │   │   └── 📄 Inventory.php         # Quản lý kho
 │   └── 📁 Providers/                # Service Providers
 ├── 📁 database/
@@ -303,6 +307,9 @@ Product (1) → (1) Inventory
 
 User (n) → (n) Role (Many-to-Many via UserRole)
   (Người dùng có nhiều Vai trò thông qua bảng UserRole)
+
+Coupon (Standalone validation via business logic)
+  (Coupon hoạt động độc lập, validate qua business logic) ✨
 ```
 
 ---
@@ -328,6 +335,9 @@ carts             # Giỏ hàng của user
 cart_items        # Sản phẩm trong giỏ hàng
 orders            # Đơn hàng
 order_items       # Chi tiết đơn hàng
+
+-- PROMOTIONS ✨
+coupons           # Mã giảm giá/khuyến mãi
 
 -- REPORTING
 revenue_reports   # Báo cáo doanh thu (tùy chọn)
@@ -390,8 +400,10 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
 | Tìm kiếm | ✅ | ✅ | ✅ | ✅ |
 | Thêm giỏ hàng | ❌ | ✅ | ✅ | ✅ |
 | Đặt hàng | ❌ | ✅ | ✅ | ✅ |
+| Áp dụng coupon | ❌ | ✅ | ✅ | ✅ |
 | Xem đơn hàng (own) | ❌ | ✅ | ✅ | ✅ |
 | CRUD sản phẩm | ❌ | ❌ | ✅ | ✅ |
+| Quản lý coupon | ❌ | ❌ | ✅ | ✅ |
 | Xem tất cả đơn hàng | ❌ | ❌ | ✅ | ✅ |
 | Quản lý kho | ❌ | ❌ | ✅ | ✅ |
 | Quản lý người dùng | ❌ | ❌ | ❌ | ✅ |
@@ -462,6 +474,14 @@ Giỏ hàng:
   POST   /api/orders/checkout   # Thanh toán giỏ hàng
   GET    /api/orders/{id}       # Chi tiết đơn hàng
   PUT    /api/orders/{id}/cancel # Hủy đơn hàng (nếu có thể)
+
+Quản lý coupon (Quản lý+) ✨:
+  GET    /api/coupons           # Danh sách coupon
+  GET    /api/coupons/{id}      # Chi tiết coupon  
+  POST   /api/coupons           # Tạo coupon mới
+  PUT    /api/coupons/{id}      # Cập nhật coupon
+  DELETE /api/coupons/{id}      # Xóa coupon
+  POST   /api/coupons/validate  # Validate mã coupon
 
 Quản lý kho (Quản lý+):
   GET    /api/inventory         # Báo cáo tồn kho
@@ -969,5 +989,9 @@ php artisan backup:run
 > 📝 *Tài liệu này được cập nhật thường xuyên. Hãy kiểm tra phiên bản mới nhất trên repository.*
 
 ---
+
+**Cập nhật lần cuối**: 21/10/2025  
+**Version**: 3.0  
+**Author**: Hoàng Quang Vinh
 
 *© 2025 WebShop E-commerce Platform. All rights reserved.*

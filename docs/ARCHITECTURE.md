@@ -131,35 +131,45 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
 #### 2.2 Middleware (Bộ lọc Yêu cầu)
 
 **Middleware có sẵn**:
-- `auth:sanctum` - Xác thực bằng token
+- `auth:sanctum` - Xác thực bằng token API
+- `auth` - Xác thực session web
 - `throttle:60,1` - Giới hạn tốc độ (60 yêu cầu/phút)
 - `cors` - Chia sẻ tài nguyên giữa các nguồn gốc
 
 **Middleware tùy chỉnh**:
-- `AdminMiddleware` - Kiểm tra vai trò admin
-- `RolePermissionMiddleware` - Kiểm tra quyền hạn
+- `RolePermissionMiddleware` - Kiểm tra vai trò và quyền hạn
+- `FirebaseAuth` - Xác thực Firebase cho Google OAuth
 
 #### 2.3 Controllers (Điều khiển)
 
 **Web Controllers**:
 ```
 app/Http/Controllers/Web/
-├── HomeController.php           # Trang chủ
-├── AuthController.php           # Đăng nhập/Đăng ký
-├── CustomerProductController.php # Xem sản phẩm (khách hàng)
-├── CustomerCartController.php   # Giỏ hàng (khách hàng)
-├── ProductController.php        # Quản lý sản phẩm (admin)
-├── OrderController.php          # Quản lý đơn hàng (admin)
-└── ...
+├── HomeController.php              # Trang chủ
+├── AuthController.php              # Đăng nhập/Đăng ký
+├── CustomerProductController.php   # Xem sản phẩm (khách hàng)
+├── CustomerCartController.php      # Giỏ hàng (khách hàng)
+├── ProductController.php           # Quản lý sản phẩm (admin)
+├── CategoryController.php          # Quản lý danh mục (admin)
+├── OrderController.php             # Quản lý đơn hàng (admin)
+├── InventoryController.php         # Quản lý tồn kho (manager)
+├── ReportController.php            # Báo cáo thống kê (manager)
+├── UserManagementController.php    # Quản lý người dùng (admin)
+└── CouponController.php            # Quản lý coupon (admin)
 ```
 
 **API Controllers**:
 ```
 app/Http/Controllers/Api/
-├── AuthController.php           # API Xác thực
-├── ProductController.php        # API Sản phẩm
-├── OrderController.php          # API Đơn hàng
-└── ...
+├── AuthController.php              # API Xác thực
+├── ProductController.php           # API Sản phẩm
+├── CategoryController.php          # API Danh mục
+├── OrderController.php             # API Đơn hàng
+├── CartController.php              # API Giỏ hàng
+├── CartItemController.php          # API Mục giỏ hàng
+├── OrderItemController.php         # API Mục đơn hàng
+├── InventoryController.php         # API Tồn kho
+└── ProductDetailController.php     # API Chi tiết sản phẩm
 ```
 
 ---
@@ -199,12 +209,20 @@ public function checkout(Request $request)
 **Eloquent ORM Models**:
 ```
 app/Models/
-├── User.php           # HasApiTokens, quan hệ roles
-├── Product.php        # belongsTo Category, hasOne Inventory
+├── User.php           # HasApiTokens, quan hệ roles, carts, orders
+├── Role.php           # Vai trò: admin, manager, customer
+├── UserRole.php       # Bảng trung gian user-role
+├── Product.php        # belongsTo Category, hasOne Inventory/ProductDetail
+├── ProductDetail.php  # Chi tiết sản phẩm (màn hình, RAM, CPU, etc.)
 ├── Category.php       # hasMany Products
+├── Inventory.php      # Quản lý tồn kho (stock_in, stock_out, current_stock)
 ├── Order.php          # belongsTo User, hasMany OrderItems
+├── OrderItem.php      # belongsTo Order, Product
 ├── Cart.php           # belongsTo User, hasMany CartItems
-└── ...
+├── CartItem.php       # belongsTo Cart, Product
+├── Coupon.php         # Mã giảm giá với validation logic
+├── Rating.php         # Đánh giá sản phẩm (1-5 sao)
+└── RevenueReport.php  # Báo cáo doanh thu
 ```
 
 **Quan hệ (Relationships)**:
@@ -218,6 +236,14 @@ public function cart() {
     return $this->hasOne(Cart::class);
 }
 
+public function orders() {
+    return $this->hasMany(Order::class);
+}
+
+public function ratings() {
+    return $this->hasMany(Rating::class);
+}
+
 // Product.php
 public function category() {
     return $this->belongsTo(Category::class, 'category_id');
@@ -225,6 +251,31 @@ public function category() {
 
 public function inventory() {
     return $this->hasOne(Inventory::class, 'product_id');
+}
+
+public function details() {
+    return $this->hasOne(ProductDetail::class, 'product_id');
+}
+
+public function ratings() {
+    return $this->hasMany(Rating::class, 'product_id');
+}
+
+public function cartItems() {
+    return $this->hasMany(CartItem::class, 'product_id');
+}
+
+public function orderItems() {
+    return $this->hasMany(OrderItem::class, 'product_id');
+}
+
+// Coupon.php - Các phương thức business logic
+public function isValid($orderAmount = 0) {
+    // Kiểm tra tính hợp lệ của coupon
+}
+
+public function calculateDiscount($orderAmount) {
+    // Tính toán số tiền giảm giá
 }
 ```
 
@@ -349,11 +400,21 @@ users ────────┬──── user_roles ──── roles
               │
               ├──── carts ──── cart_items ──── products
               │
-              └──── orders ──── order_items ──── products
+              ├──── orders ──── order_items ──── products
+              │
+              └──── ratings ──── products
 
 categories ──── products ────┬──── product_details
                              │
-                             └──── inventory
+                             ├──── inventory
+                             │
+                             ├──── cart_items
+                             │
+                             ├──── order_items
+                             │
+                             └──── ratings
+
+coupons (độc lập, có validation logic)
 
 revenue_reports (độc lập)
 
@@ -367,11 +428,15 @@ personal_access_tokens (Laravel Sanctum)
 | users | roles | Nhiều-nhiều | User có nhiều vai trò |
 | users | cart | Một-một | Mỗi user có 1 giỏ hàng |
 | users | orders | Một-nhiều | User có nhiều đơn hàng |
+| users | ratings | Một-nhiều | User có nhiều đánh giá |
 | categories | products | Một-nhiều | Danh mục có nhiều sản phẩm |
 | products | inventory | Một-một | Sản phẩm có 1 bản ghi tồn kho |
 | products | product_details | Một-một | Sản phẩm có 1 bản ghi chi tiết |
+| products | ratings | Một-nhiều | Sản phẩm có nhiều đánh giá |
 | carts | cart_items | Một-nhiều | Giỏ hàng có nhiều mục |
 | orders | order_items | Một-nhiều | Đơn hàng có nhiều mục |
+| products | cart_items | Một-nhiều | Sản phẩm có trong nhiều giỏ hàng |
+| products | order_items | Một-nhiều | Sản phẩm có trong nhiều đơn hàng |
 
 ---
 
@@ -448,6 +513,9 @@ personal_access_tokens (Laravel Sanctum)
 | Đơn hàng | ✅ CRUD | ✅ RU | ✅ R (riêng) |
 | Người dùng | ✅ CRUD | ❌ | ❌ |
 | Tồn kho | ✅ CRUD | ✅ RU | ❌ |
+| Coupon | ✅ CRUD | ✅ RU | ❌ |
+| Báo cáo | ✅ R | ✅ R | ❌ |
+| Đánh giá | ✅ RUD | ✅ RU | ✅ CRU (riêng) |
 
 ---
 
@@ -480,12 +548,12 @@ Yêu cầu
 ```php
 // Cache danh sách sản phẩm
 Cache::remember('products:all', 3600, function () {
-    return Product::with('category')->get();
+    return Product::with(['category', 'inventory', 'details'])->get();
 });
 
 // Cache cây danh mục
 Cache::remember('categories:tree', 3600, function () {
-    return Category::tree();
+    return Category::with('products')->get();
 });
 
 // Cache giỏ hàng theo user
@@ -494,6 +562,19 @@ Cache::remember("cart:user:{$userId}", 600, function () use ($userId) {
         ->where('user_id', $userId)
         ->first();
 });
+
+// Cache đánh giá sản phẩm
+Cache::remember("product:ratings:{$productId}", 1800, function () use ($productId) {
+    return Rating::where('product_id', $productId)
+        ->with('user')
+        ->latest()
+        ->get();
+});
+
+// Cache coupon hợp lệ
+Cache::remember('coupons:active', 900, function () {
+    return Coupon::active()->valid()->available()->get();
+});
 ```
 
 ### Xóa Cache
@@ -501,10 +582,20 @@ Cache::remember("cart:user:{$userId}", 600, function () use ($userId) {
 ```php
 // Khi tạo/sửa/xóa sản phẩm
 Cache::forget('products:all');
+Cache::forget("product:ratings:{$productId}");
 Cache::tags(['products'])->flush();
 
 // Khi tạo/sửa danh mục
 Cache::forget('categories:tree');
+
+// Khi tạo/sửa/xóa coupon
+Cache::forget('coupons:active');
+
+// Khi user thêm/xóa sản phẩm khỏi giỏ hàng
+Cache::forget("cart:user:{$userId}");
+
+// Khi có đánh giá mới
+Cache::forget("product:ratings:{$productId}");
 ```
 
 ---
@@ -593,7 +684,102 @@ Product::factory()->count(50)->create();
 
 ---
 
-## 📊 Cân nhắc về hiệu suất
+## �️ Routing & API Architecture
+
+### Web Routes Structure
+
+```php
+// Public routes
+Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/products', [ProductController::class, 'publicIndex'])->name('products.public');
+Route::get('/products/{product}', [ProductController::class, 'publicShow'])->name('products.public.show');
+Route::get('/categories/{category}', [CategoryController::class, 'publicShow'])->name('categories.public.show');
+
+// Authenticated routes
+Route::middleware(['web', 'auth'])->group(function () {
+    // Dashboard
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    
+    // Admin/Manager routes
+    Route::middleware(['role:admin,manager'])->prefix('dashboard')->group(function () {
+        Route::resource('products', ProductController::class);
+        Route::resource('categories', CategoryController::class);
+        Route::resource('coupons', CouponController::class);
+        Route::post('coupons/{coupon}/toggle-status', [CouponController::class, 'toggleStatus'])
+            ->name('coupons.toggle-status');
+        Route::resource('orders', OrderController::class)->only(['index', 'show', 'update']);
+    });
+    
+    // Admin only routes
+    Route::middleware(['role:admin'])->prefix('dashboard')->group(function () {
+        Route::resource('users', UserController::class);
+    });
+    
+    // Customer routes
+    Route::prefix('cart')->group(function () {
+        Route::get('/', [CartController::class, 'index'])->name('cart.index');
+        Route::post('/add', [CartController::class, 'add'])->name('cart.add');
+        Route::patch('/update/{cartItem}', [CartController::class, 'update'])->name('cart.update');
+        Route::delete('/remove/{cartItem}', [CartController::class, 'remove'])->name('cart.remove');
+    });
+    
+    Route::prefix('checkout')->group(function () {
+        Route::get('/', [CheckoutController::class, 'index'])->name('checkout.index');
+        Route::post('/', [CheckoutController::class, 'process'])->name('checkout.process');
+    });
+    
+    // Rating system
+    Route::post('products/{product}/rate', [RatingController::class, 'store'])->name('ratings.store');
+});
+```
+
+### API Routes Structure
+
+```php
+// API v1 routes
+Route::prefix('api/v1')->middleware('api')->group(function () {
+    // Authentication
+    Route::post('/login', [Api\AuthController::class, 'login']);
+    Route::post('/register', [Api\AuthController::class, 'register']);
+    Route::post('/logout', [Api\AuthController::class, 'logout'])->middleware('auth:sanctum');
+    
+    // Public API
+    Route::get('/products', [Api\ProductController::class, 'index']);
+    Route::get('/products/{product}', [Api\ProductController::class, 'show']);
+    Route::get('/categories', [Api\CategoryController::class, 'index']);
+    
+    // Protected API
+    Route::middleware('auth:sanctum')->group(function () {
+        // Cart management
+        Route::apiResource('cart', Api\CartController::class);
+        
+        // Order management
+        Route::apiResource('orders', Api\OrderController::class)->only(['index', 'show', 'store']);
+        
+        // User profile
+        Route::get('/profile', [Api\UserController::class, 'profile']);
+        Route::patch('/profile', [Api\UserController::class, 'updateProfile']);
+        
+        // Admin/Manager API
+        Route::middleware('role:admin,manager')->group(function () {
+            Route::apiResource('products', Api\ProductController::class)->except(['index', 'show']);
+            Route::apiResource('categories', Api\CategoryController::class);
+            Route::apiResource('coupons', Api\CouponController::class);
+            Route::patch('orders/{order}/status', [Api\OrderController::class, 'updateStatus']);
+        });
+        
+        // Admin only API
+        Route::middleware('role:admin')->group(function () {
+            Route::apiResource('users', Api\UserController::class);
+            Route::get('/reports/revenue', [Api\ReportController::class, 'revenue']);
+        });
+    });
+});
+```
+
+---
+
+## �📊 Cân nhắc về hiệu suất
 
 ### Tối ưu hóa cơ sở dữ liệu
 - ✅ Chỉ mục trên khóa ngoại
@@ -622,6 +808,6 @@ Product::factory()->count(50)->create();
 
 ---
 
-**Cập nhật lần cuối**: 19/10/2025  
-**Phiên bản**: 2.0  
+**Cập nhật lần cuối**: 21/10/2025  
+**Phiên bản**: 3.0  
 **Tác giả**: Hoàng Quang Vinh

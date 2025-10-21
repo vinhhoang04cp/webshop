@@ -107,6 +107,7 @@ Tài liệu được tổ chức thành 7 file chính, mỗi file phục vụ m�
 - 🔐 Authentication endpoints
 - 📦 Products endpoints
 - 📁 Categories endpoints
+- 🎫 Coupon endpoints ✨
 - 🛒 Cart endpoints
 - 📋 Orders endpoints
 - 👥 Users endpoints
@@ -128,8 +129,9 @@ Tài liệu được tổ chức thành 7 file chính, mỗi file phục vụ m�
 
 - 👥 User Roles & Permissions
 - 🔄 Complete Order Flow (5 steps chi tiết)
+- 🎫 Coupon System & Discount Rules ✨
 - ⚠️ Critical Business Rules
-- 📖 Core Use Cases (Browse, Add to Cart, Checkout, etc.)
+- 📖 Core Use Cases (Browse, Add to Cart, Apply Coupon, Checkout, etc.)
 - 📊 Inventory Management
 - 🔄 Status Transitions
 
@@ -150,7 +152,7 @@ Tài liệu được tổ chức thành 7 file chính, mỗi file phục vụ m�
 **Database schema & relationships**
 
 - 📊 ERD Diagram
-- 📋 Table Structures (13 tables)
+- 📋 Table Structures (15 tables bao gồm coupons) ✨
 - 🔗 Relationships (One-to-Many, Many-to-Many)
 - 🔑 Indexes & Constraints
 - 📝 Migration Commands
@@ -438,6 +440,11 @@ docs/
 ├── DATABASE.md                    # 🗄️ Database schema
 └── CODING_CONVENTIONS.md          # 📝 Code standards
 
+Current Version: 3.0 (21/10/2025) ✨
+- Thêm hệ thống coupon/mã giảm giá hoàn chỉnh
+- Cập nhật tất cả tài liệu phản ánh tính năng mới
+- API endpoints cho quản lý coupon
+
 Legacy files (sẽ xóa trong future updates):
 ├── Api-Document.md                # ⚠️ Merged into AUTHENTICATION + API_REFERENCE
 ├── MIDDLEWARE_AUTHENTICATION.md   # ⚠️ Merged into AUTHENTICATION
@@ -445,6 +452,12 @@ Legacy files (sẽ xóa trong future updates):
 ├── ORDER_CHECKOUT_PROCESS.md      # ⚠️ Merged into BUSINESS_LOGIC
 └── USE_CASES.md                   # ⚠️ Merged into BUSINESS_LOGIC
 ```
+
+---
+
+**Cập nhật lần cuối**: 21/10/2025  
+**Version**: 3.0  
+**Author**: Hoàng Quang Vinh
 
 ---
 

@@ -7,11 +7,12 @@
 2. [Xác thực](#xác-thực)
 3. [Sản phẩm](#sản-phẩm)
 4. [Danh mục](#danh-mục)
-5. [Giỏ hàng](#giỏ-hàng)
-6. [Đơn hàng](#đơn-hàng)
-7. [Người dùng](#người-dùng)
-8. [Tồn kho](#tồn-kho)
-9. [Mã trạng thái](#mã-trạng-thái)
+5. [Coupon](#coupon)
+6. [Giỏ hàng](#giỏ-hàng)
+7. [Đơn hàng](#đơn-hàng)
+8. [Người dùng](#người-dùng)
+9. [Tồn kho](#tồn-kho)
+10. [Mã trạng thái](#mã-trạng-thái)
 
 ---
 
@@ -378,6 +379,206 @@ Authorization: Bearer {admin-token}
 {
   "status": true,
   "message": "Category deleted successfully"
+}
+```
+
+---
+
+## 🎫 Coupon
+
+### List Coupons
+```http
+GET /api/coupons
+Authorization: Bearer {admin/manager-token}
+```
+
+**Query Parameters**:
+- `search` (optional): Search by code or name
+- `status` (optional): active, inactive
+- `type` (optional): percentage, fixed
+
+**Response (200)**:
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "name": "Summer Sale",
+      "code": "SUMMER2025",
+      "type": "percentage",
+      "value": 15,
+      "min_order_amount": 500000,
+      "max_discount_amount": 100000,
+      "usage_limit": 100,
+      "used_count": 25,
+      "starts_at": "2025-06-01T00:00:00Z",
+      "expires_at": "2025-08-31T23:59:59Z",
+      "status": "active"
+    }
+  ]
+}
+```
+
+---
+
+### Get Coupon Detail
+```http
+GET /api/coupons/{id}
+Authorization: Bearer {admin/manager-token}
+```
+
+**Response (200)**:
+```json
+{
+  "id": 1,
+  "name": "Summer Sale",
+  "code": "SUMMER2025",
+  "description": "15% off for summer collection",
+  "type": "percentage",
+  "value": 15,
+  "min_order_amount": 500000,
+  "max_discount_amount": 100000,
+  "usage_limit": 100,
+  "used_count": 25,
+  "starts_at": "2025-06-01T00:00:00Z",
+  "expires_at": "2025-08-31T23:59:59Z",
+  "status": "active",
+  "created_at": "2025-05-01T00:00:00Z"
+}
+```
+
+---
+
+### Create Coupon
+```http
+POST /api/coupons
+Authorization: Bearer {admin/manager-token}
+```
+
+**Body**:
+```json
+{
+  "name": "Black Friday",
+  "code": "BLACKFRIDAY2025",
+  "description": "Special discount for Black Friday",
+  "type": "percentage",
+  "value": 20,
+  "min_order_amount": 1000000,
+  "max_discount_amount": 200000,
+  "usage_limit": 500,
+  "starts_at": "2025-11-29 00:00:00",
+  "expires_at": "2025-11-30 23:59:59",
+  "status": "active"
+}
+```
+
+**Response (201)**:
+```json
+{
+  "status": true,
+  "message": "Coupon created successfully",
+  "data": {...}
+}
+```
+
+---
+
+### Update Coupon
+```http
+PUT /api/coupons/{id}
+Authorization: Bearer {admin/manager-token}
+```
+
+**Body**:
+```json
+{
+  "name": "Updated Black Friday",
+  "value": 25,
+  "usage_limit": 1000
+}
+```
+
+**Response (200)**:
+```json
+{
+  "status": true,
+  "message": "Coupon updated successfully",
+  "data": {...}
+}
+```
+
+---
+
+### Delete Coupon
+```http
+DELETE /api/coupons/{id}
+Authorization: Bearer {admin/manager-token}
+```
+
+**Response (200)**:
+```json
+{
+  "status": true,
+  "message": "Coupon deleted successfully"
+}
+```
+
+---
+
+### Toggle Coupon Status
+```http
+POST /api/coupons/{id}/toggle-status
+Authorization: Bearer {admin/manager-token}
+```
+
+**Response (200)**:
+```json
+{
+  "status": true,
+  "message": "Coupon status updated successfully",
+  "data": {
+    "id": 1,
+    "status": "inactive"
+  }
+}
+```
+
+---
+
+### Validate Coupon (Public)
+```http
+POST /api/coupons/validate
+```
+
+**Body**:
+```json
+{
+  "code": "SUMMER2025",
+  "order_total": 750000
+}
+```
+
+**Response (200) - Valid**:
+```json
+{
+  "status": true,
+  "valid": true,
+  "coupon": {
+    "id": 1,
+    "code": "SUMMER2025",
+    "type": "percentage",
+    "value": 15
+  },
+  "discount_amount": 112500
+}
+```
+
+**Response (422) - Invalid**:
+```json
+{
+  "status": false,
+  "valid": false,
+  "message": "Coupon has expired"
 }
 ```
 
@@ -962,6 +1163,6 @@ Xem file: `docs/postman/webshop-api.json` (nếu có)
 
 ---
 
-**Cập nhật lần cuối**: 19/10/2025  
-**Version**: 2.0  
+**Cập nhật lần cuối**: 21/10/2025  
+**Version**: 3.0  
 **Author**: Hoàng Quang Vinh

@@ -40,13 +40,15 @@ graph TB
         UC10[UC10: Cập nhật giỏ hàng]
         UC11[UC11: Xóa khỏi giỏ hàng]
         UC12[UC12: Thanh toán COD]
+        UC13[UC13: Áp dụng mã giảm giá]
         
         %% Admin Use Cases
-        UC13[UC13: Quản lý sản phẩm]
-        UC14[UC14: Quản lý danh mục]
-        UC15[UC15: Quản lý tồn kho]
-        UC16[UC16: Quản lý đơn hàng]
-        UC17[UC17: Quản lý người dùng]
+        UC14[UC14: Quản lý sản phẩm]
+        UC15[UC15: Quản lý danh mục]
+        UC16[UC16: Quản lý coupon] ✨
+        UC17[UC17: Quản lý tồn kho]
+        UC18[UC18: Quản lý đơn hàng]
+        UC19[UC19: Quản lý người dùng]
     end
     
     %% Customer connections
@@ -308,16 +310,37 @@ graph TB
 - **Precondition**: Giỏ hàng có sản phẩm
 - **Main Flow**:
   1. Khách hàng nhập thông tin giao hàng (tên, SĐT, địa chỉ, ghi chú)
-  2. Hệ thống validate thông tin
-  3. Kiểm tra tồn kho tất cả sản phẩm
-  4. Tạo đơn hàng với trạng thái "pending"
-  5. Trừ tồn kho ngay (giữ hàng)
-  6. Xóa giỏ hàng
-  7. Chuyển hướng đến trang chi tiết đơn hàng
+  2. Khách hàng nhập mã coupon (tùy chọn)
+  3. Hệ thống validate thông tin và coupon
+  4. Kiểm tra tồn kho tất cả sản phẩm
+  5. Tính toán tổng tiền bao gồm giảm giá
+  6. Tạo đơn hàng với trạng thái "pending"
+  7. Trừ tồn kho ngay (giữ hàng)
+  8. Tăng used_count của coupon (nếu có)
+  9. Xóa giỏ hàng
+  10. Chuyển hướng đến trang chi tiết đơn hàng
 - **Alternative Flow**: 
+  - Mã coupon không hợp lệ → Hiển thị lỗi, không áp dụng giảm giá
   - Không đủ tồn kho → Rollback, hiển thị lỗi
   - Thông tin giao hàng không hợp lệ → Hiển thị lỗi
 - **Controller**: `CustomerCartController@checkout`
+
+#### UC13: Áp dụng mã giảm giá ✨ *Mới*
+- **Actor**: Khách hàng đã đăng nhập
+- **Mô tả**: Khách hàng nhập và áp dụng mã coupon khi thanh toán
+- **Precondition**: Khách hàng đang ở trang checkout
+- **Main Flow**:
+  1. Khách hàng nhập mã coupon
+  2. Hệ thống validate mã coupon (còn hạn, còn lượt, đơn hàng đủ điều kiện)
+  3. Tính toán số tiền giảm giá
+  4. Hiển thị preview tổng tiền sau giảm giá
+  5. Khách hàng xác nhận áp dụng
+- **Alternative Flow**: 
+  - Mã không tồn tại → "Mã giảm giá không hợp lệ"
+  - Mã đã hết hạn → "Mã giảm giá đã hết hạn"
+  - Mã đã hết lượt sử dụng → "Mã giảm giá đã hết lượt sử dụng"
+  - Đơn hàng chưa đủ điều kiện → "Đơn hàng chưa đạt giá trị tối thiểu"
+- **Controller**: `CustomerCartController@applyCoupon`
 
 ---
 
@@ -337,36 +360,51 @@ graph TB
     end
     
     subgraph "Quản lý danh mục"
-        UC14A[📂 Xem danh sách danh mục]
-        UC14B[➕ Tạo danh mục mới]
-        UC14C[✏️ Cập nhật danh mục]
-        UC14D[🗑️ Xóa danh mục]
+        UC15A[📂 Xem danh sách danh mục]
+        UC15B[➕ Tạo danh mục mới]
+        UC15C[✏️ Cập nhật danh mục]
+        UC15D[🗑️ Xóa danh mục]
+    end
+    
+    subgraph "Quản lý Coupon ✨"
+        UC16A[🎫 Xem danh sách coupon]
+        UC16B[➕ Tạo coupon mới]
+        UC16C[✏️ Cập nhật coupon]
+        UC16D[🗑️ Xóa coupon]
+        UC16E[🔄 Bật/tắt coupon]
     end
     
     Admin --> UC13A
     Admin --> UC13B
     Admin --> UC13C
     Admin --> UC13D
-    Admin --> UC14A
-    Admin --> UC14B
-    Admin --> UC14C
-    Admin --> UC14D
+    Admin --> UC15A
+    Admin --> UC15B
+    Admin --> UC15C
+    Admin --> UC15D
+    Admin --> UC16A
+    Admin --> UC16B
+    Admin --> UC16C
+    Admin --> UC16D
+    Admin --> UC16E
     
     %% Dependencies
-    UC13B -.->|requires| UC14A
-    UC13C -.->|requires| UC14A
+    UC13B -.->|requires| UC15A
+    UC13C -.->|requires| UC15A
     
     classDef actor fill:#e1f5fe,stroke:#01579b,stroke-width:2px
     classDef product fill:#e8f5e8,stroke:#2e7d32,stroke-width:1px
     classDef category fill:#fff3e0,stroke:#f57c00,stroke-width:1px
+    classDef coupon fill:#f3e5f5,stroke:#7b1fa2,stroke-width:1px
     
     class Admin actor
     class UC13A,UC13B,UC13C,UC13D product
-    class UC14A,UC14B,UC14C,UC14D category
+    class UC15A,UC15B,UC15C,UC15D category
+    class UC16A,UC16B,UC16C,UC16D,UC16E coupon
 ```
 
-#### UC13: Quản lý sản phẩm
-- **UC13A: Xem danh sách sản phẩm (Admin)**
+#### UC14: Quản lý sản phẩm
+- **UC14A: Xem danh sách sản phẩm (Admin)**
   - **Actor**: Admin
   - **Mô tả**: Admin xem và quản lý tất cả sản phẩm
   - **Main Flow**:
@@ -411,6 +449,57 @@ graph TB
   2. Mỗi danh mục có tên và mô tả
 - **Controller**: `CategoryController`
 
+#### UC16: Quản lý Coupon ✨ *Mới*
+- **UC16A: Xem danh sách coupon**
+  - **Actor**: Admin/Manager
+  - **Mô tả**: Xem tất cả mã giảm giá trong hệ thống
+  - **Main Flow**:
+    1. Admin truy cập trang quản lý coupon
+    2. Xem danh sách với thông tin: mã, tên, loại, giá trị, trạng thái, số lần dùng
+    3. Có thể tìm kiếm và lọc theo trạng thái
+  - **Controller**: `CouponController@index`
+
+- **UC16B: Tạo coupon mới**
+  - **Actor**: Admin/Manager
+  - **Mô tả**: Tạo mã giảm giá mới
+  - **Main Flow**:
+    1. Admin nhấn "Tạo coupon mới"
+    2. Nhập thông tin: mã, tên, loại (percentage/fixed), giá trị
+    3. Cấu hình: đơn tối thiểu, giảm tối đa, giới hạn sử dụng, thời gian
+    4. Hệ thống validate và lưu coupon
+  - **Alternative Flow**: 
+    - Mã đã tồn tại → Hiển thị lỗi
+    - Thông tin không hợp lệ → Hiển thị lỗi validation
+  - **Controller**: `CouponController@store`
+
+- **UC16C: Cập nhật coupon**
+  - **Actor**: Admin/Manager
+  - **Mô tả**: Chỉnh sửa thông tin coupon
+  - **Main Flow**:
+    1. Admin chọn coupon cần sửa
+    2. Cập nhật thông tin (không được sửa mã)
+    3. Hệ thống validate và lưu thay đổi
+  - **Business Rule**: Không sửa được coupon đã được sử dụng (used_count > 0)
+  - **Controller**: `CouponController@update`
+
+- **UC16D: Xóa coupon**
+  - **Actor**: Admin
+  - **Mô tả**: Xóa mã giảm giá khỏi hệ thống
+  - **Main Flow**:
+    1. Admin chọn coupon cần xóa
+    2. Xác nhận xóa
+    3. Hệ thống xóa coupon
+  - **Business Rule**: Chỉ xóa được coupon chưa sử dụng (used_count = 0)
+  - **Controller**: `CouponController@destroy`
+
+- **UC16E: Bật/tắt coupon**
+  - **Actor**: Admin/Manager
+  - **Mô tả**: Kích hoạt hoặc vô hiệu hóa coupon
+  - **Main Flow**:
+    1. Admin click toggle trạng thái
+    2. Hệ thống cập nhật is_active
+  - **Controller**: `CouponController@toggleStatus`
+
 ### 3.2 Quản lý tồn kho và đơn hàng
 
 ```mermaid
@@ -418,43 +507,43 @@ graph TB
     Admin[👨‍💼 Admin]
     
     subgraph "Quản lý tồn kho"
-        UC15A[📊 Xem tồn kho hiện tại]
-        UC15B[📥 Nhập kho]
-        UC15C[📤 Xuất kho]
-        UC15D[📈 Báo cáo tồn kho]
+        UC17A[📊 Xem tồn kho hiện tại]
+        UC17B[📥 Nhập kho]
+        UC17C[📤 Xuất kho]
+        UC17D[📈 Báo cáo tồn kho]
     end
     
     subgraph "Quản lý đơn hàng"
-        UC16A[📋 Xem danh sách đơn hàng]
-        UC16B[👀 Xem chi tiết đơn hàng]
-        UC16C[🔄 Cập nhật trạng thái]
-        UC16D[❌ Hủy đơn hàng]
+        UC18A[📋 Xem danh sách đơn hàng]
+        UC18B[👀 Xem chi tiết đơn hàng]
+        UC18C[🔄 Cập nhật trạng thái]
+        UC18D[❌ Hủy đơn hàng]
     end
     
-    Admin --> UC15A
-    Admin --> UC15B
-    Admin --> UC15C
-    Admin --> UC15D
-    Admin --> UC16A
-    Admin --> UC16B
-    Admin --> UC16C
-    Admin --> UC16D
+    Admin --> UC17A
+    Admin --> UC17B
+    Admin --> UC17C
+    Admin --> UC17D
+    Admin --> UC18A
+    Admin --> UC18B
+    Admin --> UC18C
+    Admin --> UC18D
     
     %% Automatic stock updates
-    UC16C -.->|auto update| UC15A
-    UC16D -.->|restore stock| UC15A
+    UC18C -.->|auto update| UC17A
+    UC18D -.->|restore stock| UC17A
     
     classDef actor fill:#e1f5fe,stroke:#01579b,stroke-width:2px
     classDef inventory fill:#e3f2fd,stroke:#1565c0,stroke-width:1px
     classDef order fill:#fce4ec,stroke:#ad1457,stroke-width:1px
     
     class Admin actor
-    class UC15A,UC15B,UC15C,UC15D inventory
-    class UC16A,UC16B,UC16C,UC16D order
+    class UC17A,UC17B,UC17C,UC17D inventory
+    class UC18A,UC18B,UC18C,UC18D order
 ```
 
-#### UC15: Quản lý tồn kho
-- **UC15A: Xem tồn kho**
+#### UC17: Quản lý tồn kho
+- **UC17A: Xem tồn kho**
   - **Actor**: Admin
   - **Mô tả**: Admin xem tình trạng tồn kho của tất cả sản phẩm
   - **Main Flow**:
@@ -552,10 +641,12 @@ sequenceDiagram
     S-->>C: Xác nhận thêm thành công
     
     %% Thanh toán
-    C->>S: 4. Thanh toán COD
+    C->>S: 4. Nhập thông tin thanh toán + Mã coupon
+    S->>DB: Validate coupon (nếu có)
+    DB-->>S: Kết quả validation coupon
     S->>DB: Kiểm tra tồn kho cuối
     DB-->>S: Xác nhận đủ hàng
-    S->>DB: Tạo đơn hàng + Trừ tồn kho
+    S->>DB: Tạo đơn hàng + Trừ tồn kho + Tăng used_count coupon
     S->>DB: Xóa giỏ hàng
     S-->>C: Chuyển hướng chi tiết đơn hàng
     
@@ -637,15 +728,26 @@ sequenceDiagram
 ### 5.2 Thanh toán
 - Hiện tại chỉ hỗ trợ COD (Cash on Delivery)
 - Đơn hàng được tạo với trạng thái "pending"
+- Khách hàng có thể áp dụng mã giảm giá trong quá trình thanh toán
 
-### 5.3 Trạng thái đơn hàng
+### 5.3 Coupon/Mã giảm giá ✨ *Mới*
+- Mã coupon phải unique và được tự động chuyển thành chữ hoa
+- Coupon có 2 loại: percentage (%) và fixed amount (VND)
+- Coupon có thời gian hiệu lực (start_date đến end_date)
+- Coupon có thể có giới hạn số lần sử dụng (usage_limit)
+- Coupon có điều kiện đơn hàng tối thiểu (min_order_amount)
+- Percentage coupon có thể có giới hạn số tiền giảm tối đa (max_discount_amount)
+- Khi áp dụng coupon thành công, tăng used_count
+- Chỉ Admin/Manager mới có thể quản lý coupon
+
+### 5.4 Trạng thái đơn hàng
 - **pending**: Đơn hàng mới tạo
 - **processing**: Đang xử lý
 - **shipped**: Đã gửi hàng
 - **delivered**: Đã giao hàng
 - **cancelled**: Đã hủy
 
-### 5.4 Phân quyền
+### 5.5 Phân quyền
 - **Customer**: Chỉ có thể mua hàng và xem đơn hàng của mình
 - **Admin**: Quản lý toàn bộ hệ thống
 
@@ -820,21 +922,23 @@ erDiagram
 ## 📋 Tóm tắt
 
 ### 📊 Thống kê Use Cases:
-- **👤 Khách hàng**: 12 use cases chính
-- **👨‍💼 Admin**: 12 use cases chính
+- **👤 Khách hàng**: 13 use cases chính (bao gồm coupon)
+- **👨‍💼 Admin**: 15 use cases chính (bao gồm quản lý coupon)
 - **🔄 Luồng nghiệp vụ**: 2 luồng chính
-- **📋 Quy tắc**: 4 nhóm quy tắc nghiệp vụ
+- **📋 Quy tắc**: 5 nhóm quy tắc nghiệp vụ
 
 ### 🎯 Chức năng cốt lõi:
 1. **Xác thực và phân quyền**: Đăng ký, đăng nhập, phân quyền
 2. **Quản lý sản phẩm**: CRUD sản phẩm, danh mục, tồn kho
 3. **Mua sắm**: Duyệt, tìm kiếm, giỏ hàng, thanh toán
-4. **Quản lý đơn hàng**: Theo dõi, cập nhật trạng thái
+4. **Hệ thống giảm giá**: Quản lý và áp dụng coupon ✨
+5. **Quản lý đơn hàng**: Theo dõi, cập nhật trạng thái
 
 ### 💡 Đặc điểm nổi bật:
 - **Tồn kho thời gian thực**: Trừ ngay khi đặt hàng
 - **Thanh toán COD**: Đơn giản, phù hợp thị trường Việt Nam
-- **Phân quyền rõ ràng**: Customer vs Admin
+- **Hệ thống coupon linh hoạt**: Hỗ trợ % và số tiền cố định ✨
+- **Phân quyền rõ ràng**: Customer vs Admin/Manager
 - **Luồng nghiệp vụ hoàn chỉnh**: Từ đăng ký đến giao hàng
 
 ---

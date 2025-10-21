@@ -299,8 +299,8 @@ npm run dev
 
 ---
 
-**Cập nhật lần cuối**: 19/10/2025  
-**Version**: 3.0 (Simplified)  
+**Cập nhật lần cuối**: 21/10/2025  
+**Version**: 3.1 (Coupon System Added)  
 **Author**: Hoàng Quang Vinh
 - **Authorization**: Role-Based Access Control (RBAC)
 

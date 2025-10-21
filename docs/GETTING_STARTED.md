@@ -385,6 +385,6 @@ git push origin feature-branch
 
 ---
 
-**Cập nhật lần cuối**: 19/10/2025  
-**Version**: 2.0  
+**Cập nhật lần cuối**: 21/10/2025  
+**Version**: 3.0  
 **Author**: Hoàng Quang Vinh
