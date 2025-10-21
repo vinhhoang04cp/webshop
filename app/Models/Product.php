@@ -46,4 +46,21 @@ class Product extends Model
     {
         return $this->hasMany(CartItem::class, 'product_id', 'product_id');
     }
+
+    public function ratings() // quan he 1-n voi Rating
+    {
+        return $this->hasMany(Rating::class, 'product_id', 'product_id');
+    }
+
+    // Hàm tính trung bình rating
+    public function averageRating()
+    {
+        return $this->ratings()->avg('rating') ?? 0;
+    }
+
+    // Hàm đếm số lượng rating
+    public function totalRatings()
+    {
+        return $this->ratings()->count();
+    }
 }

@@ -156,3 +156,8 @@ Route::middleware(['auth'])->group(function () {
             ->name('dashboard.reports.export');
     });
 });
+
+// Rating routes - Đánh giá sản phẩm (cần đăng nhập)
+Route::middleware(['auth'])->group(function () {
+    Route::post('/product/{productId}/rating', [CustomerProductController::class, 'addRating'])->name('product.rating.add');
+});
