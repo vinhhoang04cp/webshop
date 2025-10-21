@@ -18,13 +18,8 @@ class DatabaseSeeder extends Seeder
             UserRoleSeeder::class,
             CategorySeeder::class,
             ProductSeeder::class,
-            ProductDetailSeeder::class,
             InventorySeeder::class,
             CouponSeeder::class,
-            CartSeeder::class,
-            CartItemSeeder::class,
-            OrderSeeder::class,
-            OrderItemSeeder::class,
         ]);
     }
 }

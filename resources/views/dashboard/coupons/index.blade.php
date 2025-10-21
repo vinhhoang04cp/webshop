@@ -3,15 +3,19 @@
 @section('title', 'Quản Lý Coupon')
 
 @section('content')
-<div class="container-fluid">
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">Quản Lý Coupon</h1>
-        @if(auth()->user()->hasRole('admin'))
-        <a href="{{ route('dashboard.coupons.create') }}" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
-            <i class="fas fa-plus fa-sm text-white-50"></i> Tạo Coupon Mới
-        </a>
-        @endif
-    </div>
+<div class="container-fluid p-0">
+    <div class="row g-0">
+        @include('components.sidebar')
+        <div class="col-md-9 col-lg-10 dashboard-content">
+            <div class="container-fluid">
+                <div class="d-sm-flex align-items-center justify-content-between mb-4">
+                    <h1 class="h3 mb-0 text-gray-800">Quản Lý Coupon</h1>
+                    @if(auth()->user()->hasRole('admin'))
+                    <a href="{{ route('dashboard.coupons.create') }}" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
+                        <i class="fas fa-plus fa-sm text-white-50"></i> Tạo Coupon Mới
+                    </a>
+                    @endif
+                </div>
 
     <!-- Alert Messages -->
     @if(session('success'))
@@ -223,6 +227,9 @@
                     @endif
                 </div>
             @endif
+        </div>
+    </div>
+            </div>
         </div>
     </div>
 </div>

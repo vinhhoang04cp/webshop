@@ -3,13 +3,17 @@
 @section('title', 'Tạo Coupon Mới')
 
 @section('content')
-<div class="container-fluid">
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">Tạo Coupon Mới</h1>
-        <a href="{{ route('dashboard.coupons.index') }}" class="d-none d-sm-inline-block btn btn-sm btn-secondary shadow-sm">
-            <i class="fas fa-arrow-left fa-sm text-white-50"></i> Quay Lại
-        </a>
-    </div>
+<div class="container-fluid p-0">
+    <div class="row g-0">
+        @include('components.sidebar')
+        <div class="col-md-9 col-lg-10 dashboard-content">
+            <div class="container-fluid">
+                <div class="d-sm-flex align-items-center justify-content-between mb-4">
+                    <h1 class="h3 mb-0 text-gray-800">Tạo Coupon Mới</h1>
+                    <a href="{{ route('dashboard.coupons.index') }}" class="d-none d-sm-inline-block btn btn-sm btn-secondary shadow-sm">
+                        <i class="fas fa-arrow-left fa-sm text-white-50"></i> Quay Lại
+                    </a>
+                </div>
 
     <!-- Alert Messages -->
     @if(session('error'))
@@ -243,4 +247,8 @@
         this.value = this.value.toUpperCase();
     });
 </script>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection

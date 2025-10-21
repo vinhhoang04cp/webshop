@@ -3,20 +3,24 @@
 @section('title', 'Chi Tiết Coupon')
 
 @section('content')
-<div class="container-fluid">
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">Chi Tiết Coupon: {{ $coupon->code }}</h1>
-        <div>
-            @if(auth()->user()->hasRole('admin'))
-                <a href="{{ route('dashboard.coupons.edit', $coupon->coupon_id) }}" class="d-none d-sm-inline-block btn btn-sm btn-warning shadow-sm">
-                    <i class="fas fa-edit fa-sm text-white-50"></i> Chỉnh Sửa
-                </a>
-            @endif
-            <a href="{{ route('dashboard.coupons.index') }}" class="d-none d-sm-inline-block btn btn-sm btn-secondary shadow-sm ml-2">
-                <i class="fas fa-arrow-left fa-sm text-white-50"></i> Quay Lại
-            </a>
-        </div>
-    </div>
+<div class="container-fluid p-0">
+    <div class="row g-0">
+        @include('components.sidebar')
+        <div class="col-md-9 col-lg-10 dashboard-content">
+            <div class="container-fluid">
+                <div class="d-sm-flex align-items-center justify-content-between mb-4">
+                    <h1 class="h3 mb-0 text-gray-800">Chi Tiết Coupon: {{ $coupon->code }}</h1>
+                    <div>
+                        @if(auth()->user()->hasRole('admin'))
+                            <a href="{{ route('dashboard.coupons.edit', $coupon->coupon_id) }}" class="d-none d-sm-inline-block btn btn-sm btn-warning shadow-sm">
+                                <i class="fas fa-edit fa-sm text-white-50"></i> Chỉnh Sửa
+                            </a>
+                        @endif
+                        <a href="{{ route('dashboard.coupons.index') }}" class="d-none d-sm-inline-block btn btn-sm btn-secondary shadow-sm ml-2">
+                            <i class="fas fa-arrow-left fa-sm text-white-50"></i> Quay Lại
+                        </a>
+                    </div>
+                </div>
 
     <!-- Alert Messages -->
     @if(session('success'))
@@ -303,4 +307,8 @@
         }, 5000);
     });
 </script>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
