@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('name', 200);
             $table->text('description')->nullable();
             $table->decimal('price', 10, 2);
+            $table->decimal('original_price', 10, 2)->nullable(); // Giá gốc khi áp dụng coupon
             $table->unsignedBigInteger('category_id');
             $table->unsignedInteger('stock_quantity');
             $table->string('image_url', 2048)->nullable();

@@ -13,23 +13,41 @@
             </div>
             @include('components.alerts')
             <div class="row g-4 mb-4">
-                @php
-                    $statCards = [ 
-                        ['value' => $productsCount, 'label' => 'Sản phẩm', 'icon' => 'fa-box', 'gradient' => 'linear-gradient(135deg, #667eea, #764ba2)'],
-                        ['value' => $ordersCount, 'label' => 'Đơn hàng', 'icon' => 'fa-shopping-cart', 'gradient' => 'linear-gradient(135deg, #f093fb, #f5576c)'],
-                        ['value' => $usersCount, 'label' => 'Khách hàng', 'icon' => 'fa-users', 'gradient' => 'linear-gradient(135deg, #4facfe, #00f2fe)'],
-                        ['value' => number_format($totalRevenue) . ' đ', 'label' => 'Doanh thu', 'icon' => 'fa-chart-line', 'gradient' => 'linear-gradient(135deg, #43e97b, #38f9d7)'],
-                    ];
-                @endphp
-                @foreach ($statCards as $card)
+                <!-- Thống kê sản phẩm -->
                 <div class="col-md-6 col-lg-3">
-                    <div class="stat-card" style="background: {{ $card['gradient'] }};">
-                        <div class="stat-icon"><i class="fas {{ $card['icon'] }}"></i></div>
-                        <h3>{{ $card['value'] }}</h3>
-                        <p>{{ $card['label'] }}</p>
+                    <div class="stat-card" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+                        <div class="stat-icon"><i class="fas fa-box"></i></div>
+                        <h3>{{ $productsCount }}</h3>
+                        <p>Sản phẩm</p>
                     </div>
                 </div>
-                @endforeach
+
+                <!-- Thống kê đơn hàng -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="stat-card" style="background: linear-gradient(135deg, #f093fb, #f5576c);">
+                        <div class="stat-icon"><i class="fas fa-shopping-cart"></i></div>
+                        <h3>{{ $ordersCount }}</h3>
+                        <p>Đơn hàng</p>
+                    </div>
+                </div>
+
+                <!-- Thống kê khách hàng -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="stat-card" style="background: linear-gradient(135deg, #4facfe, #00f2fe);">
+                        <div class="stat-icon"><i class="fas fa-users"></i></div>
+                        <h3>{{ $usersCount }}</h3>
+                        <p>Khách hàng</p>
+                    </div>
+                </div>
+
+                <!-- Thống kê doanh thu -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="stat-card" style="background: linear-gradient(135deg, #43e97b, #38f9d7);">
+                        <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
+                        <h3>{{ number_format($totalRevenue) }} đ</h3>
+                        <p>Doanh thu</p>
+                    </div>
+                </div>
             </div>
             <div class="row g-4">
                 <div class="col-lg-8">
