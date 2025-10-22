@@ -28,9 +28,9 @@ Hệ thống hỗ trợ **3 cấp phân quyền** với các chức năng đầy
 ```mermaid
 graph TB
     %% Actors
-    Customer[👤 Khách hàng<br/>Customer]
-    Manager[👔 Quản lý<br/>Manager]
-    Admin[👨‍💼 Quản trị viên<br/>Admin]
+    Customer[Khách hàng - Customer]
+    Manager[Quản lý - Manager]
+    Admin[Quản trị viên - Admin]
     
     %% System boundary
     subgraph "Hệ thống Webshop"
@@ -48,7 +48,7 @@ graph TB
         UC11[UC11: Xóa khỏi giỏ hàng]
         UC12[UC12: Thanh toán COD]
         UC13[UC13: Áp dụng mã giảm giá]
-        UC14[UC14: Đánh giá sản phẩm] ⭐
+        UC14[UC14: Đánh giá sản phẩm]
         
         %% Admin/Manager Use Cases
         UC15[UC15: Quản lý sản phẩm]
@@ -57,11 +57,11 @@ graph TB
         UC18[UC18: Quản lý tồn kho]
         UC19[UC19: Quản lý đơn hàng]
         UC20[UC20: Quản lý người dùng]
-        UC21[UC21: Báo cáo tổng quan] 📊
-        UC22[UC22: Báo cáo doanh thu] 💰
-        UC23[UC23: Báo cáo sản phẩm] 📦
-        UC24[UC24: Báo cáo khách hàng] 👥
-        UC25[UC25: Xuất báo cáo CSV] 📄
+        UC21[UC21: Báo cáo tổng quan]
+        UC22[UC22: Báo cáo doanh thu]
+        UC23[UC23: Báo cáo sản phẩm]
+        UC24[UC24: Báo cáo khách hàng]
+        UC25[UC25: Xuất báo cáo CSV]
     end
     
     %% Customer connections
@@ -125,12 +125,12 @@ graph TB
 
 ```mermaid
 graph TB
-    Customer[👤 Khách hàng]
+    Customer[Khách hàng]
     
     subgraph "Quản lý tài khoản"
-        UC01[UC01: Đăng ký tài khoản<br/>📝 Tạo tài khoản mới]
-        UC02[UC02: Đăng nhập<br/>🔐 Xác thực người dùng]
-        UC03[UC03: Đăng xuất<br/>🚪 Kết thúc phiên làm việc]
+        UC01[UC01: Đăng ký tài khoản]
+        UC02[UC02: Đăng nhập]
+        UC03[UC03: Đăng xuất]
     end
     
     Customer --> UC01
@@ -189,13 +189,13 @@ graph TB
 
 ```mermaid
 graph TB
-    Customer[👤 Khách hàng]
+    Customer[Khách hàng]
     
     subgraph "Duyệt sản phẩm"
-        UC04[UC04: Xem danh sách sản phẩm<br/>📋 Hiển thị tất cả sản phẩm]
-        UC05[UC05: Tìm kiếm sản phẩm<br/>🔍 Tìm theo từ khóa]
-        UC06[UC06: Xem chi tiết sản phẩm<br/>📄 Thông tin chi tiết]
-        UC07[UC07: Xem theo danh mục<br/>🏷️ Lọc theo category]
+        UC04[UC04: Xem danh sách sản phẩm]
+        UC05[UC05: Tìm kiếm sản phẩm]
+        UC06[UC06: Xem chi tiết sản phẩm]
+        UC07[UC07: Xem theo danh mục]
     end
     
     Customer --> UC04
@@ -257,14 +257,14 @@ graph TB
 
 ```mermaid
 graph TB
-    Customer[👤 Khách hàng<br/>🔐 Đã đăng nhập]
+    Customer[Khách hàng - Đã đăng nhập]
     
     subgraph "Quản lý giỏ hàng"
-        UC08[UC08: Thêm vào giỏ hàng<br/>➕ Thêm sản phẩm]
-        UC09[UC09: Xem giỏ hàng<br/>👀 Xem danh sách]
-        UC10[UC10: Cập nhật số lượng<br/>✏️ Thay đổi quantity]
-        UC11[UC11: Xóa sản phẩm<br/>🗑️ Remove item]
-        UC12[UC12: Thanh toán COD<br/>💰 Đặt hàng]
+        UC08[UC08: Thêm vào giỏ hàng]
+        UC09[UC09: Xem giỏ hàng]
+        UC10[UC10: Cập nhật số lượng]
+        UC11[UC11: Xóa sản phẩm]
+        UC12[UC12: Thanh toán COD]
     end
     
     Customer --> UC08
@@ -282,7 +282,7 @@ graph TB
     UC11 --> UC09
     
     %% Preconditions
-    UC08 -.->|requires| Auth[🔐 Đăng nhập]
+    UC08 -.->|requires| Auth[Đăng nhập]
     UC09 -.->|requires| Auth
     UC10 -.->|requires| Auth
     UC11 -.->|requires| Auth
@@ -381,10 +381,10 @@ graph TB
 
 ```mermaid
 graph TB
-    Customer[👤 Khách hàng<br/>🔐 Đã đăng nhập]
+    Customer[Khách hàng - Đã đăng nhập]
     
     subgraph "Đánh giá sản phẩm"
-        UC14[UC14: Đánh giá sản phẩm<br/>⭐ Rating & Review]
+        UC14[UC14: Đánh giá sản phẩm]
         UC14A[Chọn số sao 1-5]
         UC14B[Viết nhận xét]
         UC14C[Gửi đánh giá]
@@ -436,28 +436,28 @@ graph TB
 
 ```mermaid
 graph TB
-    Admin[👨‍💼 Admin]
+    Admin[Admin]
     
     subgraph "Quản lý sản phẩm"
-        UC13A[📦 Xem danh sách sản phẩm]
-        UC13B[➕ Tạo sản phẩm mới]
-        UC13C[✏️ Cập nhật sản phẩm]
-        UC13D[🗑️ Xóa sản phẩm]
+        UC13A[Xem danh sách sản phẩm]
+        UC13B[Tạo sản phẩm mới]
+        UC13C[Cập nhật sản phẩm]
+        UC13D[Xóa sản phẩm]
     end
     
     subgraph "Quản lý danh mục"
-        UC15A[📂 Xem danh sách danh mục]
-        UC15B[➕ Tạo danh mục mới]
-        UC15C[✏️ Cập nhật danh mục]
-        UC15D[🗑️ Xóa danh mục]
+        UC15A[Xem danh sách danh mục]
+        UC15B[Tạo danh mục mới]
+        UC15C[Cập nhật danh mục]
+        UC15D[Xóa danh mục]
     end
     
-    subgraph "Quản lý Coupon ✨"
-        UC16A[🎫 Xem danh sách coupon]
-        UC16B[➕ Tạo coupon mới]
-        UC16C[✏️ Cập nhật coupon]
-        UC16D[🗑️ Xóa coupon]
-        UC16E[🔄 Bật/tắt coupon]
+    subgraph "Quản lý Coupon"
+        UC16A[Xem danh sách coupon]
+        UC16B[Tạo coupon mới]
+        UC16C[Cập nhật coupon]
+        UC16D[Xóa coupon]
+        UC16E[Bật/tắt coupon]
     end
     
     Admin --> UC13A
@@ -590,20 +590,20 @@ graph TB
 
 ```mermaid
 graph TB
-    Admin[👨‍💼 Admin]
+    Admin[Admin]
     
     subgraph "Quản lý tồn kho"
-        UC17A[📊 Xem tồn kho hiện tại]
-        UC17B[📥 Nhập kho]
-        UC17C[📤 Xuất kho]
-        UC17D[📈 Báo cáo tồn kho]
+        UC17A[Xem tồn kho hiện tại]
+        UC17B[Nhập kho]
+        UC17C[Xuất kho]
+        UC17D[Báo cáo tồn kho]
     end
     
     subgraph "Quản lý đơn hàng"
-        UC18A[📋 Xem danh sách đơn hàng]
-        UC18B[👀 Xem chi tiết đơn hàng]
-        UC18C[🔄 Cập nhật trạng thái]
-        UC18D[❌ Hủy đơn hàng]
+        UC18A[Xem danh sách đơn hàng]
+        UC18B[Xem chi tiết đơn hàng]
+        UC18C[Cập nhật trạng thái]
+        UC18D[Hủy đơn hàng]
     end
     
     Admin --> UC17A
@@ -716,14 +716,14 @@ graph TB
 
 ```mermaid
 graph TB
-    Manager[👔 Manager/Admin]
+    Manager[Manager/Admin]
     
     subgraph "Hệ thống báo cáo"
-        UC21[UC21: Báo cáo tổng quan<br/>📊 Dashboard Analytics]
-        UC22[UC22: Báo cáo doanh thu<br/>💰 Revenue Report]
-        UC23[UC23: Báo cáo sản phẩm<br/>📦 Product Report]
-        UC24[UC24: Báo cáo khách hàng<br/>👥 Customer Report]
-        UC25[UC25: Xuất báo cáo<br/>📄 Export CSV]
+        UC21[UC21: Báo cáo tổng quan]
+        UC22[UC22: Báo cáo doanh thu]
+        UC23[UC23: Báo cáo sản phẩm]
+        UC24[UC24: Báo cáo khách hàng]
+        UC25[UC25: Xuất báo cáo CSV]
     end
     
     Manager --> UC21
@@ -1145,20 +1145,17 @@ stateDiagram-v2
 ```mermaid
 graph TB
     subgraph "Hệ thống phân quyền 3 cấp"
-        Guest[🌐 Khách vãng lai<br/>Guest]
-        Customer[👤 Khách hàng<br/>Customer]
-        Manager[👔 Quản lý<br/>Manager]
-        Admin[👨‍💼 Quản trị viên<br/>Admin]
+        Guest[Khách vãng lai]
+        Customer[Khách hàng]
+        Manager[Quản lý]
+        Admin[Quản trị viên]
     end
     
     subgraph "Quyền truy cập"
-        PublicPages[📄 Trang công khai<br/>• Trang chủ<br/>• Danh sách sản phẩm<br/>• Chi tiết sản phẩm<br/>• Đăng ký/Đăng nhập]
-        
-        CustomerPages[🛒 Trang khách hàng<br/>• Giỏ hàng<br/>• Thanh toán<br/>• Đơn hàng của tôi<br/>• Đánh giá sản phẩm]
-        
-        ManagerPages[📊 Trang quản lý<br/>• Dashboard<br/>• Xem sản phẩm/danh mục<br/>• Xem & cập nhật đơn hàng<br/>• Xem coupon<br/>• Cập nhật tồn kho<br/>• Báo cáo & thống kê]
-        
-        AdminPages[⚙️ Trang quản trị<br/>• CRUD Sản phẩm<br/>• CRUD Danh mục<br/>• CRUD Coupon<br/>• Xóa đơn hàng<br/>• Quản lý người dùng<br/>• Quản lý Role]
+        PublicPages[Trang công khai]
+        CustomerPages[Trang khách hàng]
+        ManagerPages[Trang quản lý]
+        AdminPages[Trang quản trị]
     end
     
     Guest --> PublicPages
