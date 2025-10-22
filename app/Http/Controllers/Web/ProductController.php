@@ -136,42 +136,42 @@ class ProductController extends Controller
             'image_url' => 'nullable|url', // image_url co the khong co, neu co phai la kieu url
             'stock_quantity' => 'required|integer|min:0', // stock_quantity bat buoc phai co, kieu integer, gia tri toi thieu 0
             // Thêm validation cho ProductDetail fields
-            'color' => 'nullable|string|max:100',
-            'storage' => 'nullable|string|max:100',
-            'ram' => 'nullable|string|max:100',
-            'screen_size' => 'nullable|string|max:100',
+            'color' => 'nullable|string|max:100', // color co the khong co, neu co phai la kieu string, do dai toi da 100 ky tu
+            'storage' => 'nullable|string|max:100', // storage co the khong co, neu co phai la kieu string, do dai toi da 100 ky tu
+            'ram' => 'nullable|string|max:100', // ram co the khong co, neu co phai la kieu string, do dai toi da 100 ky tu
+            'screen_size' => 'nullable|string|max:100', // screen_size co the khong co, neu co phai la kieu string, do dai toi da 100 ky tu
             'chip' => 'nullable|string|max:100',
-            'battery' => 'nullable|string|max:100',
-            'camera_main' => 'nullable|string|max:100',
-            'camera_front' => 'nullable|string|max:100',
+            'battery' => 'nullable|string|max:100', // battery co the khong co, neu co phai la kieu string, do dai toi da 100 ky tu
+            'camera_main' => 'nullable|string|max:100', // camera_main co the khong co, neu co phai la kieu string, do dai toi da 100 ky tu
+            'camera_front' => 'nullable|string|max:100', // camera_front co the khong co, neu co phai la kieu string, do dai toi da 100 ky tu
             'os' => 'nullable|string|max:100',
-            'special_features' => 'nullable|string',
+            'special_features' => 'nullable|string', // special_features co the khong co, neu co phai la kieu string
         ]);
 
         try {
             // Xử lý upload ảnh
-            $imagePath = null;
+            $imagePath = null; // imagePath la bien luu gia tri cua image path
             if ($request->hasFile('image')) { // Kiểm tra xem có file ảnh được upload không
                 // Tạo tên file unique để tránh trùng lặp
-                $imageName = time().'_'.$request->file('image')->getClientOriginalName();
+                $imageName = time().'_'.$request->file('image')->getClientOriginalName(); // imageName la bien luu gia tri cua image name
 
                 // Lưu ảnh vào thư mục storage/app/public/products
-                $imagePath = $request->file('image')->storeAs('products', $imageName, 'public');
+                $imagePath = $request->file('image')->storeAs('products', $imageName, 'public'); // storeAs('products', $imageName, 'public') la ham de luu image vao thu muc storage/app/public/products
 
                 // Tạo URL để lưu vào database (sẽ là /storage/products/filename.jpg)
-                $imageUrl = '/storage/'.$imagePath;
-            } else {
+                $imageUrl = '/storage/'.$imagePath; // imageUrl la bien luu gia tri cua image url
+            } else { // nếu không upload file thì sử dụng image_url (nếu có)
                 // Nếu không upload file thì sử dụng image_url
-                $imageUrl = $request->image_url;
+                $imageUrl = $request->image_url; // imageUrl la bien luu gia tri cua image url  (nếu không upload file thì sử dụng image_url)
             }
             // Tạo product mới sử dụng Eloquent
             $product = Product::create([ // Tao moi product su dung model Product voi phuong thuc create() eloquent
-                'name' => $request->name, // lay gia tri name da validate tu request
-                'description' => $request->description, // lay gia tri description da validate tu request
-                'price' => $request->price, // lay gia tri price da validate tu request
-                'category_id' => $request->category_id, // lay gia tri category_id da validate tu request
-                'image_url' => $imageUrl, // lay gia tri image_url da xu ly (co the la file upload hoac url)
-                'stock_quantity' => $request->stock_quantity, // lay gia tri stock_quantity da validate tu request
+                'name' => $request->name, // name la truong bat buoc, kieu string, do dai toi da 255 ky tu
+                'description' => $request->description, // description la truong nullable, kieu string
+                'price' => $request->price, // price la truong bat buoc, kieu numeric, gia tri toi thieu 0
+                'category_id' => $request->category_id, // category_id la truong bat buoc, kieu integer, phai ton tai trong bang categories cot category_id
+                'image_url' => $imageUrl, // image_url la truong nullable, kieu url
+                'stock_quantity' => $request->stock_quantity, // stock_quantity la truong bat buoc, kieu integer, gia tri toi thieu 0
             ]);
 
             // Tự động tạo bản ghi inventory cho sản phẩm mới
