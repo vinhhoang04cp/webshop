@@ -47,6 +47,7 @@ class CustomerCartController extends Controller
             'shipping_phone' => 'required|string|max:20',
             'shipping_address' => 'required|string|max:1000',
             'note' => 'nullable|string|max:500',
+            'coupon_code' => 'nullable|string|max:50',
         ], [
             'shipping_name.required' => 'Vui lòng nhập họ và tên người nhận',
             'shipping_phone.required' => 'Vui lòng nhập số điện thoại',
@@ -73,10 +74,35 @@ class CustomerCartController extends Controller
                 }
             }
 
+            // Tính tổng tiền giỏ hàng
+            $totalAmount = $cart->totalPrice();
+            $discountAmount = 0;
+            $coupon = null;
+
+            // Xử lý coupon nếu có
+            if ($request->filled('coupon_code')) {
+                $couponCode = strtoupper(trim($request->coupon_code));
+                $coupon = \App\Models\Coupon::where('code', $couponCode)->first();
+
+                if (! $coupon) {
+                    throw new \Exception('Mã giảm giá không hợp lệ!');
+                }
+
+                // Validate coupon
+                $validation = $coupon->isValid($totalAmount);
+                if (! $validation['valid']) {
+                    throw new \Exception($validation['message']);
+                }
+
+                // Tính tiền giảm giá
+                $discountAmount = $coupon->calculateDiscount($totalAmount);
+                $totalAmount = $totalAmount - $discountAmount;
+            }
+
             // Tạo đơn hàng với thông tin giao hàng
             $order = new \App\Models\Order; // Su dung model Order de tao don hang moi
             $order->user_id = Auth::id(); // Auth::id() lay id cua user hien tai dang nhap
-            $order->total_amount = $cart->totalPrice(); // $cart->totalPrice() goi den method totalPrice() trong model Cart de tinh tong tien gio hang
+            $order->total_amount = $totalAmount; // Tổng tiền sau khi trừ coupon
             $order->status = 'pending'; // trang thai don hang mac dinh la 'pending'
             $order->order_date = now();  // thoi gian dat hang la thoi diem hien tai
 
@@ -87,6 +113,11 @@ class CustomerCartController extends Controller
             $order->note = $request->note; // Lấy ghi chú từ form (có thể null)
 
             $order->save(); // luu don hang vao database
+
+            // Tăng used_count của coupon nếu đã sử dụng
+            if ($coupon) {
+                $coupon->increment('used_count');
+            }
 
             // Thêm các sản phẩm vào order_items VÀ TRỪ TỒN KHO NGAY
             foreach ($cart->items as $item) { // voi moi item trong gio hang
@@ -122,12 +153,92 @@ class CustomerCartController extends Controller
 
             DB::commit(); // ket thuc giao dich
 
-            return redirect()->route('cart.index')->with('success', 'Đặt hàng thành công! Đơn hàng của bạn đã được ghi nhận. Chúng tôi sẽ liên hệ với bạn qua số điện thoại '.$request->shipping_phone.' để xác nhận.');
+            $successMessage = 'Đặt hàng thành công! Đơn hàng của bạn đã được ghi nhận.';
+            if ($discountAmount > 0) {
+                $successMessage .= ' Bạn đã tiết kiệm được '.number_format($discountAmount, 0, ',', '.').' VND với mã giảm giá!';
+            }
+            $successMessage .= ' Chúng tôi sẽ liên hệ với bạn qua số điện thoại '.$request->shipping_phone.' để xác nhận.';
+
+            return redirect()->route('cart.index')->with('success', $successMessage);
             // chuyen huong den trang gio hang voi thong bao thanh cong
         } catch (\Exception $e) { // neu co loi xay ra trong qua trinh dat hang
             DB::rollBack(); // quay lai trang thai truoc khi bat dau giao dich
 
             return redirect()->route('cart.index')->with('error', 'Có lỗi xảy ra khi đặt hàng: '.$e->getMessage()); // chuyen huong den trang gio hang voi thong bao loi
+        }
+    }
+
+    /**
+     * Preview áp dụng mã coupon (AJAX)
+     */
+    public function applyCoupon(Request $request)
+    {
+        if (! Auth::check()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Vui lòng đăng nhập!',
+            ], 401);
+        }
+
+        $request->validate([
+            'coupon_code' => 'required|string|max:50',
+        ]);
+
+        try {
+            $cart = Auth::user()->cart;
+            if (! $cart || $cart->items()->count() == 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Giỏ hàng trống!',
+                ]);
+            }
+
+            $totalAmount = $cart->totalPrice();
+            $couponCode = strtoupper(trim($request->coupon_code));
+
+            $coupon = \App\Models\Coupon::where('code', $couponCode)->first();
+
+            if (! $coupon) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Mã giảm giá không hợp lệ!',
+                ]);
+            }
+
+            // Validate coupon
+            $validation = $coupon->isValid($totalAmount);
+            if (! $validation['valid']) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $validation['message'],
+                ]);
+            }
+
+            // Tính tiền giảm giá
+            $discountAmount = $coupon->calculateDiscount($totalAmount);
+            $finalAmount = $totalAmount - $discountAmount;
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Mã giảm giá hợp lệ!',
+                'data' => [
+                    'coupon_code' => $coupon->code,
+                    'coupon_name' => $coupon->name,
+                    'discount_type' => $coupon->discount_type,
+                    'discount_value' => $coupon->discount_value,
+                    'original_amount' => $totalAmount,
+                    'discount_amount' => $discountAmount,
+                    'final_amount' => $finalAmount,
+                    'discount_display' => number_format($discountAmount, 0, ',', '.').' VND',
+                    'final_display' => number_format($finalAmount, 0, ',', '.').' VND',
+                ],
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra: '.$e->getMessage(),
+            ], 500);
         }
     }
 

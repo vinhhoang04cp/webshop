@@ -16,8 +16,13 @@ class Coupon extends Model
 
     protected $fillable = [
         'code',
+        'name',
         'discount_type',
         'discount_value',
+        'min_order_amount',
+        'max_discount_amount',
+        'usage_limit',
+        'used_count',
         'product_id',
         'start_date',
         'end_date',
@@ -42,7 +47,7 @@ class Coupon extends Model
     /**
      * Kiểm tra xem coupon có hợp lệ không
      */
-    public function isValid()
+    public function isValid($orderAmount = 0)
     {
         $now = Carbon::now();
 
@@ -60,6 +65,16 @@ class Coupon extends Model
             return ['valid' => false, 'message' => 'Mã giảm giá đã hết hạn'];
         }
 
+        // Kiểm tra số lần sử dụng
+        if ($this->usage_limit !== null && $this->used_count >= $this->usage_limit) {
+            return ['valid' => false, 'message' => 'Mã giảm giá đã hết lượt sử dụng'];
+        }
+
+        // Kiểm tra giá trị đơn hàng tối thiểu
+        if ($orderAmount > 0 && $orderAmount < $this->min_order_amount) {
+            return ['valid' => false, 'message' => 'Đơn hàng chưa đạt giá trị tối thiểu '.number_format($this->min_order_amount, 0, ',', '.').' VND'];
+        }
+
         return ['valid' => true, 'message' => 'Mã giảm giá hợp lệ'];
     }
 
@@ -68,7 +83,7 @@ class Coupon extends Model
      */
     public function calculateDiscount($price)
     {
-        if (! $this->isValid()['valid']) {
+        if (! $this->isValid($price)['valid']) {
             return 0;
         }
 
@@ -76,11 +91,16 @@ class Coupon extends Model
 
         if ($this->discount_type === 'percentage') {
             $discount = ($price * $this->discount_value) / 100;
+
+            // Áp dụng giảm giá tối đa nếu có
+            if ($this->max_discount_amount !== null) {
+                $discount = min($discount, $this->max_discount_amount);
+            }
         } else {
             $discount = $this->discount_value;
         }
 
-        // Đảm bảo số tiền giảm không vượt quá giá trị
+        // Đảm bảo số tiền giảm không vượt quá giá trị đơn hàng
         return min($discount, $price);
     }
 
