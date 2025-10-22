@@ -16,14 +16,9 @@ class Coupon extends Model
 
     protected $fillable = [
         'code',
-        'name',
-        'description',
         'discount_type',
         'discount_value',
-        'min_order_amount',
-        'max_discount_amount',
-        'usage_limit',
-        'used_count',
+        'product_id',
         'start_date',
         'end_date',
         'is_active',
@@ -34,14 +29,20 @@ class Coupon extends Model
         'end_date' => 'datetime',
         'is_active' => 'boolean',
         'discount_value' => 'decimal:2',
-        'min_order_amount' => 'decimal:2',
-        'max_discount_amount' => 'decimal:2',
     ];
+
+    /**
+     * Quan hệ với Product (1 coupon thuộc về 1 sản phẩm hoặc null = tất cả)
+     */
+    public function product()
+    {
+        return $this->belongsTo(Product::class, 'product_id', 'product_id');
+    }
 
     /**
      * Kiểm tra xem coupon có hợp lệ không
      */
-    public function isValid($orderAmount = 0)
+    public function isValid()
     {
         $now = Carbon::now();
 
@@ -59,61 +60,42 @@ class Coupon extends Model
             return ['valid' => false, 'message' => 'Mã giảm giá đã hết hạn'];
         }
 
-        // Kiểm tra giới hạn sử dụng
-        if ($this->usage_limit && $this->used_count >= $this->usage_limit) {
-            return ['valid' => false, 'message' => 'Mã giảm giá đã hết lượt sử dụng'];
-        }
-
-        // Kiểm tra giá trị đơn hàng tối thiểu
-        if ($orderAmount < $this->min_order_amount) {
-            return ['valid' => false, 'message' => 'Đơn hàng chưa đạt giá trị tối thiểu '.number_format($this->min_order_amount, 0, ',', '.').' VND'];
-        }
-
         return ['valid' => true, 'message' => 'Mã giảm giá hợp lệ'];
     }
 
     /**
-     * Tính toán số tiền giảm giá
+     * Tính toán số tiền giảm giá cho một giá trị
      */
-    public function calculateDiscount($orderAmount)
+    public function calculateDiscount($price)
     {
-        if (! $this->isValid($orderAmount)['valid']) {
+        if (! $this->isValid()['valid']) {
             return 0;
         }
 
         $discount = 0;
 
         if ($this->discount_type === 'percentage') {
-            $discount = ($orderAmount * $this->discount_value) / 100;
-
-            // Áp dụng giới hạn giảm tối đa nếu có
-            if ($this->max_discount_amount && $discount > $this->max_discount_amount) {
-                $discount = $this->max_discount_amount;
-            }
+            $discount = ($price * $this->discount_value) / 100;
         } else {
             $discount = $this->discount_value;
         }
 
-        // Đảm bảo số tiền giảm không vượt quá tổng đơn hàng
-        return min($discount, $orderAmount);
+        // Đảm bảo số tiền giảm không vượt quá giá trị
+        return min($discount, $price);
     }
 
     /**
-     * Tăng số lần sử dụng coupon
+     * Kiểm tra coupon có áp dụng cho sản phẩm cụ thể không
      */
-    public function incrementUsage()
+    public function appliesTo($productId)
     {
-        $this->increment('used_count');
-    }
-
-    /**
-     * Giảm số lần sử dụng coupon (khi hủy đơn hàng)
-     */
-    public function decrementUsage()
-    {
-        if ($this->used_count > 0) {
-            $this->decrement('used_count');
+        // Nếu product_id null = áp dụng cho tất cả
+        if ($this->product_id === null) {
+            return true;
         }
+
+        // Nếu có product_id = chỉ áp dụng cho sản phẩm đó
+        return $this->product_id == $productId;
     }
 
     /**
@@ -136,13 +118,13 @@ class Coupon extends Model
     }
 
     /**
-     * Scope để lấy coupon còn lượt sử dụng
+     * Scope để lấy coupon cho sản phẩm cụ thể hoặc tất cả
      */
-    public function scopeAvailable($query)
+    public function scopeForProduct($query, $productId)
     {
-        return $query->where(function ($q) {
-            $q->whereNull('usage_limit')
-                ->orWhereRaw('used_count < usage_limit');
+        return $query->where(function ($q) use ($productId) {
+            $q->whereNull('product_id')
+                ->orWhere('product_id', $productId);
         });
     }
 
@@ -177,10 +159,18 @@ class Coupon extends Model
             return 'Đã hết hạn';
         }
 
-        if ($this->usage_limit && $this->used_count >= $this->usage_limit) {
-            return 'Hết lượt sử dụng';
+        return 'Đang hoạt động';
+    }
+
+    /**
+     * Accessor để hiển thị phạm vi áp dụng
+     */
+    public function getScopeDisplayAttribute()
+    {
+        if ($this->product_id === null) {
+            return 'Tất cả sản phẩm';
         }
 
-        return 'Đang hoạt động';
+        return $this->product ? $this->product->name : 'Sản phẩm #'.$this->product_id;
     }
 }

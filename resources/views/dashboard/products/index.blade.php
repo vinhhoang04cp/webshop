@@ -37,14 +37,15 @@
                                     <th>Tên sản phẩm</th>
                                     <th>Giá</th>
                                     <th>Danh mục</th>
+                                    <th class="text-center">Coupon</th>
                                     <th class="text-center">Hành động</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @if(isset($error))
-                                    <tr><td colspan="6" class="text-center py-4 text-danger"><i class="fas fa-exclamation-triangle fa-2x mb-2 d-block"></i>{{ $error }}</td></tr>
+                                    <tr><td colspan="7" class="text-center py-4 text-danger"><i class="fas fa-exclamation-triangle fa-2x mb-2 d-block"></i>{{ $error }}</td></tr>
                                 @elseif(empty($paginatedProducts))
-                                    <tr><td colspan="6" class="text-center py-4 text-muted"><i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+                                    <tr><td colspan="7" class="text-center py-4 text-muted"><i class="fas fa-inbox fa-2x mb-2 d-block"></i>
                                         @if(request('search'))Không tìm thấy "{{ request('search') }}"
                                         @else Chưa có sản phẩm nào<br><a href="{{ route('dashboard.products.create') }}" class="btn btn-primary mt-2"><i class="fas fa-plus me-2"></i>Thêm sản phẩm</a>
                                         @endif
@@ -79,6 +80,21 @@
                                             </td>
                                             <td><span class="text-primary fw-bold">{{ number_format($product->price) }} VNĐ</span></td>
                                             <td>@if($product->category)<span class="badge bg-secondary">{{ $product->category->name }}</span>@else-@endif</td>
+                                            <td class="text-center">
+                                                @php
+                                                    $couponCount = $product->coupons()->count();
+                                                    $activeCouponCount = $product->coupons()->where('is_active', true)->count();
+                                                @endphp
+                                                @if($couponCount > 0)
+                                                    <a href="{{ route('dashboard.products.show', $product->product_id) }}#coupons" 
+                                                       class="badge bg-warning text-dark" 
+                                                       title="Có {{ $couponCount }} coupon ({{ $activeCouponCount }} đang hoạt động)">
+                                                        <i class="fas fa-ticket-alt"></i> {{ $couponCount }}
+                                                    </a>
+                                                @else
+                                                    <span class="text-muted" title="Chưa có coupon">-</span>
+                                                @endif
+                                            </td>
                                             <td class="text-center">
                                                 <a href="{{ route('dashboard.products.show', $product->product_id) }}" class="btn btn-sm btn-outline-info" title="Xem"><i class="fas fa-eye"></i></a>
                                                 <a href="{{ route('dashboard.products.edit', $product->product_id) }}" class="btn btn-sm btn-outline-secondary" title="Sửa"><i class="fas fa-edit"></i></a>

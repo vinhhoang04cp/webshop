@@ -201,9 +201,44 @@
                     <hr>
 
                     <div class="mb-4">
-                        <h2 class="text-primary mb-0" style="font-size: 2.5rem; font-weight: 700;">
-                            {{ number_format($product->price, 0, ',', '.') }}₫ {{-- Giá sản phẩm đã được định dạng --}}
-                        </h2>
+                        @php
+                            $bestCoupon = $product->getBestCoupon();
+                            $discountedPrice = $product->getDiscountedPrice();
+                            $hasCoupon = $bestCoupon !== null;
+                        @endphp
+                        
+                        @if($hasCoupon)
+                            {{-- Có coupon giảm giá --}}
+                            <div class="mb-3 p-3 bg-warning bg-opacity-10 border border-warning rounded">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-ticket-alt text-warning fa-lg me-2"></i>
+                                    <span class="badge bg-warning text-dark px-3 py-2" style="font-size: 1.1em;">
+                                        <strong>{{ $bestCoupon->code }}</strong> - Giảm {{ $bestCoupon->discount_display }}
+                                    </span>
+                                </div>
+                                <div class="text-muted small">
+                                    <i class="fas fa-clock me-1"></i>
+                                    Có hiệu lực đến {{ $bestCoupon->end_date->format('d/m/Y') }}
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex align-items-baseline gap-3">
+                                <h2 class="text-danger mb-0" style="font-size: 2.5rem; font-weight: 700;">
+                                    {{ number_format($discountedPrice, 0, ',', '.') }}₫
+                                </h2>
+                                <span class="text-muted text-decoration-line-through" style="font-size: 1.5rem;">
+                                    {{ number_format($product->price, 0, ',', '.') }}₫
+                                </span>
+                                <span class="badge bg-danger" style="font-size: 0.9rem;">
+                                    Tiết kiệm {{ number_format($product->price - $discountedPrice, 0, ',', '.') }}₫
+                                </span>
+                            </div>
+                        @else
+                            {{-- Không có coupon --}}
+                            <h2 class="text-primary mb-0" style="font-size: 2.5rem; font-weight: 700;">
+                                {{ number_format($product->price, 0, ',', '.') }}₫ {{-- Giá sản phẩm đã được định dạng --}}
+                            </h2>
+                        @endif
                     </div>
 
                     <div class="mb-4">

@@ -52,6 +52,11 @@ class Product extends Model
         return $this->hasMany(Rating::class, 'product_id', 'product_id');
     }
 
+    public function coupons() // quan he 1-n voi Coupon (1 san pham co the co nhieu coupon)
+    {
+        return $this->hasMany(Coupon::class, 'product_id', 'product_id');
+    }
+
     // Hàm tính trung bình rating
     public function averageRating()
     {
@@ -62,5 +67,51 @@ class Product extends Model
     public function totalRatings()
     {
         return $this->ratings()->count();
+    }
+
+    /**
+     * Lấy coupon tốt nhất đang hoạt động cho sản phẩm này
+     */
+    public function getBestCoupon()
+    {
+        // Lấy tất cả coupon có thể áp dụng (coupon của sản phẩm này + coupon chung)
+        $allCoupons = Coupon::active()
+            ->valid()
+            ->forProduct($this->product_id)
+            ->get();
+
+        if ($allCoupons->isEmpty()) {
+            return null;
+        }
+
+        // Tìm coupon giảm giá nhiều nhất
+        return $allCoupons->sortByDesc(function ($coupon) {
+            return $coupon->calculateDiscount($this->price);
+        })->first();
+    }
+
+    /**
+     * Tính giá sau khi giảm (nếu có coupon)
+     */
+    public function getDiscountedPrice()
+    {
+        $bestCoupon = $this->getBestCoupon();
+
+        if ($bestCoupon) {
+            return $this->price - $bestCoupon->calculateDiscount($this->price);
+        }
+
+        return $this->price;
+    }
+
+    /**
+     * Kiểm tra sản phẩm có coupon không
+     */
+    public function hasCoupon()
+    {
+        return Coupon::active()
+            ->valid()
+            ->forProduct($this->product_id)
+            ->exists();
     }
 }

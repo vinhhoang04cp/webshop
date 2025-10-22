@@ -87,15 +87,13 @@ Route::middleware(['auth'])->group(function () {
             ->name('dashboard.products.show');
     });
 
-    // Coupons Management - cần quyền manager trở lên
+    // Coupons Management - cần quyền manager trở lên để xem
     Route::middleware('role:manager')->group(function () {
         Route::get('/dashboard/coupons', [\App\Http\Controllers\Web\CouponController::class, 'index'])
             ->name('dashboard.coupons.index');
-        Route::get('/dashboard/coupons/{id}', [\App\Http\Controllers\Web\CouponController::class, 'show'])
-            ->name('dashboard.coupons.show');
     });
 
-    // Coupons create/edit/delete - chỉ admin
+    // Coupons create/edit/delete - chỉ admin (ĐẶT TRƯỚC {id} để tránh conflict)
     Route::middleware('role:admin')->group(function () {
         Route::get('/dashboard/coupons/create', [\App\Http\Controllers\Web\CouponController::class, 'create'])
             ->name('dashboard.coupons.create');
@@ -109,6 +107,12 @@ Route::middleware(['auth'])->group(function () {
             ->name('dashboard.coupons.destroy');
         Route::patch('/dashboard/coupons/{id}/toggle-status', [\App\Http\Controllers\Web\CouponController::class, 'toggleStatus'])
             ->name('dashboard.coupons.toggle-status');
+    });
+
+    // Coupons show - manager có thể xem (ĐẶT SAU các route cụ thể)
+    Route::middleware('role:manager')->group(function () {
+        Route::get('/dashboard/coupons/{id}', [\App\Http\Controllers\Web\CouponController::class, 'show'])
+            ->name('dashboard.coupons.show');
     });
 
     // Orders Management - cần quyền manager trở lên

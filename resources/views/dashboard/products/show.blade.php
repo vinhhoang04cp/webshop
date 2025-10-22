@@ -250,7 +250,7 @@
                     @endif
 
                     <!-- Hành động -->
-                    <div class="card">
+                    <div class="card mb-3">
                         <div class="card-header">
                             <h6 class="mb-0"><i class="fas fa-tools me-2"></i>Hành động</h6>
                         </div>
@@ -276,6 +276,80 @@
                                     <i class="fas fa-list me-2"></i>Danh sách sản phẩm
                                 </a>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Coupons của sản phẩm này -->
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0"><i class="fas fa-ticket-alt me-2"></i>Coupon ({{ $product->coupons->count() }})</h6>
+                                @if(auth()->user()->hasRole('admin'))
+                                    <a href="{{ route('dashboard.coupons.create') }}?product_id={{ $product->product_id }}" class="btn btn-sm btn-light">
+                                        <i class="fas fa-plus"></i> Tạo Coupon
+                                    </a>
+                                @endif
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            @if($product->coupons->count() > 0)
+                                <div class="list-group list-group-flush">
+                                    @foreach($product->coupons as $coupon)
+                                        <div class="list-group-item px-0">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div>
+                                                    <strong class="text-primary">{{ $coupon->code }}</strong>
+                                                    <br>
+                                                    <span class="badge bg-{{ $coupon->discount_type === 'percentage' ? 'info' : 'success' }}">
+                                                        {{ $coupon->discount_display }}
+                                                    </span>
+                                                    <br>
+                                                    @php
+                                                        $status = $coupon->status_display;
+                                                        $badgeClass = match($status) {
+                                                            'Đang hoạt động' => 'success',
+                                                            'Không hoạt động' => 'secondary',
+                                                            'Đã hết hạn' => 'danger',
+                                                            'Chưa bắt đầu' => 'warning',
+                                                            default => 'secondary',
+                                                        };
+                                                    @endphp
+                                                    <small class="badge bg-{{ $badgeClass }}">{{ $status }}</small>
+                                                    <br>
+                                                    <small class="text-muted">
+                                                        {{ $coupon->start_date->format('d/m/Y') }} - {{ $coupon->end_date->format('d/m/Y') }}
+                                                    </small>
+                                                </div>
+                                                <div class="btn-group-vertical btn-group-sm">
+                                                    <a href="{{ route('dashboard.coupons.show', $coupon->coupon_id) }}" class="btn btn-info btn-sm">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    @if(auth()->user()->hasRole('admin'))
+                                                        <a href="{{ route('dashboard.coupons.edit', $coupon->coupon_id) }}" class="btn btn-warning btn-sm">
+                                                            <i class="fas fa-edit"></i>
+                                                        </a>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                                <div class="mt-3">
+                                    <a href="{{ route('dashboard.coupons.index') }}?search=" class="btn btn-sm btn-outline-primary w-100">
+                                        <i class="fas fa-list me-2"></i>Xem tất cả coupon
+                                    </a>
+                                </div>
+                            @else
+                                <div class="text-center py-3">
+                                    <i class="fas fa-ticket-alt fa-2x text-muted mb-2"></i>
+                                    <p class="text-muted mb-2">Chưa có coupon cho sản phẩm này</p>
+                                    @if(auth()->user()->hasRole('admin'))
+                                        <a href="{{ route('dashboard.coupons.create') }}?product_id={{ $product->product_id }}" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-plus"></i> Tạo Coupon Đầu Tiên
+                                        </a>
+                                    @endif
+                                </div>
+                            @endif
                         </div>
                     </div>
                 </div>

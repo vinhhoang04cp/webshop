@@ -4,18 +4,25 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\Coupon;
+use App\Models\Product;
 use Illuminate\Http\Request;
 
 class CouponController extends Controller
 {
     /**
-     * Hiển thị danh sách coupon cho admin
+     * Hiển thị danh sách coupon
      */
     public function index(Request $request)
     {
         try {
-            // Lấy tất cả coupons đơn giản
-            $coupons = Coupon::orderBy('created_at', 'desc')->paginate(15);
+            $query = Coupon::with('product');
+
+            // Tìm kiếm theo code
+            if ($request->has('search') && $request->search) {
+                $query->where('code', 'like', '%'.$request->search.'%');
+            }
+
+            $coupons = $query->orderBy('created_at', 'desc')->paginate(15);
 
             return view('dashboard.coupons.index', [
                 'coupons' => $coupons,
@@ -23,7 +30,7 @@ class CouponController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('Coupon index error: '.$e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            \Log::error('Coupon index error: '.$e->getMessage());
 
             return view('dashboard.coupons.index', [
                 'coupons' => collect(),
@@ -36,63 +43,57 @@ class CouponController extends Controller
     /**
      * Hiển thị form tạo coupon mới
      */
-    public function create()
+    public function create(Request $request)
     {
         try {
-            return view('dashboard.coupons.create');
+            $products = Product::orderBy('name')->get();
+            $selectedProductId = $request->input('product_id', null);
+
+            return view('dashboard.coupons.create', compact('products', 'selectedProductId'));
         } catch (\Exception $e) {
             return redirect()->route('dashboard.coupons.index')
-                ->with('error', 'Lỗi khi tải form tạo coupon: '.$e->getMessage());
+                ->with('error', 'Lỗi khi tải form: '.$e->getMessage());
         }
     }
 
     /**
-     * Lưu coupon mới vào database
+     * Lưu coupon mới
      */
     public function store(Request $request)
     {
         $request->validate([
             'code' => 'required|string|max:50|unique:coupons,code',
-            'name' => 'required|string|max:200',
-            'description' => 'nullable|string',
             'discount_type' => 'required|in:percentage,fixed',
             'discount_value' => 'required|numeric|min:0',
-            'min_order_amount' => 'required|numeric|min:0',
-            'max_discount_amount' => 'nullable|numeric|min:0',
-            'usage_limit' => 'nullable|integer|min:1',
-            'start_date' => 'required|date|after_or_equal:today',
+            'product_id' => 'nullable|exists:products,product_id',
+            'start_date' => 'required|date',
             'end_date' => 'required|date|after:start_date',
             'is_active' => 'boolean',
         ]);
 
         try {
-            // Validate percentage discount
+            // Validate giá trị phần trăm
             if ($request->discount_type === 'percentage' && $request->discount_value > 100) {
                 return redirect()->back()
                     ->withInput()
-                    ->withErrors(['discount_value' => 'Giá trị giảm giá theo phần trăm không được vượt quá 100%']);
+                    ->withErrors(['discount_value' => 'Giá trị phần trăm không được vượt quá 100%']);
             }
 
             Coupon::create([
                 'code' => strtoupper($request->code),
-                'name' => $request->name,
-                'description' => $request->description,
                 'discount_type' => $request->discount_type,
                 'discount_value' => $request->discount_value,
-                'min_order_amount' => $request->min_order_amount ?? 0,
-                'max_discount_amount' => $request->max_discount_amount,
-                'usage_limit' => $request->usage_limit,
-                'used_count' => 0,
+                'product_id' => $request->product_id,
                 'start_date' => $request->start_date,
                 'end_date' => $request->end_date,
-                'is_active' => $request->has('is_active') ? true : false,
+                'is_active' => $request->has('is_active'),
             ]);
 
             return redirect()->route('dashboard.coupons.index')
                 ->with('success', 'Coupon đã được tạo thành công!');
 
         } catch (\Exception $e) {
-            return redirect()->route('dashboard.coupons.create')
+            return redirect()->back()
                 ->withInput()
                 ->with('error', 'Lỗi khi tạo coupon: '.$e->getMessage());
         }
@@ -104,44 +105,41 @@ class CouponController extends Controller
     public function show($id)
     {
         try {
-            $coupon = Coupon::findOrFail($id);
+            $coupon = Coupon::with('product')->findOrFail($id);
 
             return view('dashboard.coupons.show', compact('coupon'));
         } catch (\Exception $e) {
             return redirect()->route('dashboard.coupons.index')
-                ->with('error', 'Không tìm thấy coupon: '.$e->getMessage());
+                ->with('error', 'Không tìm thấy coupon.');
         }
     }
 
     /**
-     * Hiển thị form chỉnh sửa coupon
+     * Hiển thị form chỉnh sửa
      */
     public function edit($id)
     {
         try {
             $coupon = Coupon::findOrFail($id);
+            $products = Product::orderBy('name')->get();
 
-            return view('dashboard.coupons.edit', compact('coupon'));
+            return view('dashboard.coupons.edit', compact('coupon', 'products'));
         } catch (\Exception $e) {
             return redirect()->route('dashboard.coupons.index')
-                ->with('error', 'Không tìm thấy coupon: '.$e->getMessage());
+                ->with('error', 'Không tìm thấy coupon.');
         }
     }
 
     /**
-     * Cập nhật thông tin coupon
+     * Cập nhật coupon
      */
     public function update(Request $request, $id)
     {
         $request->validate([
             'code' => 'required|string|max:50|unique:coupons,code,'.$id.',coupon_id',
-            'name' => 'required|string|max:200',
-            'description' => 'nullable|string',
             'discount_type' => 'required|in:percentage,fixed',
             'discount_value' => 'required|numeric|min:0',
-            'min_order_amount' => 'required|numeric|min:0',
-            'max_discount_amount' => 'nullable|numeric|min:0',
-            'usage_limit' => 'nullable|integer|min:1',
+            'product_id' => 'nullable|exists:products,product_id',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after:start_date',
             'is_active' => 'boolean',
@@ -150,55 +148,44 @@ class CouponController extends Controller
         try {
             $coupon = Coupon::findOrFail($id);
 
-            // Validate percentage discount
+            // Validate giá trị phần trăm
             if ($request->discount_type === 'percentage' && $request->discount_value > 100) {
                 return redirect()->back()
                     ->withInput()
-                    ->withErrors(['discount_value' => 'Giá trị giảm giá theo phần trăm không được vượt quá 100%']);
+                    ->withErrors(['discount_value' => 'Giá trị phần trăm không được vượt quá 100%']);
             }
 
             $coupon->update([
                 'code' => strtoupper($request->code),
-                'name' => $request->name,
-                'description' => $request->description,
                 'discount_type' => $request->discount_type,
                 'discount_value' => $request->discount_value,
-                'min_order_amount' => $request->min_order_amount ?? 0,
-                'max_discount_amount' => $request->max_discount_amount,
-                'usage_limit' => $request->usage_limit,
+                'product_id' => $request->product_id,
                 'start_date' => $request->start_date,
                 'end_date' => $request->end_date,
-                'is_active' => $request->has('is_active') ? true : false,
+                'is_active' => $request->has('is_active'),
             ]);
 
             return redirect()->route('dashboard.coupons.index')
-                ->with('success', 'Coupon đã được cập nhật thành công!');
+                ->with('success', 'Coupon đã được cập nhật!');
 
         } catch (\Exception $e) {
-            return redirect()->route('dashboard.coupons.edit', $id)
+            return redirect()->back()
                 ->withInput()
-                ->with('error', 'Lỗi khi cập nhật coupon: '.$e->getMessage());
+                ->with('error', 'Lỗi khi cập nhật: '.$e->getMessage());
         }
     }
 
     /**
-     * Xóa coupon khỏi database
+     * Xóa coupon
      */
     public function destroy($id)
     {
         try {
             $coupon = Coupon::findOrFail($id);
-
-            // Kiểm tra xem coupon đã được sử dụng chưa
-            if ($coupon->used_count > 0) {
-                return redirect()->route('dashboard.coupons.index')
-                    ->with('error', 'Không thể xóa coupon đã được sử dụng. Bạn có thể vô hiệu hóa nó thay thế.');
-            }
-
             $coupon->delete();
 
             return redirect()->route('dashboard.coupons.index')
-                ->with('success', 'Coupon đã được xóa thành công!');
+                ->with('success', 'Coupon đã được xóa!');
 
         } catch (\Exception $e) {
             return redirect()->route('dashboard.coupons.index')
@@ -207,7 +194,7 @@ class CouponController extends Controller
     }
 
     /**
-     * Toggle trạng thái active/inactive của coupon
+     * Toggle trạng thái
      */
     public function toggleStatus($id)
     {
@@ -218,11 +205,11 @@ class CouponController extends Controller
             $status = $coupon->is_active ? 'kích hoạt' : 'vô hiệu hóa';
 
             return redirect()->route('dashboard.coupons.index')
-                ->with('success', "Coupon đã được {$status} thành công!");
+                ->with('success', "Coupon đã được {$status}!");
 
         } catch (\Exception $e) {
             return redirect()->route('dashboard.coupons.index')
-                ->with('error', 'Lỗi khi thay đổi trạng thái coupon: '.$e->getMessage());
+                ->with('error', 'Lỗi: '.$e->getMessage());
         }
     }
 }
