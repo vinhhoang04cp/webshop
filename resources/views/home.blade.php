@@ -69,15 +69,33 @@
                         <a href="{{ route('product.show', $product->product_id) }}" class="text-decoration-none">
                             <h5 class="product-title">{{ $product->name }}</h5>
                         </a>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="product-price">{{ number_format($product->price, 0, ',', '.') }}₫</span>
-                            <div class="text-warning">
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="far fa-star"></i>
-                            </div>
+                        <div class="mb-2">
+                            @if($product->original_price)
+                                <div class="text-muted small text-decoration-line-through">
+                                    {{ number_format($product->original_price, 0, ',', '.') }}₫
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="product-price text-danger">{{ number_format($product->price, 0, ',', '.') }}₫</span>
+                                    <span class="badge bg-danger" style="font-size: 0.7rem;">
+                                        -{{ number_format((($product->original_price - $product->price) / $product->original_price) * 100, 0) }}%
+                                    </span>
+                                </div>
+                            @else
+                                <span class="product-price">{{ number_format($product->price, 0, ',', '.') }}₫</span>
+                            @endif
+                        </div>
+                        <div class="text-warning">
+                            @php
+                                $avgRating = $product->averageRating();
+                                $fullStars = floor($avgRating);
+                            @endphp
+                            @for($i = 1; $i <= 5; $i++)
+                                @if($i <= $fullStars)
+                                    <i class="fas fa-star"></i>
+                                @else
+                                    <i class="far fa-star"></i>
+                                @endif
+                            @endfor
                         </div>
                         <button class="btn-add-cart" onclick="addToCart({{ $product->product_id }})"> 
                             {{-- onclick goi ham addToCart voi product_id tuong ung --}}
@@ -126,10 +144,20 @@
                         <a href="{{ route('product.show', $product->product_id) }}" class="text-decoration-none"> {{-- Link den trang chi tiet san pham moi voi product_id tuong ung --}}
                             <h5 class="product-title">{{ $product->name }}</h5> {{-- Hien thi ten san pham moi khi goi den $product->name --}}
                         </a>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="product-price">{{ number_format($product->price, 0, ',', '.') }}₫</span> {{-- number format de dinh dang gia san pham moi --}}
-                            <small class="text-muted">{{ $product->created_at->diffForHumans() }}</small> {{-- Hien thi thoi gian them san pham moi dang "x phut truoc", "x gio truoc" --}}
+                        <div class="mb-2">
+                            @if($product->original_price)
+                                <div class="text-muted small text-decoration-line-through">
+                                    {{ number_format($product->original_price, 0, ',', '.') }}₫
+                                </div>
+                                <span class="product-price text-danger">{{ number_format($product->price, 0, ',', '.') }}₫</span>
+                                <span class="badge bg-danger ms-1" style="font-size: 0.7rem;">
+                                    -{{ number_format((($product->original_price - $product->price) / $product->original_price) * 100, 0) }}%
+                                </span>
+                            @else
+                                <span class="product-price">{{ number_format($product->price, 0, ',', '.') }}₫</span>
+                            @endif
                         </div>
+                        <small class="text-muted">{{ $product->created_at->diffForHumans() }}</small>
                         <button class="btn-add-cart" onclick="addToCart({{ $product->product_id }})"> {{-- onclick goi ham addToCart voi product_id tuong ung --}}
                             <i class="fas fa-cart-plus"></i> Thêm vào giỏ {{-- Hien thi icon gio hang va chu "Them vao gio" --}}
                         </button>

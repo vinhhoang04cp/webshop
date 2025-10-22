@@ -79,7 +79,7 @@ class CouponController extends Controller
                     ->withErrors(['discount_value' => 'Giá trị phần trăm không được vượt quá 100%']); // truyen error vao view
             }
 
-            Coupon::create([
+            $coupon = Coupon::create([
                 'code' => strtoupper($request->code), // code la truong bat buoc, string, max 50 ky tu, unique trong bang coupons, code
                 'discount_type' => $request->discount_type,
                 'discount_value' => $request->discount_value, // discount_value la truong bat buoc, numeric, min 0
@@ -88,6 +88,11 @@ class CouponController extends Controller
                 'end_date' => $request->end_date,
                 'is_active' => $request->has('is_active'),
             ]);
+
+            // Nếu coupon active và áp dụng cho sản phẩm cụ thể, cập nhật giá sản phẩm
+            if ($coupon->is_active && $request->product_id) {
+                $this->applyDiscountToProduct($coupon);
+            }
 
             return redirect()->route('dashboard.coupons.index') // chuyen huong ve trang danh sach coupon
                 ->with('success', 'Coupon đã được tạo thành công!'); // truyen success vao view
@@ -147,12 +152,19 @@ class CouponController extends Controller
 
         try {
             $coupon = Coupon::findOrFail($id); // findOrFail la ham de tim kiem coupon theo id
+            $oldProductId = $coupon->product_id; // Lưu lại product_id cũ
+            $oldIsActive = $coupon->is_active; // Lưu lại trạng thái cũ
 
             // Validate giá trị phần trăm
             if ($request->discount_type === 'percentage' && $request->discount_value > 100) { // neu gia tri cua discount_type la phan tram va discount_value lon hon 100 thi tra ve loi
                 return redirect()->back() // tra ve trang truoc do
                     ->withInput() // truyen input vao view
                     ->withErrors(['discount_value' => 'Giá trị phần trăm không được vượt quá 100%']); // truyen error vao view
+            }
+
+            // Nếu sản phẩm cũ có áp dụng giảm giá, khôi phục giá gốc
+            if ($oldIsActive && $oldProductId) {
+                $this->restoreProductPrice($oldProductId);
             }
 
             $coupon->update([ // update coupon
@@ -164,6 +176,11 @@ class CouponController extends Controller
                 'end_date' => $request->end_date, // end_date la truong bat buoc, date, after:start_date
                 'is_active' => $request->has('is_active'), // is_active la truong bat buoc, boolean
             ]);
+
+            // Nếu coupon mới active và áp dụng cho sản phẩm cụ thể, áp dụng giảm giá
+            if ($coupon->is_active && $request->product_id) {
+                $this->applyDiscountToProduct($coupon);
+            }
 
             return redirect()->route('dashboard.coupons.index') // chuyen huong ve trang danh sach coupon
                 ->with('success', 'Coupon đã được cập nhật!'); // truyen success vao view
@@ -182,6 +199,12 @@ class CouponController extends Controller
     {
         try {
             $coupon = Coupon::findOrFail($id); // findOrFail la ham de tim kiem coupon theo id
+
+            // Nếu coupon đang active và áp dụng cho sản phẩm cụ thể, khôi phục giá gốc
+            if ($coupon->is_active && $coupon->product_id) {
+                $this->restoreProductPrice($coupon->product_id);
+            }
+
             $coupon->delete(); // delete la ham de xoa coupon
 
             return redirect()->route('dashboard.coupons.index') // chuyen huong ve trang danh sach coupon
@@ -200,7 +223,18 @@ class CouponController extends Controller
     {
         try {
             $coupon = Coupon::findOrFail($id); // findOrFail la ham de tim kiem coupon theo id
+
+            // Nếu đang active và có product_id, khôi phục giá gốc trước khi toggle
+            if ($coupon->is_active && $coupon->product_id) {
+                $this->restoreProductPrice($coupon->product_id);
+            }
+
             $coupon->update(['is_active' => ! $coupon->is_active]); // update la ham de cap nhat coupon
+
+            // Nếu sau khi toggle mà active và có product_id, áp dụng giảm giá
+            if ($coupon->is_active && $coupon->product_id) {
+                $this->applyDiscountToProduct($coupon);
+            }
 
             $status = $coupon->is_active ? 'kích hoạt' : 'vô hiệu hóa'; // status la truong bat buoc, boolean
 
@@ -211,5 +245,48 @@ class CouponController extends Controller
             return redirect()->route('dashboard.coupons.index') // chuyen huong ve trang danh sach coupon
                 ->with('error', 'Lỗi: '.$e->getMessage()); // truyen error vao view
         }
+    }
+
+    /**
+     * Áp dụng giảm giá cho sản phẩm
+     */
+    private function applyDiscountToProduct($coupon)
+    {
+        if (! $coupon->product_id) {
+            return;
+        }
+
+        $product = Product::find($coupon->product_id);
+        if (! $product) {
+            return;
+        }
+
+        // Lưu giá gốc nếu chưa có
+        if ($product->original_price === null) {
+            $product->original_price = $product->price;
+        }
+
+        // Tính giá sau khi giảm
+        $discountedPrice = $product->original_price - $coupon->calculateDiscount($product->original_price);
+
+        // Cập nhật giá sản phẩm
+        $product->price = max(0, $discountedPrice); // Đảm bảo giá không âm
+        $product->save();
+    }
+
+    /**
+     * Khôi phục giá gốc cho sản phẩm
+     */
+    private function restoreProductPrice($productId)
+    {
+        $product = Product::find($productId);
+        if (! $product || $product->original_price === null) {
+            return;
+        }
+
+        // Khôi phục giá gốc
+        $product->price = $product->original_price;
+        $product->original_price = null;
+        $product->save();
     }
 }

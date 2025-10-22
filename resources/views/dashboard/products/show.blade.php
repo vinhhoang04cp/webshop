@@ -95,7 +95,20 @@
                                     <p class="text-muted mb-3">ID: #{{ $product->product_id }}</p>
                                     
                                     <div class="mb-3">
-                                        <h5 class="text-primary">{{ number_format($product->price, 0, ',', '.') }} VNĐ</h5>
+                                        @if($product->original_price)
+                                            <div class="text-muted text-decoration-line-through mb-1">
+                                                Giá gốc: {{ number_format($product->original_price, 0, ',', '.') }} VNĐ
+                                            </div>
+                                            <h5 class="text-danger mb-0">
+                                                {{ number_format($product->price, 0, ',', '.') }} VNĐ
+                                                <span class="badge bg-danger ms-2">
+                                                    -{{ number_format((($product->original_price - $product->price) / $product->original_price) * 100, 0) }}%
+                                                </span>
+                                            </h5>
+                                            <small class="text-success"><i class="fas fa-tag me-1"></i>Đang áp dụng coupon</small>
+                                        @else
+                                            <h5 class="text-primary">{{ number_format($product->price, 0, ',', '.') }} VNĐ</h5>
+                                        @endif
                                     </div>
 
                                     @if($product->description)

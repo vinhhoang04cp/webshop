@@ -202,8 +202,37 @@
 
                     <div class="mb-4">
                         @php
-                            $bestCoupon = $product->getBestCoupon();
-                            $discountedPrice = $product->getDiscountedPrice();
+                            // Nếu sản phẩm có original_price, nghĩa là đã được áp dụng coupon từ backend
+                            $hasAppliedCoupon = $product->original_price !== null;
+                            
+                            if ($hasAppliedCoupon) {
+                                // Sử dụng giá đã được cập nhật trong database
+                                $originalPrice = $product->original_price;
+                                $currentPrice = $product->price;
+                                $savedAmount = $originalPrice - $currentPrice;
+                                
+                                // Lấy thông tin coupon đang active cho sản phẩm
+                                $bestCoupon = \App\Models\Coupon::where('product_id', $product->product_id)
+                                    ->where('is_active', true)
+                                    ->whereDate('start_date', '<=', now())
+                                    ->whereDate('end_date', '>=', now())
+                                    ->first();
+                            } else {
+                                // Logic cũ: Tính toán động cho coupon chung (product_id = null)
+                                $bestCoupon = $product->getBestCoupon();
+                                $currentPrice = $product->price;
+                                
+                                if ($bestCoupon) {
+                                    $discountedPrice = $product->getDiscountedPrice();
+                                    $originalPrice = $product->price;
+                                    $currentPrice = $discountedPrice;
+                                    $savedAmount = $originalPrice - $currentPrice;
+                                } else {
+                                    $originalPrice = null;
+                                    $savedAmount = 0;
+                                }
+                            }
+                            
                             $hasCoupon = $bestCoupon !== null;
                         @endphp
                         
@@ -224,14 +253,16 @@
                             
                             <div class="d-flex align-items-baseline gap-3">
                                 <h2 class="text-danger mb-0" style="font-size: 2.5rem; font-weight: 700;">
-                                    {{ number_format($discountedPrice, 0, ',', '.') }}₫
+                                    {{ number_format($currentPrice, 0, ',', '.') }}₫
                                 </h2>
+                                @if($originalPrice && $savedAmount > 0)
                                 <span class="text-muted text-decoration-line-through" style="font-size: 1.5rem;">
-                                    {{ number_format($product->price, 0, ',', '.') }}₫
+                                    {{ number_format($originalPrice, 0, ',', '.') }}₫
                                 </span>
                                 <span class="badge bg-danger" style="font-size: 0.9rem;">
-                                    Tiết kiệm {{ number_format($product->price - $discountedPrice, 0, ',', '.') }}₫
+                                    Tiết kiệm {{ number_format($savedAmount, 0, ',', '.') }}₫
                                 </span>
+                                @endif
                             </div>
                         @else
                             {{-- Không có coupon --}}

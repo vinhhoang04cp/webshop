@@ -78,7 +78,18 @@
                                                 <strong>{{ $product->name }}</strong>
                                                 @if($product->description)<br><small class="text-muted">{{ Str::limit($product->description, 50) }}</small>@endif
                                             </td>
-                                            <td><span class="text-primary fw-bold">{{ number_format($product->price) }} VNĐ</span></td>
+                                            <td>
+                                                @if($product->original_price)
+                                                    <div>
+                                                        <span class="text-decoration-line-through text-muted small">{{ number_format($product->original_price) }} VNĐ</span>
+                                                        <br>
+                                                        <span class="text-danger fw-bold">{{ number_format($product->price) }} VNĐ</span>
+                                                        <span class="badge bg-danger ms-1">-{{ number_format((($product->original_price - $product->price) / $product->original_price) * 100, 0) }}%</span>
+                                                    </div>
+                                                @else
+                                                    <span class="text-primary fw-bold">{{ number_format($product->price) }} VNĐ</span>
+                                                @endif
+                                            </td>
                                             <td>@if($product->category)<span class="badge bg-secondary">{{ $product->category->name }}</span>@else-@endif</td>
                                             <td class="text-center">
                                                 @php
