@@ -14,6 +14,10 @@ return new class extends Migration
         Schema::create('orders', function (Blueprint $table) {
             $table->id('order_id');
             $table->unsignedBigInteger('user_id');
+            $table->string('shipping_name')->nullable();
+            $table->string('shipping_phone', 20)->nullable();
+            $table->text('shipping_address')->nullable();
+            $table->text('note')->nullable();
             $table->dateTime('order_date');
             $table->decimal('total_amount', 12, 2);
             $table->enum('status', ['pending', 'processing', 'shipped', 'delivered', 'cancelled'])
