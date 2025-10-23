@@ -1,6 +1,6 @@
-@extends('layouts.customer') {{-- Ke thua layout chính --}}
+@extends('layouts.customer')
 
-@section('title', $product->name . ' - WebShop') {{-- Tiêu đề trang --}}
+@section('title', $product->name . ' - WebShop')
 
 @push('styles')
 <style>
@@ -98,9 +98,8 @@
 </style>
 @endpush
 
-@section('content') {{-- Nội dung chính --}}
+@section('content')
 <div class="container">
-    {{-- Hiển thị thông báo --}}
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             <i class="fas fa-check-circle"></i> {{ session('success') }}
@@ -121,14 +120,14 @@
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a href="{{ route('home') }}">Trang chủ</a></li>
                     <li class="breadcrumb-item"><a href="{{ route('products.index') }}">Sản phẩm</a></li>
-                    @if($product->category) {{-- Kiểm tra nếu sản phẩm có danh mục --}}
+                    @if($product->category)
                         <li class="breadcrumb-item"> 
                             <a href="{{ route('category.show', $product->category->category_id) }}"> 
-                                {{ $product->category->name }} {{-- Hiển thị tên danh mục --}}
+                                {{ $product->category->name }}
                             </a>
                         </li>
                     @endif 
-                    <li class="breadcrumb-item active">{{ $product->name }}</li> {{-- Tên sản phẩm --}}
+                    <li class="breadcrumb-item active">{{ $product->name }}</li>
                 </ol>
             </nav>
         </div>
@@ -138,7 +137,6 @@
         <!-- Product Image -->
         <div class="col-md-5">
             <div class="card border-0 shadow-sm" style="border-radius: 12px; overflow: hidden;">
-                {{-- $product->image_url hien thi anh san pham qua link url neu khong co thi hien thi hinh mac dinh --}}
                 <img src="{{ $product->image_url ?? 'https://via.placeholder.com/500x500/667eea/ffffff?text=' . urlencode($product->name) }}" 
                      alt="{{ $product->name }}" 
                      class="img-fluid"
@@ -150,36 +148,19 @@
         <div class="col-md-7">
             <div class="card border-0 shadow-sm" style="border-radius: 12px;">
                 <div class="card-body p-4">
-                    @if($product->category) {{-- Kiểm tra nếu sản phẩm có danh mục --}}
-                        <span class="category-badge mb-3">{{ $product->category->name }}</span> {{-- Hiển thị tên danh mục --}}
+                    @if($product->category)
+                        <span class="category-badge mb-3">{{ $product->category->name }}</span>
                     @endif
                     
-                    <h1 class="mb-3" style="font-size: 2rem; font-weight: 700;">{{ $product->name }}</h1> {{-- Tên sản phẩm --}}
+                    <h1 class="mb-3" style="font-size: 2rem; font-weight: 700;">{{ $product->name }}</h1>
                     
-                    <div class="d-flex align-items-center mb-3"> {{-- Đánh giá sao thực tế --}}
-                        <div class="text-warning me-3">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="me-3">
                             @php
                                 $averageRating = $product->averageRating();
                                 $totalRatings = $product->totalRatings();
-                                $fullStars = floor($averageRating);
-                                $hasHalfStar = ($averageRating - $fullStars) >= 0.5;
                             @endphp
-                            
-                            {{-- Hiển thị sao đầy --}}
-                            @for($i = 1; $i <= $fullStars; $i++)
-                                <i class="fas fa-star"></i>
-                            @endfor
-                            
-                            {{-- Hiển thị sao nửa --}}
-                            @if($hasHalfStar)
-                                <i class="fas fa-star-half-alt"></i>
-                            @endif
-                            
-                            {{-- Hiển thị sao rỗng --}}
-                            @for($i = ($fullStars + ($hasHalfStar ? 1 : 0)); $i < 5; $i++)
-                                <i class="far fa-star"></i>
-                            @endfor
-                            
+                            @include('components.rating-stars', ['rating' => $averageRating])
                             <span class="text-muted ms-2">
                                 ({{ number_format($averageRating, 1) }}/5 - {{ $totalRatings }} đánh giá)
                             </span>
@@ -188,12 +169,11 @@
                         <span class="ms-3 text-muted">
                             <i class="fas fa-box"></i> 
                             Kho: 
-                            {{-- $product->inventory hien thi thong tin kho --}}
                             @if($product->inventory)
                                 <strong>{{ $product->inventory->quantity }}</strong> 
                                 <div class="text-muted">sản phẩm có sẵn</div>
                             @else
-                                <strong class="text-danger">Hết hàng</strong> {{-- Neu khong co thong tin kho thi hien thi het hang --}}
+                                <strong class="text-danger">Hết hàng</strong>
                             @endif
                         </span>
                     </div>
@@ -265,9 +245,8 @@
                                 @endif
                             </div>
                         @else
-                            {{-- Không có coupon --}}
                             <h2 class="text-primary mb-0" style="font-size: 2.5rem; font-weight: 700;">
-                                {{ number_format($product->price, 0, ',', '.') }}₫ {{-- Giá sản phẩm đã được định dạng --}}
+                                {{ number_format($product->price, 0, ',', '.') }}₫
                             </h2>
                         @endif
                     </div>
@@ -275,17 +254,15 @@
                     <div class="mb-4">
                         <h5>Mô tả sản phẩm:</h5>
                         <p class="text-muted">{{ $product->description ?? 'Chưa có mô tả cho sản phẩm này.' }}</p>
-                        {{-- $product->description hien thi mo ta san pham --}}
                     </div>
 
-                    @if($product->details) {{-- Kiểm tra nếu sản phẩm có thông tin chi tiết --}}
+                    @if($product->details)
                         <div class="mb-4">
                             <h5 class="text-primary mb-3">
                                 <i class="fas fa-info-circle me-2"></i>Thông tin chi tiết:
                             </h5>
                             <div class="row">
                                 <div class="col-md-6">
-                                    {{-- Thông tin cơ bản --}}
                                     @if($product->details->color)
                                         <div class="mb-3 p-3 bg-light rounded">
                                             <strong><i class="fas fa-palette me-2 text-info"></i>Màu sắc:</strong> 
@@ -323,7 +300,6 @@
                                 </div>
                                 
                                 <div class="col-md-6">
-                                    {{-- Thông tin kỹ thuật --}}
                                     @if($product->details->battery)
                                         <div class="mb-3 p-3 bg-light rounded">
                                             <strong><i class="fas fa-battery-full me-2 text-success"></i>Pin:</strong> 
@@ -365,18 +341,17 @@
                         </div>
                     @endif
 
-                    <form action="{{ route('cart.add', $product->product_id) }}" method="POST"> {{-- Form thêm vào giỏ hàng --}}
-                        @csrf {{-- Token bảo mật --}}
+                    <form action="{{ route('cart.add', $product->product_id) }}" method="POST">
+                        @csrf
                         <div class="mb-4">
-                            <label class="mb-2"><strong>Số lượng:</strong></label> {{-- Nhãn số lượng --}}
-                            <div class="input-group" style="width: 150px;"> {{-- Nhập số lượng --}}
+                            <label class="mb-2"><strong>Số lượng:</strong></label>
+                            <div class="input-group" style="width: 150px;">
                                 <input type="number" name="quantity" class="form-control text-center" value="1" min="1" max="{{ $product->inventory ? $product->inventory->quantity : 1 }}">
-                                {{-- so luong toi da la so luong co trong inventory --}}
                             </div>
                         </div>
 
                         <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary btn-lg" style="border-radius: 25px; padding: 12px;"> {{-- Nút thêm vào giỏ hàng click se gui request di --}}
+                            <button type="submit" class="btn btn-primary btn-lg" style="border-radius: 25px; padding: 12px;">
                                 <i class="fas fa-cart-plus"></i> Thêm vào giỏ hàng
                             </button>
                         </div>
@@ -610,11 +585,11 @@
     </div>
 
     <!-- Related Products -->
-    @if($relatedProducts->count() > 0) {{-- Kiểm tra nếu có sản phẩm liên quan --}}
+    @if($relatedProducts->count() > 0)
     <section class="mb-5">
-        <h2 class="section-title">Sản phẩm liên quan</h2> {{-- Tiêu đề phần sản phẩm liên quan --}}
+        <h2 class="section-title">Sản phẩm liên quan</h2>
         <div class="row g-4">
-            @foreach($relatedProducts as $related) {{-- Vòng lặp hiển thị từng sản phẩm liên quan --}}
+            @foreach($relatedProducts as $related)
             <div class="col-md-3"> 
                 <div class="product-card">
                     <a href="{{ route('product.show', $related->product_id) }}">
@@ -623,18 +598,18 @@
                              class="product-image">
                     </a>
                     <div class="product-body">
-                        @if($related->category) {{-- Kiểm tra nếu sản phẩm có danh mục --}}
-                            <span class="category-badge">{{ $related->category->name }}</span> {{-- Hiển thị tên danh mục --}}
+                        @if($related->category)
+                            <span class="category-badge">{{ $related->category->name }}</span>
                         @endif
                         <a href="{{ route('product.show', $related->product_id) }}" class="text-decoration-none">
-                            <h5 class="product-title">{{ $related->name }}</h5> {{-- Tên sản phẩm --}}
+                            <h5 class="product-title">{{ $related->name }}</h5>
                         </a>
-                        <div class="d-flex justify-content-between align-items-center"> {{-- Giá sản phẩm --}}
-                            <span class="product-price">{{ number_format($related->price, 0, ',', '.') }}₫</span> {{-- Giá sản phẩm đã được định dạng --}}
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="product-price">{{ number_format($related->price, 0, ',', '.') }}₫</span>
                         </div>
                         <form action="{{ route('cart.add', $related->product_id) }}" method="POST" style="display: inline;">
-                            @csrf {{-- Token bảo mật --}} 
-                            <input type="hidden" name="quantity" value="1"> {{-- Số lượng mặc định là 1 --}}
+                            @csrf
+                            <input type="hidden" name="quantity" value="1">
                             <button type="submit" class="btn-add-cart"> 
                                 <i class="fas fa-cart-plus"></i> Thêm vào giỏ
                             </button>

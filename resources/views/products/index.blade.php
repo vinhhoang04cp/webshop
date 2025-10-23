@@ -125,35 +125,9 @@
                                     <h5 class="product-title">{{ $product->name }}</h5>
                                 </a>
                                 <div class="mb-2">
-                                    @if($product->original_price)
-                                        {{-- Sản phẩm có giảm giá --}}
-                                        <div class="text-muted small text-decoration-line-through mb-1">
-                                            {{ number_format($product->original_price, 0, ',', '.') }}₫
-                                        </div>
-                                        <div class="d-flex align-items-center gap-2">
-                                            <span class="product-price text-danger">{{ number_format($product->price, 0, ',', '.') }}₫</span>
-                                            <span class="badge bg-danger" style="font-size: 0.7rem;">
-                                                -{{ number_format((($product->original_price - $product->price) / $product->original_price) * 100, 0) }}%
-                                            </span>
-                                        </div>
-                                    @else
-                                        {{-- Giá bình thường --}}
-                                        <span class="product-price">{{ number_format($product->price, 0, ',', '.') }}₫</span>
-                                    @endif
+                                    @include('components.product-price', ['product' => $product])
                                 </div>
-                                <div class="text-warning">
-                                    @php
-                                        $avgRating = $product->averageRating();
-                                        $fullStars = floor($avgRating);
-                                    @endphp
-                                    @for($i = 1; $i <= 5; $i++)
-                                        @if($i <= $fullStars)
-                                            <i class="fas fa-star"></i>
-                                        @else
-                                            <i class="far fa-star"></i>
-                                        @endif
-                                    @endfor
-                                </div>
+                                @include('components.rating-stars', ['rating' => $product->averageRating()])
                                 <button class="btn-add-cart" onclick="addToCart({{ $product->product_id }})">
                                     <i class="fas fa-cart-plus"></i> Thêm vào giỏ
                                 </button>
@@ -183,42 +157,6 @@
 
 @section('scripts')
 <script>
-function addToCart(productId) { // Hàm thêm sản phẩm vào giỏ hàng
-    fetch(`/cart/add/${productId}`, { // Gửi yêu cầu đến route thêm vào giỏ hàng
-        method: 'POST', // http method la post
-        headers: { 
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-            'Accept': 'application/json'
-        },
-        body: JSON.stringify({ quantity: 1 }) 
-    })
-    .then(response => {
-        // Kiểm tra nếu là lỗi 401 (chưa đăng nhập)
-        if (response.status === 401) {
-            return response.json().then(data => {
-                alert(data.message || 'Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!');
-                window.location.href = '/login';
-                throw new Error('Unauthorized');
-            });
-        }
-        return response.json();
-    })
-    .then(data => {
-        if(data && data.success) {
-            alert(data.message);
-            location.reload();
-        } else if(data && !data.success) {
-            alert(data.message || 'Có lỗi xảy ra!');
-        }
-    })
-    .catch(error => {
-        if (error.message !== 'Unauthorized') {
-            console.error('Error:', error);
-        }
-    });
-}
-
 function filterByCategory(categoryId) {
     const url = new URL(window.location.href);
     if(categoryId) {
