@@ -208,6 +208,10 @@
             margin-top: 10px;
             font-weight: 600;
             transition: transform 0.3s;
+            cursor: pointer;
+            pointer-events: auto;
+            position: relative;
+            z-index: 10;
         }
 
         .btn-add-cart:hover {

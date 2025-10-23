@@ -94,9 +94,15 @@
                                 @endif
                             @endfor
                         </div>
-                        <button class="btn-add-cart" onclick="addToCart({{ $product->product_id }})">
-                            <i class="fas fa-cart-plus"></i> Thêm vào giỏ
-                        </button>
+                        
+                        <!-- Form thêm vào giỏ hàng -->
+                        <form action="{{ route('cart.add', $product->product_id) }}" method="POST">
+                            @csrf
+                            <input type="hidden" name="quantity" value="1">
+                            <button type="submit" class="btn-add-cart">
+                                <i class="fas fa-cart-plus"></i> Thêm vào giỏ
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>

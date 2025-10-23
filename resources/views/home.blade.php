@@ -69,9 +69,15 @@
                             @include('components.product-price', ['product' => $product])
                         </div>
                         @include('components.rating-stars', ['rating' => $product->averageRating()])
-                        <button class="btn-add-cart" onclick="addToCart({{ $product->product_id }})">
-                            <i class="fas fa-cart-plus"></i> Thêm vào giỏ
-                        </button>
+                        
+                        <!-- Form thêm vào giỏ hàng -->
+                        <form action="{{ route('cart.add', $product->product_id) }}" method="POST">
+                            @csrf
+                            <input type="hidden" name="quantity" value="1">
+                            <button type="submit" class="btn-add-cart">
+                                <i class="fas fa-cart-plus"></i> Thêm vào giỏ
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -117,9 +123,15 @@
                             @include('components.product-price', ['product' => $product])
                         </div>
                         <small class="text-muted">{{ $product->created_at->diffForHumans() }}</small>
-                        <button class="btn-add-cart" onclick="addToCart({{ $product->product_id }})">
-                            <i class="fas fa-cart-plus"></i> Thêm vào giỏ
-                        </button>
+                        
+                        <!-- Form thêm vào giỏ hàng -->
+                        <form action="{{ route('cart.add', $product->product_id) }}" method="POST">
+                            @csrf
+                            <input type="hidden" name="quantity" value="1">
+                            <button type="submit" class="btn-add-cart">
+                                <i class="fas fa-cart-plus"></i> Thêm vào giỏ
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>

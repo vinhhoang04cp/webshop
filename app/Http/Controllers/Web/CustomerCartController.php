@@ -43,15 +43,15 @@ class CustomerCartController extends Controller
 
         // Validate thông tin giao hàng
         $request->validate([
-            'shipping_name' => 'required|string|max:255',
-            'shipping_phone' => 'required|string|max:20',
-            'shipping_address' => 'required|string|max:1000',
-            'note' => 'nullable|string|max:500',
-            'coupon_code' => 'nullable|string|max:50',
+            'shipping_name' => 'required|string|max:255', // shipping_name la ten nguoi nhan, bat buoc phai la chuoi va toi da 255 ky tu
+            'shipping_phone' => 'required|string|max:20', // shipping_phone la so dien thoai nguoi nhan, bat buoc phai la chuoi va toi da 20 ky tu
+            'shipping_address' => 'required|string|max:1000', // shipping_address la dia chi giao hang, bat buoc phai la chuoi va toi da 1000 ky tu
+            'note' => 'nullable|string|max:500', // note la ghi chu, co the null, neu co thi phai la chuoi va toi da 500 ky tu
+            'coupon_code' => 'nullable|string|max:50', // coupon_code la ma giam gia, co the null, neu co thi phai la chuoi va toi da 50 ky tu
         ], [
-            'shipping_name.required' => 'Vui lòng nhập họ và tên người nhận',
-            'shipping_phone.required' => 'Vui lòng nhập số điện thoại',
-            'shipping_address.required' => 'Vui lòng nhập địa chỉ giao hàng',
+            'shipping_name.required' => 'Vui lòng nhập họ và tên người nhận', // shipping_name.required
+            'shipping_phone.required' => 'Vui lòng nhập số điện thoại', // shipping_phone.required
+            'shipping_address.required' => 'Vui lòng nhập địa chỉ giao hàng', // shipping_address.required
         ]);
 
         $cart = Auth::user()->cart; // $cart la gio hang cua user hien tai dang nhap
@@ -75,34 +75,36 @@ class CustomerCartController extends Controller
             }
 
             // Tính tổng tiền giỏ hàng
-            $totalAmount = $cart->totalPrice();
-            $discountAmount = 0;
-            $coupon = null;
+            $totalAmount = $cart->totalPrice(); // totalPrice() la ham tinh tong tien cua gio hang lay tu model Cart
+            $discountAmount = 0; // discountAmount la so tien giam gia
+            $coupon = null; // coupon la bien chua coupon neu co
 
             // Xử lý coupon nếu có
-            if ($request->filled('coupon_code')) {
-                $couponCode = strtoupper(trim($request->coupon_code));
-                $coupon = \App\Models\Coupon::where('code', $couponCode)->first();
+            if ($request->filled('coupon_code')) { // $request->filled('coupon_code') neu co xuat hien coupon_code trong request
+                $couponCode = strtoupper(trim($request->coupon_code)); // chuyen doi coupon_code thanh chu hoa va cat bo khoang trang dau cuoi
+                $coupon = \App\Models\Coupon::where('code', $couponCode)->first(); // tim kiem coupon theo code
 
-                if (! $coupon) {
-                    throw new \Exception('Mã giảm giá không hợp lệ!');
+                if (! $coupon) { // neu khong tim thay coupon
+                    throw new \Exception('Mã giảm giá không hợp lệ!'); // thong bao loi ma giam gia khong hop le
                 }
 
                 // Validate coupon
-                $validation = $coupon->isValid($totalAmount);
-                if (! $validation['valid']) {
-                    throw new \Exception($validation['message']);
+                $validation = $coupon->isValid($totalAmount); // $coupon->isValid($totalAmount) kiem tra coupon co hop le khong voi tong tien gio hang
+                if (! $validation['valid']) { // neu coupon khong hop le
+                    throw new \Exception($validation['message']); // thong bao loi tu phuong thuc isValid
                 }
 
                 // Tính tiền giảm giá
                 $discountAmount = $coupon->calculateDiscount($totalAmount);
+                // $coupon->calculateDiscount($totalAmount) goi den ham calculateDiscount tu model Coupon de tinh so tien giam gia
                 $totalAmount = $totalAmount - $discountAmount;
+                // cap nhat lai tong tien gio hang sau khi tru giam gia
             }
 
             // Tạo đơn hàng với thông tin giao hàng
-            $order = new \App\Models\Order; // Su dung model Order de tao don hang moi
-            $order->user_id = Auth::id(); // Auth::id() lay id cua user hien tai dang nhap
-            $order->total_amount = $totalAmount; // Tổng tiền sau khi trừ coupon
+            $order = new \App\Models\Order; // tao moi don hang thong qua model Order
+            $order->user_id = Auth::id(); // su dung id cua user hien tai dang nhap lam user_id
+            $order->total_amount = $totalAmount; // Tổng tiền sau khi trừ coupon, tota
             $order->status = 'pending'; // trang thai don hang mac dinh la 'pending'
             $order->order_date = now();  // thoi gian dat hang la thoi diem hien tai
 
@@ -115,8 +117,9 @@ class CustomerCartController extends Controller
             $order->save(); // luu don hang vao database
 
             // Tăng used_count của coupon nếu đã sử dụng
-            if ($coupon) {
-                $coupon->increment('used_count');
+            if ($coupon) { // neu co coupon
+                $coupon->increment('used_count'); // increment la tang gia tri cua used_count len 1
+                $coupon->save(); // luu thay doi coupon vao database
             }
 
             // Thêm các sản phẩm vào order_items VÀ TRỪ TỒN KHO NGAY
@@ -165,80 +168,6 @@ class CustomerCartController extends Controller
             DB::rollBack(); // quay lai trang thai truoc khi bat dau giao dich
 
             return redirect()->route('cart.index')->with('error', 'Có lỗi xảy ra khi đặt hàng: '.$e->getMessage()); // chuyen huong den trang gio hang voi thong bao loi
-        }
-    }
-
-    /**
-     * Preview áp dụng mã coupon (AJAX)
-     */
-    public function applyCoupon(Request $request)
-    {
-        if (! Auth::check()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Vui lòng đăng nhập!',
-            ], 401);
-        }
-
-        $request->validate([
-            'coupon_code' => 'required|string|max:50',
-        ]);
-
-        try {
-            $cart = Auth::user()->cart;
-            if (! $cart || $cart->items()->count() == 0) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Giỏ hàng trống!',
-                ]);
-            }
-
-            $totalAmount = $cart->totalPrice();
-            $couponCode = strtoupper(trim($request->coupon_code));
-
-            $coupon = \App\Models\Coupon::where('code', $couponCode)->first();
-
-            if (! $coupon) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Mã giảm giá không hợp lệ!',
-                ]);
-            }
-
-            // Validate coupon
-            $validation = $coupon->isValid($totalAmount);
-            if (! $validation['valid']) {
-                return response()->json([
-                    'success' => false,
-                    'message' => $validation['message'],
-                ]);
-            }
-
-            // Tính tiền giảm giá
-            $discountAmount = $coupon->calculateDiscount($totalAmount);
-            $finalAmount = $totalAmount - $discountAmount;
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Mã giảm giá hợp lệ!',
-                'data' => [
-                    'coupon_code' => $coupon->code,
-                    'coupon_name' => $coupon->name,
-                    'discount_type' => $coupon->discount_type,
-                    'discount_value' => $coupon->discount_value,
-                    'original_amount' => $totalAmount,
-                    'discount_amount' => $discountAmount,
-                    'final_amount' => $finalAmount,
-                    'discount_display' => number_format($discountAmount, 0, ',', '.').' VND',
-                    'final_display' => number_format($finalAmount, 0, ',', '.').' VND',
-                ],
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Có lỗi xảy ra: '.$e->getMessage(),
-            ], 500);
         }
     }
 
@@ -305,7 +234,7 @@ class CustomerCartController extends Controller
      *
      * Chức năng: Thêm một sản phẩm vào giỏ hàng của khách hàng
      * Hoạt động:
-     * - Kiểm tra người dùng đã đăng nhập (hỗ trợ cả AJAX và normal request)
+     * - Kiểm tra người dùng đã đăng nhập
      * - Validate số lượng sản phẩm (tối thiểu 1)
      * - Tìm sản phẩm theo ID, kiểm tra tồn tại
      * - Kiểm tra tồn kho sản phẩm có đủ không
@@ -313,23 +242,15 @@ class CustomerCartController extends Controller
      * - Kiểm tra sản phẩm đã có trong giỏ hàng chưa:
      *   + Nếu có: tăng số lượng
      *   + Nếu chưa: tạo cart item mới
-     * - Trả về response phù hợp (JSON cho AJAX, redirect cho normal request)
+     * - Redirect về trang trước với thông báo
      *
      * @param  \Illuminate\Http\Request  $request  Chứa thông tin số lượng
      * @param  int  $productId  ID của sản phẩm cần thêm
-     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\RedirectResponse
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function add(Request $request, $productId) // ham add de them san pham vao gio hang voi tham so truyen vao la Request $request va $productId
     {
         if (! Auth::check()) { // neu user chua dang nhap
-            // Kiểm tra nếu là AJAX request thì trả về JSON
-            if ($request->expectsJson() || $request->ajax()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!',
-                ], 401);
-            }
-
             return redirect()->route('login')->with('error', 'Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!');
         }
 
@@ -378,26 +299,10 @@ class CustomerCartController extends Controller
 
             DB::commit(); // ket thuc giao dich
 
-            // Kiểm tra nếu là AJAX request thì trả về JSON
-            if ($request->expectsJson() || $request->ajax()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Đã thêm sản phẩm vào giỏ hàng!',
-                ]);
-            }
-
             return redirect()->back()->with('success', 'Đã thêm sản phẩm vào giỏ hàng!');
 
         } catch (\Exception $e) { // neu co loi xay ra trong qua trinh them san pham vao gio hang
             DB::rollBack();
-
-            // Kiểm tra nếu là AJAX request thì trả về JSON
-            if ($request->expectsJson() || $request->ajax()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Có lỗi xảy ra: '.$e->getMessage(),
-                ], 500);
-            }
 
             return redirect()->back()->with('error', 'Có lỗi xảy ra: '.$e->getMessage());
         }
@@ -415,20 +320,17 @@ class CustomerCartController extends Controller
      * - Kiểm tra tồn kho sản phẩm có đủ cho số lượng mới không
      * - Cập nhật số lượng mới vào cart item
      * - Lưu thay đổi vào database
-     * - Trả về response tương ứng (JSON hoặc redirect)
+     * - Redirect về trang giỏ hàng với thông báo
      *
      * @param  \Illuminate\Http\Request  $request  Chứa số lượng mới
      * @param  int  $cartItemId  ID của cart item cần cập nhật
-     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\RedirectResponse
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function update(Request $request, $cartItemId) // ham update de cap nhat so luong san pham trong gio hang voi tham so truyen vao la Request $request va $cartItemId
     {
         // check user da dang nhap chua
         if (! Auth::check()) { // neu user chua dang nhap
-            return response()->json([ // tra ve response dang json
-                'success' => false, // bien success de biet cap nhat so luong san pham trong gio hang co thanh cong hay khong
-                'message' => 'Vui lòng đăng nhập!', // thong bao loi
-            ], 401);
+            return redirect()->route('login')->with('error', 'Vui lòng đăng nhập!'); // chuyen huong den trang dang nhap voi thong bao loi
         }
 
         $request->validate([ // validate du lieu truyen vao
@@ -442,10 +344,7 @@ class CustomerCartController extends Controller
 
             // Kiểm tra quyền sở hữu
             if ($cartItem->cart->user_id != Auth::id()) { // neu user_id cua gio hang khac voi id cua user hien tai dang nhap
-                return response()->json([ // tra ve response dang json
-                    'success' => false, // bien success de biet cap nhat so luong san pham trong gio hang co thanh cong hay khong
-                    'message' => 'Không có quyền!', // thong bao loi
-                ], 403); // 403 la ma trang thai HTTP cho biet user khong co quyen truy cap
+                return redirect()->route('cart.index')->with('error', 'Không có quyền!'); // chuyen huong den trang gio hang voi thong bao loi
             }
 
             $cartItem->quantity = $request->quantity; // cap nhat so luong san pham trong gio hang qua bien quantity
@@ -456,21 +355,12 @@ class CustomerCartController extends Controller
 
             DB::commit(); // ket thuc giao dich
 
-            return response()->json([ // tra ve response dang json
-                'success' => true, // bien success de biet cap nhat so luong san pham trong gio hang co thanh cong hay khong
-                'message' => 'Đã cập nhật giỏ hàng!', // thong bao thanh cong
-                'cartCount' => $cart->items()->sum('quantity'), // tinh tong so luong san pham trong gio hang bang ham sum('quantity')
-                'itemTotal' => $cartItem->quantity * ($cartItem->price ?? $cartItem->product->price ?? 0), // tinh tong tien cua item trong gio hang
-                'cartTotal' => $cart->totalPrice(), // Sử dụng method totalPrice() thay vì total_amount
-            ]);
+            return redirect()->route('cart.index')->with('success', 'Đã cập nhật số lượng sản phẩm!'); // chuyen huong den trang gio hang voi thong bao thanh cong
 
         } catch (\Exception $e) { // neu co loi xay ra trong qua trinh cap nhat so luong san pham trong gio hang
             DB::rollBack(); // quay lai trang thai truoc khi bat dau giao dich
 
-            return response()->json([ // tra ve response dang json
-                'success' => false,
-                'message' => 'Có lỗi xảy ra: '.$e->getMessage(),
-            ], 500);
+            return redirect()->route('cart.index')->with('error', 'Có lỗi xảy ra: '.$e->getMessage()); // chuyen huong den trang gio hang voi thong bao loi
         }
     }
 
@@ -483,20 +373,16 @@ class CustomerCartController extends Controller
      * - Tìm cart item theo ID
      * - Kiểm tra quyền sở hữu (cart item phải thuộc về user hiện tại)
      * - Xóa cart item khỏi database
-     * - Tính lại tổng số lượng và tổng tiền trong giỏ hàng
-     * - Trả về JSON response với thông tin cập nhật
+     * - Redirect về trang giỏ hàng với thông báo
      * - Sử dụng transaction để đảm bảo tính toàn vẹn dữ liệu
      *
      * @param  int  $cartItemId  ID của cart item cần xóa
-     * @return \Illuminate\Http\JsonResponse
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function remove($cartItemId)
     {
         if (! Auth::check()) { // neu user chua dang nhap
-            return response()->json([ // tra ve response dang json
-                'success' => false, // bien success de biet xoa san pham khoi gio hang co thanh cong hay khong
-                'message' => 'Vui lòng đăng nhập!', // thong bao loi
-            ], 401);
+            return redirect()->route('login')->with('error', 'Vui lòng đăng nhập!'); // chuyen huong den trang dang nhap voi thong bao loi
         }
 
         try {
@@ -508,10 +394,7 @@ class CustomerCartController extends Controller
             // Kiểm tra quyền sở hữu
             if ($cartItem->cart->user_id != Auth::id()) { // neu user_id cua gio hang khac voi id cua user hien tai dang nhap
                 // $cartItem->cart-> user_id la cach truy cap user_id cua gio hang thong qua item trong gio hang
-                return response()->json([ // tra ve response dang json
-                    'success' => false, //  bien success de biet xoa san pham khoi gio hang co thanh cong hay khong
-                    'message' => 'Không có quyền!', // thong bao loi
-                ], 403); // 403 la ma trang thai HTTP cho biet user khong co quyen truy cap
+                return redirect()->route('cart.index')->with('error', 'Không có quyền!'); // chuyen huong den trang gio hang voi thong bao loi
             }
 
             $cart = $cartItem->cart; // $cart la bien chua gio hang cua item trong gio hang
@@ -521,20 +404,12 @@ class CustomerCartController extends Controller
 
             DB::commit(); // ket thuc giao dich
 
-            return response()->json([  // tra ve response dang json
-                'success' => true, // bien success de biet xoa san pham khoi gio hang co thanh cong hay khong
-                'message' => 'Đã xóa sản phẩm khỏi giỏ hàng!', // thong bao thanh cong
-                'cartTotal' => $cart->totalPrice(), // Sử dụng method totalPrice()
-                'cartCount' => $cart->items()->sum('quantity'),
-            ]);
+            return redirect()->route('cart.index')->with('success', 'Đã xóa sản phẩm khỏi giỏ hàng!'); // chuyen huong den trang gio hang voi thong bao thanh cong
 
         } catch (\Exception $e) { // neu co loi xay ra trong qua trinh xoa san pham khoi gio hang
             DB::rollBack(); // quay lai trang thai truoc khi bat dau giao dich
 
-            return response()->json([ // tra ve response dang json
-                'success' => false, // bien success de biet xoa san pham khoi gio hang co thanh cong hay khong
-                'message' => 'Có lỗi xảy ra: '.$e->getMessage(), // thong bao loi
-            ], 500);
+            return redirect()->route('cart.index')->with('error', 'Có lỗi xảy ra: '.$e->getMessage()); // chuyen huong den trang gio hang voi thong bao loi
         }
     }
 

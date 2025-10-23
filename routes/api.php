@@ -109,3 +109,8 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () { // boc
         Route::get('/low-stock/list', [\App\Http\Controllers\Api\InventoryController::class, 'lowStock']);
     });
 });
+
+// Coupon routes - Public access to view coupons
+Route::prefix('coupons')->middleware('throttle:60,1')->group(function () {
+    Route::get('/', [\App\Http\Controllers\Api\CouponController::class, 'index']);
+});

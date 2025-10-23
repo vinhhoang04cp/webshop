@@ -40,7 +40,7 @@
                             <tbody>
                                 @if($cartItems->count() > 0)
                                     @foreach($cartItems as $item)
-                                    <tr id="cart-item-{{ $item->cart_item_id }}">
+                                    <tr>
                                         <td>
                                             <div class="d-flex align-items-center">
                                                 <img src="{{ $item->product->image_url ?? 'https://via.placeholder.com/80x80/667eea/ffffff?text=' . urlencode($item->product->name) }}" 
@@ -60,19 +60,44 @@
                                         </td>
                                         <td class="align-middle">{{ number_format($item->price ?? $item->product->price ?? 0, 0, ',', '.') }}₫</td>
                                         <td class="align-middle">
-                                            <div class="input-group" style="width: 130px;">
-                                                <button class="btn btn-outline-secondary" type="button" onclick="changeQuantity({{ $item->cart_item_id }}, -1)">-</button>
-                                                <input type="text" class="form-control text-center" value="{{ $item->quantity }}" id="qty-{{ $item->cart_item_id }}" readonly>
-                                                <button class="btn btn-outline-secondary" type="button" onclick="changeQuantity({{ $item->cart_item_id }}, 1)">+</button>
+                                            <!-- Form cập nhật số lượng -->
+                                            <div class="d-flex align-items-center gap-2" style="width: 180px;">
+                                                <!-- Giảm số lượng -->
+                                                <form action="{{ route('cart.update', $item->cart_item_id) }}" method="POST" class="d-inline">
+                                                    @csrf
+                                                    @method('PUT')
+                                                    <input type="hidden" name="quantity" value="{{ max(1, $item->quantity - 1) }}">
+                                                    <button type="submit" class="btn btn-outline-secondary btn-sm" {{ $item->quantity <= 1 ? 'disabled' : '' }}>
+                                                        <i class="fas fa-minus"></i>
+                                                    </button>
+                                                </form>
+                                                
+                                                <!-- Hiển thị số lượng -->
+                                                <span class="fw-bold mx-2" style="min-width: 30px; text-align: center;">{{ $item->quantity }}</span>
+                                                
+                                                <!-- Tăng số lượng -->
+                                                <form action="{{ route('cart.update', $item->cart_item_id) }}" method="POST" class="d-inline">
+                                                    @csrf
+                                                    @method('PUT')
+                                                    <input type="hidden" name="quantity" value="{{ $item->quantity + 1 }}">
+                                                    <button type="submit" class="btn btn-outline-secondary btn-sm">
+                                                        <i class="fas fa-plus"></i>
+                                                    </button>
+                                                </form>
                                             </div>
                                         </td>
-                                        <td class="fw-bold align-middle" id="item-total-{{ $item->cart_item_id }}"
+                                        <td class="fw-bold align-middle">
                                             {{ number_format(($item->price ?? $item->product->price ?? 0) * $item->quantity, 0, ',', '.') }}₫
                                         </td>
                                         <td class="align-middle">
-                                            <button class="btn btn-link text-danger" onclick="removeItem({{ $item->cart_item_id }})" title="Xóa sản phẩm">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
+                                            <!-- Form xóa sản phẩm -->
+                                            <form action="{{ route('cart.remove', $item->cart_item_id) }}" method="POST" class="d-inline" onsubmit="return confirm('Bạn có chắc muốn xóa sản phẩm này?')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-link text-danger p-0" title="Xóa sản phẩm">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
                                         </td>
                                     </tr>
                                     @endforeach
@@ -269,106 +294,4 @@
         border: 1px solid #ffd700;
     }
 </style>
-@endsection
-
-@section('scripts')
-<script>
-// Hàm mới để thay đổi số lượng (tăng/giảm)
-function changeQuantity(cartItemId, delta) {
-    const input = document.getElementById(`qty-${cartItemId}`);
-    const currentQty = parseInt(input.value);
-    const newQuantity = currentQty + delta;
-    
-    updateQuantity(cartItemId, newQuantity);
-}
-
-function updateQuantity(cartItemId, newQuantity) {
-    if(newQuantity < 1) {
-        if(confirm('Bạn có muốn xóa sản phẩm này khỏi giỏ hàng?')) {
-            removeItem(cartItemId);
-        }
-        return;
-    }
-
-    fetch(`/cart/update/${cartItemId}`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-        },
-        body: JSON.stringify({ quantity: newQuantity })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if(data.success) {
-            // Cập nhật số lượng
-            document.getElementById(`qty-${cartItemId}`).value = newQuantity;
-            
-            // Cập nhật tổng tiền của item
-            document.getElementById(`item-total-${cartItemId}`).textContent = 
-                new Intl.NumberFormat('vi-VN').format(data.itemTotal) + '₫';
-            
-            // Cập nhật tổng giỏ hàng
-            updateCartSummary(data.cartTotal);
-        } else {
-            alert(data.message || 'Có lỗi xảy ra!');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Có lỗi xảy ra khi cập nhật giỏ hàng!');
-    });
-}
-
-function removeItem(cartItemId) {
-    if(!confirm('Bạn có chắc muốn xóa sản phẩm này?')) {
-        return;
-    }
-
-    fetch(`/cart/remove/${cartItemId}`, {
-        method: 'DELETE',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if(data.success) {
-            // Xóa dòng khỏi table
-            const row = document.getElementById(`cart-item-${cartItemId}`);
-            if(row) {
-                row.remove();
-            }
-            
-            // Cập nhật tổng giỏ hàng
-            updateCartSummary(data.cartTotal);
-            
-            // Reload nếu giỏ hàng trống
-            if(data.cartCount === 0) {
-                location.reload();
-            }
-        } else {
-            alert(data.message || 'Có lỗi xảy ra!');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Có lỗi xảy ra khi xóa sản phẩm!');
-    });
-}
-
-function updateCartSummary(cartTotal) {
-    const subtotal = cartTotal;
-    const shippingFee = subtotal >= 500000 ? 0 : 30000;
-    const total = subtotal + shippingFee;
-    
-    document.getElementById('subtotal').textContent = 
-        new Intl.NumberFormat('vi-VN').format(subtotal) + '₫';
-    document.getElementById('shipping-fee').textContent = 
-        new Intl.NumberFormat('vi-VN').format(shippingFee) + '₫';
-    document.getElementById('total').textContent = 
-        new Intl.NumberFormat('vi-VN').format(total) + '₫';
-}
-</script>
 @endsection

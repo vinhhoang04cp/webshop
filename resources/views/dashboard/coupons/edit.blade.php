@@ -176,8 +176,7 @@
         unit.textContent = type === 'percentage' ? '%' : 'VND';
     }
 
-    document.getElementById('code').addEventListener('input', function() {
-        this.value = this.value.toUpperCase();
-    });
+    // KHÔNG dùng JavaScript để uppercase nữa - để server xử lý
+    // CSS text-transform: uppercase sẽ hiển thị chữ hoa cho user
 </script>
 @endsection
