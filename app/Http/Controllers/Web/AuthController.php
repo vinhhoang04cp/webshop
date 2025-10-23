@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Web;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\Controller; // Import controller de truy cap cac ham trong controller
 use App\Models\Role; // Import model Role de truy cap bang roles
 use App\Models\User; // Import model User de truy cap bang users
 use App\Models\UserRole; // Import model UserRole de tu dong gan role cho user moi dang ky
@@ -24,7 +24,7 @@ class AuthController extends Controller
      *
      * @return \Illuminate\Http\RedirectResponse|\Illuminate\View\View
      */
-    public function showLogin() // Ham hien thi form login
+    public function showLogin() // Ham hien thi form login - tra ve view login.blade.php
     {
         if (Auth::check()) { // Auth - kiem tra user da dang nhap chua
             // Neu da dang nhap thi chuyen huong ve dashboard

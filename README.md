@@ -181,6 +181,26 @@ Tài liệu được tổ chức thành 7 file chính, mỗi file phục vụ m�
 
 ---
 
+### 9️⃣ [SOCIALITE_COMPLETE_GUIDE.md](./docs/SOCIALITE_COMPLETE_GUIDE.md) 🔐
+**Hướng dẫn đầy đủ về Laravel Socialite - Social Login**
+
+- 📋 Tổng quan tính năng đăng nhập qua Google/Facebook/GitHub
+- 🛠️ Các bước triển khai kỹ thuật chi tiết
+- 🔧 Cấu hình Google OAuth từng bước (có screenshots)
+- 📱 Cấu hình Facebook OAuth
+- 🐙 Cấu hình GitHub OAuth
+- 🧪 Testing & Debugging
+- 🔒 Security & Production checklist
+- ⚠️ Troubleshooting
+
+**Đọc khi**:
+- Cần setup đăng nhập qua Social Networks
+- Debug OAuth integration
+- Deploy social login lên production
+- Thêm provider mới (Twitter, LinkedIn, etc.)
+
+---
+
 ## 🚀 Quick Start
 
 ### 1. Cài đặt lần đầu
@@ -391,6 +411,7 @@ Khi thêm feature mới hoặc thay đổi code:
 
 | Version | Date | Changes |
 |---------|------|---------|
+| **3.1** | 23/10/2025 | Thêm Laravel Socialite (Google/Facebook/GitHub OAuth), tài liệu SOCIALITE_COMPLETE_GUIDE.md |
 | **3.0** | 19/10/2025 | Tổ chức lại toàn bộ docs, loại bỏ redundancy |
 | **2.0** | 19/10/2025 | Thêm API endpoints, controllers, routes chi tiết |
 | **1.0** | Initial | Tài liệu ban đầu |
@@ -438,9 +459,12 @@ docs/
 ├── API_REFERENCE.md               # 📡 API endpoints reference
 ├── BUSINESS_LOGIC.md              # 💼 Business workflows & use cases
 ├── DATABASE.md                    # 🗄️ Database schema
-└── CODING_CONVENTIONS.md          # 📝 Code standards
+├── CODING_CONVENTIONS.md          # 📝 Code standards
+└── SOCIALITE_COMPLETE_GUIDE.md    # 🔐 Laravel Socialite - Social Login
 
-Current Version: 3.0 (21/10/2025) ✨
+Current Version: 3.1 (23/10/2025) ✨
+- Thêm tích hợp Laravel Socialite (Google/Facebook/GitHub OAuth)
+- Hướng dẫn chi tiết từng bước setup OAuth providers
 - Thêm hệ thống coupon/mã giảm giá hoàn chỉnh
 - Cập nhật tất cả tài liệu phản ánh tính năng mới
 - API endpoints cho quản lý coupon
@@ -455,10 +479,22 @@ Legacy files (sẽ xóa trong future updates):
 
 ---
 
-**Cập nhật lần cuối**: 21/10/2025  
-**Version**: 3.0  
+**Cập nhật lần cuối**: 23/10/2025  
+**Version**: 3.1  
 **Author**: Hoàng Quang Vinh
 
 ---
 
 **💡 Tip**: Bookmark file README.md này để dễ dàng điều hướng đến các tài liệu khác!
+
+## 🆕 Tính năng mới (v3.1)
+
+### Laravel Socialite - Social Login
+- ✅ Đăng nhập/đăng ký qua Google OAuth 2.0
+- ✅ Đăng nhập/đăng ký qua Facebook Login
+- ✅ Đăng nhập/đăng ký qua GitHub OAuth
+- ✅ Tự động liên kết tài khoản nếu email đã tồn tại
+- ✅ UI đẹp với nút social login responsive
+- ✅ Tài liệu chi tiết từng bước cấu hình
+
+👉 **Xem hướng dẫn**: [SOCIALITE_COMPLETE_GUIDE.md](./docs/SOCIALITE_COMPLETE_GUIDE.md)
