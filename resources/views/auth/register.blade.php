@@ -49,6 +49,20 @@
                 </button>
             </div>
         </form>
+        
+        <div class="social-divider mt-4 mb-3">
+            <span>HOẶC</span>
+        </div>
+        
+        <div class="social-login-buttons">
+            <a href="{{ route('social.redirect', 'google') }}" class="btn btn-outline-danger btn-lg w-100 mb-2">
+                <i class="fab fa-google me-2"></i>Đăng ký với Google
+            </a>
+            <a href="{{ route('social.redirect', 'facebook') }}" class="btn btn-outline-primary btn-lg w-100 mb-2">
+                <i class="fab fa-facebook me-2"></i>Đăng ký với Facebook
+            </a>
+        </div>
+        
         <div class="text-center mt-3">
             <p class="mb-0">Đã có tài khoản? <a href="{{ route('login') }}">Đăng nhập ngay</a></p>
         </div>

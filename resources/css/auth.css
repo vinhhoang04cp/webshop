@@ -29,6 +29,36 @@
     color: #00d4aa;
 }
 
+/* Social Login Styles */
+.social-divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+}
+
+.social-divider::before,
+.social-divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.social-divider span {
+    padding: 0 10px;
+    color: #6c757d;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.social-login-buttons .btn {
+    transition: all 0.3s ease;
+}
+
+.social-login-buttons .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
 /* Loading Styles */
 .btn-loading {
     position: relative;
