@@ -24,10 +24,6 @@ class User extends Authenticatable
         'password',
         'phone',
         'address',
-        'google_id',
-        'firebase_uid',
-        'provider',
-        'avatar',
     ];
 
     /**

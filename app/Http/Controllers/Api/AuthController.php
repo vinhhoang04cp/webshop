@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Services\FirebaseAuthService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -118,55 +117,6 @@ class AuthController extends Controller
     }
 
     /**
-     * Đăng nhập bằng Google Firebase
-     */
-    public function loginWithGoogle(Request $request, FirebaseAuthService $firebaseService)
-    {
-        // Validate Firebase ID token
-        $request->validate([
-            'firebase_token' => 'required|string',
-        ]);
-
-        try {
-            // Verify Firebase token và lấy thông tin user
-            $firebaseUserData = $firebaseService->verifyIdToken($request->firebase_token);
-
-            // Tạo hoặc tìm user trong database
-            $user = $firebaseService->createOrFindUser($firebaseUserData);
-
-            // Xóa tất cả token cũ của user (optional - để đảm bảo chỉ có 1 session)
-            $user->tokens()->delete();
-
-            // Tạo Sanctum token mới cho user
-            $token = $user->createToken('auth-token')->plainTextToken;
-
-            return response()->json([
-                'status' => true,
-                'message' => 'Google login successful',
-                'data' => [
-                    'user' => [
-                        'id' => $user->id,
-                        'name' => $user->name,
-                        'email' => $user->email,
-                        'provider' => $user->provider,
-                        'avatar' => $user->avatar,
-                        'email_verified_at' => $user->email_verified_at,
-                    ],
-                    'token' => $token,
-                    'token_type' => 'Bearer',
-                ],
-            ], 200);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Google login failed',
-                'error' => $e->getMessage(),
-            ], 401);
-        }
-    }
-
-    /**
      * Lấy thông tin profile user hiện tại
      */
     public function profile(Request $request)
@@ -183,8 +133,6 @@ class AuthController extends Controller
                     'email' => $user->email,
                     'phone' => $user->phone,
                     'address' => $user->address,
-                    'provider' => $user->provider,
-                    'avatar' => $user->avatar,
                     'email_verified_at' => $user->email_verified_at,
                     'created_at' => $user->created_at,
                     'updated_at' => $user->updated_at,
