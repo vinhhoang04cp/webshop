@@ -151,9 +151,9 @@ class CouponController extends Controller
         ]);
 
         try {
-            $coupon = Coupon::findOrFail($id); // findOrFail la ham de tim kiem coupon theo id
-            $oldProductId = $coupon->product_id; // Lưu lại product_id cũ
-            $oldIsActive = $coupon->is_active; // Lưu lại trạng thái cũ
+            $coupon = Coupon::findOrFail($id); // Tìm coupon qua id
+            $oldProductId = $coupon->product_id; // $oldProductId là biến lưu id của product
+            $oldIsActive = $coupon->is_active; // $oldActive là biến lưu trạng thái
 
             // Validate giá trị phần trăm
             if ($request->discount_type === 'percentage' && $request->discount_value > 100) { // neu gia tri cua discount_type la phan tram va discount_value lon hon 100 thi tra ve loi
@@ -162,9 +162,9 @@ class CouponController extends Controller
                     ->withErrors(['discount_value' => 'Giá trị phần trăm không được vượt quá 100%']); // truyen error vao view
             }
 
-            // Nếu sản phẩm cũ có áp dụng giảm giá, khôi phục giá gốc
-            if ($oldIsActive && $oldProductId) {
-                $this->restoreProductPrice($oldProductId);
+            // truong hop san pham dang co ma giam gia se restore gia goc
+            if ($oldIsActive && $oldProductId) { // neu co ton tai oldIsActive la bien chua trang thai cu va oldProductId la bien chua id san pham cu
+                $this->restoreProductPrice($oldProductId); // khôi phục giá gốc cho sản phẩm cũ qua ham restoreProductPrice
             }
 
             $coupon->update([ // update coupon
@@ -178,8 +178,8 @@ class CouponController extends Controller
             ]);
 
             // Nếu coupon mới active và áp dụng cho sản phẩm cụ thể, áp dụng giảm giá
-            if ($coupon->is_active && $request->product_id) {
-                $this->applyDiscountToProduct($coupon);
+            if ($coupon->is_active && $request->product_id) { // neu coupon moi active va co product_id
+                $this->applyDiscountToProduct($coupon); // ap dung giam gia cho san pham qua ham applyDiscountToProduct
             }
 
             return redirect()->route('dashboard.coupons.index') // chuyen huong ve trang danh sach coupon
@@ -225,18 +225,19 @@ class CouponController extends Controller
             $coupon = Coupon::findOrFail($id); // findOrFail la ham de tim kiem coupon theo id
 
             // Nếu đang active và có product_id, khôi phục giá gốc trước khi toggle
-            if ($coupon->is_active && $coupon->product_id) {
-                $this->restoreProductPrice($coupon->product_id);
+            if ($coupon->is_active && $coupon->product_id) { // neu coupon dang active va co product_id
+                $this->restoreProductPrice($coupon->product_id); // khoi phuc gia goc cho san pham qua ham restoreProductPrice
             }
 
-            $coupon->update(['is_active' => ! $coupon->is_active]); // update la ham de cap nhat coupon
+            $coupon->update(['is_active' => ! $coupon->is_active]);
+            // 'is_active' la trang thai cua coupon, ! $coupon->is_active la phep toan dao nguoc trang thai hien tai
 
-            // Nếu sau khi toggle mà active và có product_id, áp dụng giảm giá
+            // neu coupon moi active va co product_id, ap dung giam gia cho san pham
             if ($coupon->is_active && $coupon->product_id) {
-                $this->applyDiscountToProduct($coupon);
+                $this->applyDiscountToProduct($coupon); // ap dung giam gia cho san pham qua ham applyDiscountToProduct
             }
 
-            $status = $coupon->is_active ? 'kích hoạt' : 'vô hiệu hóa'; // status la truong bat buoc, boolean
+            $status = $coupon->is_active ? 'kích hoạt' : 'vô hiệu hóa'; // neu coupon dang active thi status la kich hoat, nguoc lai la vo hieu hoa
 
             return redirect()->route('dashboard.coupons.index') // chuyen huong ve trang danh sach coupon
                 ->with('success', "Coupon đã được {$status}!"); // truyen success vao view
@@ -250,43 +251,45 @@ class CouponController extends Controller
     /**
      * Áp dụng giảm giá cho sản phẩm
      */
-    private function applyDiscountToProduct($coupon)
+    private function applyDiscountToProduct($coupon) // applyDiscountToProduct($coupon) la ham de ap dung giam gia cho san pham voi tham so truyen vao la coupon
     {
-        if (! $coupon->product_id) {
-            return;
+        if (! $coupon->product_id) { // neu coupon khong co product_id thi
+            return; // thoat khoi ham
         }
 
         $product = Product::find($coupon->product_id);
-        if (! $product) {
-            return;
+        if (! $product) { // neu khong tim thay san pham thi
+            return; // thoat khoi ham neu khong tim thay san pham
         }
 
         // Lưu giá gốc nếu chưa có
-        if ($product->original_price === null) {
-            $product->original_price = $product->price;
+        if ($product->original_price === null) { // neu original_price cua san pham la null
+            $product->original_price = $product->price; // luu gia goc cua san pham
         }
 
         // Tính giá sau khi giảm
         $discountedPrice = $product->original_price - $coupon->calculateDiscount($product->original_price);
+        // gia sau khi giam = gia goc - gia tri giam gia duoc tinh boi ham calculateDiscount cua coupon
+        // ham calculateDiscount($amount) duoc dinh nghia trong model Coupon de tinh toan gia tri giam gia dua tren discount_type va discount_value
 
         // Cập nhật giá sản phẩm
-        $product->price = max(0, $discountedPrice); // Đảm bảo giá không âm
-        $product->save();
+        $product->price = max(0, $discountedPrice); // max(0, $discountedPrice) la ham de dam bao gia san pham khong am
+        $product->save(); // luu san pham
     }
 
     /**
      * Khôi phục giá gốc cho sản phẩm
      */
-    private function restoreProductPrice($productId)
+    private function restoreProductPrice($productId) // restoreProductPrice($productId) la ham de khoi phuc gia goc cho san pham voi tham so truyen vao la productId
     {
-        $product = Product::find($productId);
-        if (! $product || $product->original_price === null) {
-            return;
+        $product = Product::find($productId); // tim kiem san pham theo productId
+        if (! $product || $product->original_price === null) { // neu khong tim thay san pham hoac original_price la null
+            return; // thoat khoi ham
         }
 
         // Khôi phục giá gốc
-        $product->price = $product->original_price;
-        $product->original_price = null;
-        $product->save();
+        $product->price = $product->original_price; // khoi phuc gia goc cho san pham
+        $product->original_price = null; // dat lai original_price ve null
+        $product->save(); // luu san pham
     }
 }
