@@ -211,8 +211,10 @@ Template Engine: Blade Templates (Engine template của Laravel)
 CSS Framework: Tailwind CSS 4.0 (Framework CSS utility-first)
 Build Tool: Vite 7.0 (Công cụ build và bundling)
 JavaScript: Vanilla JS + Alpine.js (Tương tác động)
+Component System: Blade Components (Tái sử dụng UI)
 Icons: Heroicons + Font Awesome (Bộ icon)
 Responsive: Mobile-first approach (Thiết kế đáp ứng)
+Code Organization: Component-based architecture (Kiến trúc component)
 ```
 
 ### Công cụ phát triển
@@ -264,6 +266,11 @@ webshop/
 │   └── 📁 factories/                # Model factories
 ├── 📁 resources/
 │   ├── 📁 views/                    # Blade templates
+│   │   ├── 📁 components/           # Reusable UI components
+│   │   ├── 📁 layouts/              # Layout templates
+│   │   ├── 📁 products/             # Product views
+│   │   ├── 📁 cart/                 # Cart views
+│   │   └── 📁 dashboard/            # Admin dashboard views
 │   ├── 📁 css/                      # Styles (Tailwind)
 │   └── 📁 js/                       # JavaScript files
 ├── 📁 routes/
@@ -271,6 +278,9 @@ webshop/
 │   ├── 📄 api.php                   # API routes
 │   └── 📄 console.php               # Artisan commands
 ├── 📁 public/                       # Public assets
+│   ├── 📁 js/                       # Compiled JavaScript
+│   │   └── 📄 cart.js               # Shared cart functionality
+│   └── 📁 css/                      # Compiled CSS
 ├── 📁 storage/                      # File storage
 ├── 📁 tests/                        # Test cases
 ├── 📁 docs/                         # Tài liệu dự án
@@ -990,8 +1000,51 @@ php artisan backup:run
 
 ---
 
-**Cập nhật lần cuối**: 21/10/2025  
-**Version**: 3.0  
+## 📝 CHANGELOG
+
+### Version 3.1 (23/10/2025)
+**UI Optimization & Component System**
+
+#### ✨ New Features
+- ✅ **Blade Components System**: Tạo hệ thống components tái sử dụng
+  - `rating-stars.blade.php` - Hiển thị sao đánh giá
+  - `product-price.blade.php` - Hiển thị giá có giảm giá
+- ✅ **Shared JavaScript**: Tách logic JS dùng chung vào file riêng
+  - `cart.js` - Logic giỏ hàng dùng chung
+- ✅ **Code Optimization**: Giảm ~245 dòng code lặp lại
+
+#### 🔧 Improvements
+- ⚡ Giảm 27-28% dung lượng các file view chính
+- 🧹 Loại bỏ comment thừa, giữ lại comment cần thiết
+- 📦 Component-based architecture cho frontend
+- 🔄 DRY principle được áp dụng triệt để
+
+#### 📚 Documentation
+- 📄 Cập nhật ARCHITECTURE.md với Frontend Components section
+- 📄 Thêm quy tắc Blade Components vào CODING_CONVENTIONS.md
+- 📄 Thêm quy tắc Shared JavaScript vào CODING_CONVENTIONS.md
+- 📄 Thêm UI Optimization Checklist
+
+#### 📊 Metrics
+- **Files optimized**: 3 major view files (home, products/index, products/show)
+- **Lines removed**: ~245 lines of duplicate code
+- **Components created**: 3 reusable components
+- **JS files created**: 1 shared JavaScript file
+
+---
+
+### Version 3.0 (21/10/2025)
+**Coupon System & Enhancements**
+
+#### ✨ New Features
+- ✅ Hệ thống Coupon/Mã giảm giá hoàn chỉnh
+- ✅ Rating & Review system
+- ✅ Google OAuth authentication
+
+---
+
+**Cập nhật lần cuối**: 23/10/2025  
+**Version**: 3.1  
 **Author**: Hoàng Quang Vinh
 
 *© 2025 WebShop E-commerce Platform. All rights reserved.*

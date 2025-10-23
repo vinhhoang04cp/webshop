@@ -73,7 +73,7 @@
 ### 1. Tầng Giao diện (Client Layer)
 
 **Thành phần**:
-- **Trình duyệt Web**: Blade templates + Tailwind CSS
+- **Trình duyệt Web**: Blade templates + Tailwind CSS + Blade Components
 - **Ứng dụng di động**: API client (JSON)
 - **Bên thứ ba**: External API consumers
 
@@ -81,6 +81,21 @@
 - Hiển thị giao diện người dùng
 - Gửi yêu cầu đến máy chủ
 - Xử lý phản hồi và hiển thị kết quả
+- Tái sử dụng UI components
+
+**Blade Components Architecture**:
+```php
+// Component-based UI structure
+resources/views/components/
+├── rating-stars.blade.php    // Hiển thị sao đánh giá
+├── product-price.blade.php   // Hiển thị giá có giảm giá
+├── alerts.blade.php          // Hiển thị thông báo
+└── sidebar.blade.php         // Sidebar dashboard
+
+// Sử dụng component
+@include('components.rating-stars', ['rating' => $product->averageRating()])
+@include('components.product-price', ['product' => $product])
+```
 
 ---
 
@@ -799,15 +814,86 @@ Route::prefix('api/v1')->middleware('api')->group(function () {
 
 ---
 
+## 🎨 Frontend Architecture & Components
+
+### Blade Components System
+
+**Cấu trúc components**:
+```
+resources/views/components/
+├── rating-stars.blade.php      # Component hiển thị sao đánh giá
+├── product-price.blade.php     # Component hiển thị giá sản phẩm
+├── alerts.blade.php            # Component hiển thị thông báo
+└── sidebar.blade.php           # Component sidebar admin
+```
+
+**Shared JavaScript**:
+```
+public/js/
+└── cart.js                     # Logic giỏ hàng dùng chung
+    ├── addToCart()             # Thêm sản phẩm vào giỏ
+    └── Error handling          # Xử lý lỗi xác thực
+```
+
+**Component Usage Examples**:
+
+```blade
+{{-- Rating Stars Component --}}
+@include('components.rating-stars', [
+    'rating' => $product->averageRating()
+])
+
+{{-- Product Price Component --}}
+@include('components.product-price', [
+    'product' => $product,
+    'priceClass' => 'text-danger' // Optional
+])
+
+{{-- Alerts Component --}}
+@include('components.alerts')
+```
+
+**Lợi ích của Component System**:
+- ✅ **DRY Principle**: Không lặp lại code
+- ✅ **Maintainability**: Dễ bảo trì, cập nhật tập trung
+- ✅ **Consistency**: UI nhất quán trên toàn hệ thống
+- ✅ **Reusability**: Tái sử dụng linh hoạt
+- ✅ **Testing**: Dễ test từng component riêng lẻ
+
+### JavaScript Organization
+
+**Shared Functions** (public/js/cart.js):
+```javascript
+// Được load trong layouts/customer.blade.php
+// Tự động available cho tất cả trang customer
+
+function addToCart(productId) {
+    // Unified cart logic
+    // - CSRF token handling
+    // - 401 redirect to login
+    // - Success/error messages
+}
+```
+
+**Benefits**:
+- ✅ Single source of truth
+- ✅ Browser caching
+- ✅ Reduced code duplication
+- ✅ Easier debugging and updates
+
+---
+
 ## 📚 Tài liệu liên quan
 
 - **[TECH_STACK.md](./TECH_STACK.md)** - Danh sách công nghệ
 - **[DATABASE.md](./DATABASE.md)** - Chi tiết schema
 - **[AUTHENTICATION.md](./AUTHENTICATION.md)** - Hệ thống xác thực
 - **[BUSINESS_LOGIC.md](./BUSINESS_LOGIC.md)** - Quy tắc nghiệp vụ
+- **[CODING_CONVENTIONS.md](./CODING_CONVENTIONS.md)** - Quy tắc code và components
 
 ---
 
-**Cập nhật lần cuối**: 21/10/2025  
-**Phiên bản**: 3.0  
-**Tác giả**: Hoàng Quang Vinh
+**Cập nhật lần cuối**: 23/10/2025  
+**Phiên bản**: 3.1  
+**Tác giả**: Hoàng Quang Vinh  
+**Thay đổi mới nhất**: Thêm Blade Components và tối ưu hóa Frontend

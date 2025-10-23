@@ -3,11 +3,13 @@
 ## MỤC LỤC
 1. [Quy tắc chung cho Controllers](#quy-tắc-chung-cho-controllers)
 2. [Quy tắc chung cho Models](#quy-tắc-chung-cho-models)
-3. [Quy ước đặt tên](#quy-ước-đặt-tên)
-4. [Xử lý lỗi và Exception](#xử-lý-lỗi-và-exception)
-5. [Validation và Request Handling](#validation-và-request-handling)
-6. [Database Queries và Eloquent](#database-queries-và-eloquent)
-7. [Comment và Documentation](#comment-và-documentation)
+3. [Quy tắc cho Blade Components](#quy-tắc-cho-blade-components)
+4. [Quy tắc cho JavaScript](#quy-tắc-cho-javascript)
+5. [Quy ước đặt tên](#quy-ước-đặt-tên)
+6. [Xử lý lỗi và Exception](#xử-lý-lỗi-và-exception)
+7. [Validation và Request Handling](#validation-và-request-handling)
+8. [Database Queries và Eloquent](#database-queries-và-eloquent)
+9. [Comment và Documentation](#comment-và-documentation)
 
 ---
 
@@ -766,6 +768,306 @@ public function totalItems()
 
 ---
 
+## QUY TẮC CHO BLADE COMPONENTS
+
+### 1. KHI NÀO TẠO COMPONENT
+
+**Quy tắc:**
+- Tạo component khi code UI lặp lại >= 3 lần
+- Tạo component cho logic UI phức tạp (rating stars, price display)
+- Tạo component khi muốn đảm bảo consistency
+- KHÔNG tạo component cho UI chỉ dùng 1-2 lần
+
+**Ví dụ components đã tạo:**
+```
+resources/views/components/
+├── rating-stars.blade.php      # Hiển thị sao đánh giá (dùng nhiều nơi)
+├── product-price.blade.php     # Hiển thị giá có giảm giá (logic phức tạp)
+├── alerts.blade.php            # Hiển thị thông báo (dùng mọi trang)
+└── sidebar.blade.php           # Sidebar admin (cấu trúc phức tạp)
+```
+
+### 2. CẤU TRÚC COMPONENT
+
+**Quy tắc:**
+- Component file phải ở thư mục `resources/views/components/`
+- Tên file: `kebab-case.blade.php`
+- Nhận parameters qua array khi include
+- Xử lý default values cho parameters
+
+**Template chuẩn:**
+```blade
+{{-- resources/views/components/rating-stars.blade.php --}}
+@php
+    // 1. Nhận parameters và set defaults
+    $rating = $rating ?? 0;
+    $showCount = $showCount ?? false;
+    
+    // 2. Tính toán logic
+    $fullStars = floor($rating);
+    $hasHalfStar = ($rating - $fullStars) >= 0.5;
+@endphp
+
+{{-- 3. Render HTML --}}
+<div class="text-warning d-inline-block">
+    @for($i = 1; $i <= $fullStars; $i++)
+        <i class="fas fa-star"></i>
+    @endfor
+    
+    @if($hasHalfStar)
+        <i class="fas fa-star-half-alt"></i>
+    @endif
+    
+    @for($i = ($fullStars + ($hasHalfStar ? 1 : 0)); $i < 5; $i++)
+        <i class="far fa-star"></i>
+    @endfor
+    
+    @if($showCount)
+        <span class="ms-1">({{ number_format($rating, 1) }})</span>
+    @endif
+</div>
+```
+
+### 3. SỬ DỤNG COMPONENT
+
+**Quy tắc:**
+- Sử dụng `@include()` directive
+- Truyền parameters bằng array
+- Đặt tên parameters rõ ràng, dễ hiểu
+
+**Ví dụ sử dụng:**
+```blade
+{{-- Basic usage --}}
+@include('components.rating-stars', ['rating' => $product->averageRating()])
+
+{{-- Với nhiều parameters --}}
+@include('components.rating-stars', [
+    'rating' => $product->averageRating(),
+    'showCount' => true
+])
+
+{{-- Product price component --}}
+@include('components.product-price', [
+    'product' => $product,
+    'priceClass' => 'text-danger'  // Optional custom class
+])
+
+{{-- Alerts component (không cần parameters) --}}
+@include('components.alerts')
+```
+
+### 4. COMPONENT BEST PRACTICES
+
+**Quy tắc:**
+- ✅ Component phải self-contained (không phụ thuộc biến global)
+- ✅ Kiểm tra và xử lý null values
+- ✅ Có default values cho optional parameters
+- ✅ Logic đơn giản, dễ hiểu
+- ✅ Có comment giải thích parameters
+
+**Ví dụ component tốt:**
+```blade
+{{-- 
+    Component: Product Price Display
+    Parameters:
+        - $product (required): Product model object
+        - $priceClass (optional): Custom CSS class for price
+    Usage:
+        @include('components.product-price', ['product' => $product])
+--}}
+@php
+    $priceClass = $priceClass ?? 'product-price';
+@endphp
+
+@if($product->original_price)
+    <div class="text-muted small text-decoration-line-through mb-1">
+        {{ number_format($product->original_price, 0, ',', '.') }}₫
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <span class="{{ $priceClass }} text-danger">
+            {{ number_format($product->price, 0, ',', '.') }}₫
+        </span>
+        <span class="badge bg-danger" style="font-size: 0.7rem;">
+            -{{ number_format((($product->original_price - $product->price) / $product->original_price) * 100, 0) }}%
+        </span>
+    </div>
+@else
+    <span class="{{ $priceClass }}">
+        {{ number_format($product->price, 0, ',', '.') }}₫
+    </span>
+@endif
+```
+
+### 5. TRÁNH LẠM DỤNG COMPONENTS
+
+**KHÔNG nên tạo component cho:**
+- ❌ Code chỉ dùng 1-2 lần
+- ❌ HTML đơn giản (1-2 dòng)
+- ❌ Logic quá phức tạp (nên dùng View Composer)
+- ❌ Code có nhiều dependencies
+
+**Ví dụ KHÔNG nên làm component:**
+```blade
+{{-- ❌ Quá đơn giản, không cần component --}}
+<h1>{{ $title }}</h1>
+
+{{-- ❌ Chỉ dùng 1 lần --}}
+<div class="hero-section">...</div>
+
+{{-- ❌ Logic quá phức tạp, nên để controller --}}
+@php
+    // 50 dòng logic phức tạp...
+@endphp
+```
+
+---
+
+## QUY TẮC CHO JAVASCRIPT
+
+### 1. SHARED JAVASCRIPT FILES
+
+**Quy tắc:**
+- Tạo file JS riêng cho functions dùng chung
+- Đặt trong `public/js/` để browser cache
+- Load trong layout chính để available mọi nơi
+- Tên file: `kebab-case.js`
+
+**Cấu trúc:**
+```
+public/js/
+├── cart.js                # Giỏ hàng functions
+├── product.js             # Sản phẩm functions (tương lai)
+└── common.js              # Utilities chung (tương lai)
+```
+
+### 2. SHARED FUNCTION TEMPLATE
+
+**Quy tắc:**
+- Function name: `camelCase`
+- Có comment giải thích
+- Xử lý errors đầy đủ
+- CSRF token handling
+- User-friendly error messages
+
+**Template chuẩn:**
+```javascript
+// public/js/cart.js
+
+/**
+ * Thêm sản phẩm vào giỏ hàng
+ * @param {number} productId - ID của sản phẩm
+ */
+function addToCart(productId) {
+    fetch(`/cart/add/${productId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({ quantity: 1 })
+    })
+    .then(response => {
+        // Xử lý 401 - chưa đăng nhập
+        if (response.status === 401) {
+            return response.json().then(data => {
+                alert(data.message || 'Vui lòng đăng nhập!');
+                window.location.href = '/login';
+                throw new Error('Unauthorized');
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        // Xử lý success
+        if(data && data.success) {
+            alert(data.message);
+            location.reload();
+        } else if(data && !data.success) {
+            alert(data.message || 'Có lỗi xảy ra!');
+        }
+    })
+    .catch(error => {
+        // Xử lý error (nhưng không log 401)
+        if (error.message !== 'Unauthorized') {
+            console.error('Error:', error);
+        }
+    });
+}
+```
+
+### 3. LOAD SHARED JS IN LAYOUT
+
+**Quy tắc:**
+- Load trong layout chính (layouts/customer.blade.php)
+- Load TRƯỚC các script riêng của trang
+- Sử dụng `asset()` helper
+
+**Ví dụ:**
+```blade
+{{-- resources/views/layouts/customer.blade.php --}}
+<!DOCTYPE html>
+<html>
+<head>...</head>
+<body>
+    <!-- Content -->
+    
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    {{-- Shared JS - Load first --}}
+    <script src="{{ asset('js/cart.js') }}"></script>
+    
+    {{-- Page-specific JS --}}
+    @yield('scripts')
+</body>
+</html>
+```
+
+### 4. SỬ DỤNG SHARED FUNCTIONS
+
+**Quy tắc:**
+- Không cần khai báo lại function
+- Gọi trực tiếp từ HTML
+- Không duplicate code
+
+**Ví dụ:**
+```blade
+{{-- home.blade.php --}}
+<button class="btn-add-cart" onclick="addToCart({{ $product->product_id }})">
+    <i class="fas fa-cart-plus"></i> Thêm vào giỏ
+</button>
+
+{{-- products/index.blade.php --}}
+<button class="btn-add-cart" onclick="addToCart({{ $product->product_id }})">
+    <i class="fas fa-cart-plus"></i> Thêm vào giỏ
+</button>
+
+{{-- Không cần định nghĩa addToCart() trong @section('scripts') nữa! --}}
+```
+
+### 5. KHI NÀO TẠO SHARED JS
+
+**Quy tắc:**
+- ✅ Function lặp lại >= 2 lần
+- ✅ Logic quan trọng (cart, auth, payment)
+- ✅ Functions cần consistency
+- ❌ KHÔNG tạo cho page-specific logic
+
+**Ví dụ:**
+```javascript
+// ✅ NÊN tạo shared function
+addToCart()              // Dùng nhiều nơi
+handlePayment()          // Logic quan trọng
+showNotification()       // Dùng mọi nơi
+
+// ❌ KHÔNG nên shared
+filterByCategory()       // Chỉ dùng ở products/index
+toggleAllReviews()       // Chỉ dùng ở products/show
+```
+
+---
+
 ## QUY ƯỚC ĐẶT TÊN
 
 ### 1. CONTROLLERS
@@ -1381,15 +1683,82 @@ public function login(Request $request)
 
 ---
 
+## CODE OPTIMIZATION PRINCIPLES
+
+### 1. DRY PRINCIPLE (Don't Repeat Yourself)
+
+**Quy tắc:**
+- Nếu code lặp lại >= 3 lần → Tạo component/function
+- Logic phức tạp lặp lại >= 2 lần → Tạo component/function
+- Luôn tìm cách reuse code
+
+**Ví dụ đã áp dụng:**
+```blade
+{{-- TRƯỚC: Lặp lại 5 lần --}}
+@for($i = 1; $i <= 5; $i++)
+    @if($i <= floor($averageRating))
+        <i class="fas fa-star"></i>
+    @else
+        <i class="far fa-star"></i>
+    @endif
+@endfor
+
+{{-- SAU: Component tái sử dụng --}}
+@include('components.rating-stars', ['rating' => $averageRating])
+```
+
+### 2. COMMENT GUIDELINES
+
+**Quy tắc:**
+- ✅ Comment logic phức tạp
+- ✅ Comment business rules
+- ✅ Comment WHY, không comment WHAT
+- ❌ Không comment code tự giải thích
+- ❌ Không comment mỗi dòng
+
+**Ví dụ tốt:**
+```php
+// Kiểm tra và áp dụng coupon nếu có
+if ($coupon && $coupon->isValid($orderAmount)) {
+    $discount = $coupon->calculateDiscount($orderAmount);
+}
+```
+
+**Ví dụ xấu:**
+```php
+// Gán tên sản phẩm ❌
+$name = $product->name;
+
+// In ra tên ❌
+echo $name;
+```
+
+### 3. FILE SIZE GUIDELINES
+
+**Quy tắc:**
+- Controller method: < 50 dòng
+- Blade view: < 300 dòng (ưu tiên < 200)
+- Component: < 50 dòng
+- JS function: < 30 dòng
+
+**Khi file quá dài:**
+- Tách thành components
+- Tách thành partials
+- Refactor logic vào service/repository
+
+---
+
 ## KẾT LUẬN
 
-Tài liệu này tổng hợp các quy tắc chung khi code Web Controllers và Models trong dự án Laravel webshop. Tuân thủ các quy tắc này sẽ giúp:
+Tài liệu này tổng hợp các quy tắc chung khi code trong dự án Laravel webshop. Tuân thủ các quy tắc này sẽ giúp:
 
 1. **Code nhất quán** - Dễ đọc, dễ maintain
 2. **Tránh bugs** - Xử lý lỗi đầy đủ, validation chặt chẽ
 3. **Security** - Bảo vệ khỏi các lỗ hổng phổ biến
 4. **Performance** - Tránh N+1 problem, sử dụng pagination
 5. **Maintainability** - Comment đầy đủ, code tự giải thích
+6. **Reusability** - Components và shared functions
+7. **DRY Principle** - Không lặp lại code
 
 **Nhớ:**
 - Luôn validate input
@@ -1398,9 +1767,43 @@ Tài liệu này tổng hợp các quy tắc chung khi code Web Controllers và 
 - Luôn sử dụng pagination
 - Luôn comment code phức tạp
 - Luôn follow naming conventions
+- **Tạo components cho code lặp lại >= 3 lần**
+- **Tạo shared JS cho functions dùng chung**
+- **Loại bỏ comment thừa, chỉ giữ comment cần thiết**
+
+---
+
+## UI OPTIMIZATION CHECKLIST
+
+### ✅ BLADE VIEWS CHECKLIST
+
+- [ ] Code lặp lại đã được chuyển thành components
+- [ ] Component có comment giải thích parameters
+- [ ] Views không quá 200-300 dòng
+- [ ] Loại bỏ comment không cần thiết
+- [ ] Logic hiển thị sao, giá đã dùng components
+
+### ✅ JAVASCRIPT CHECKLIST
+
+- [ ] Functions dùng chung đã được tách ra file riêng
+- [ ] Load shared JS trong layout chính
+- [ ] Không duplicate code JS
+- [ ] Functions có JSDoc comments
+
+### ✅ COMPONENT CHECKLIST
+
+- [ ] Component nhỏ gọn (< 50 dòng)
+- [ ] Có default values cho parameters
+- [ ] Xử lý null values đúng cách
+- [ ] Có documentation comment
+- [ ] Tên file và cách dùng rõ ràng
 
 ---
 
 **Tài liệu được tạo dựa trên phân tích code thực tế của dự án webshop**
-**Version: 3.0 - Date: 2025-10-21**
-**Cập nhật: Thêm hướng dẫn cho Coupon system**
+**Version: 3.1 - Date: 2025-10-23**
+**Cập nhật mới nhất**: 
+- Thêm quy tắc cho Blade Components
+- Thêm quy tắc cho Shared JavaScript
+- Thêm nguyên tắc tối ưu hóa code (DRY, Comments, File Size)
+- Thêm UI Optimization Checklist
