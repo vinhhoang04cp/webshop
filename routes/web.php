@@ -27,6 +27,7 @@ Route::get('/auth/{provider}/callback', [SocialAuthController::class, 'callback'
 // Customer facing routes - Các route dành cho khách hàng
 Route::get('/products', [CustomerProductController::class, 'index'])->name('products.index');
 Route::get('/products/search', [CustomerProductController::class, 'search'])->name('products.search');
+Route::get('/products/promotions', [CustomerProductController::class, 'promotions'])->name('products.promotions');
 Route::get('/product/{id}', [CustomerProductController::class, 'show'])->name('product.show');
 Route::get('/category/{id}', [CustomerProductController::class, 'category'])->name('category.show');
 

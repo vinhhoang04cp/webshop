@@ -927,7 +927,7 @@ Facebook callback: /auth/facebook/callback
 
 ---
 
-**Tác giả**: AI Assistant  
+**Tác giả**: Vinh Hoang
 **Ngày tạo**: 23/10/2025  
 **Version**: 1.0  
 **Status**: ✅ Hoàn thành

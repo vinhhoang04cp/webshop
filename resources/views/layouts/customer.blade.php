@@ -406,7 +406,7 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">
+                        <a class="nav-link" href="{{ route('products.promotions') }}">
                             <i class="fas fa-fire"></i> Khuyến mãi
                         </a>
                     </li>

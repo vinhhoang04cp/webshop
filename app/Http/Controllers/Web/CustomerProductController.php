@@ -205,4 +205,40 @@ class CustomerProductController extends Controller
 
         return redirect()->back()->with('success', 'Cảm ơn bạn đã đánh giá sản phẩm!');
     }
+
+    /**
+     * Hiển thị trang sản phẩm khuyến mãi
+     *
+     * Chức năng: Hiển thị danh sách các sản phẩm đang có giảm giá/khuyến mãi
+     * Hoạt động:
+     * - Lấy các sản phẩm có original_price khác NULL và khác price (đang giảm giá)
+     * - Sắp xếp theo % giảm giá cao nhất
+     * - Eager load category
+     * - Phân trang 12 sản phẩm mỗi trang
+     * - Lấy danh sách categories
+     * - Đếm số lượng sản phẩm trong giỏ hàng
+     * - Trả về view với dữ liệu
+     *
+     * @return \Illuminate\View\View
+     */
+    public function promotions()
+    {
+        // Lấy sản phẩm có khuyến mãi (có original_price và khác với price hiện tại)
+        $products = Product::with('category')
+            ->whereNotNull('original_price')
+            ->whereColumn('original_price', '>', 'price')
+            ->orderByRaw('((original_price - price) / original_price) DESC') // Sắp xếp theo % giảm giá cao nhất
+            ->paginate(12);
+
+        // Lấy danh sách categories để hiển thị menu
+        $categories = Category::withCount('products')->get();
+
+        // Đếm số lượng sản phẩm trong giỏ hàng
+        $cartCount = 0;
+        if (Auth::check() && Auth::user()->cart) {
+            $cartCount = Auth::user()->cart->items()->sum('quantity');
+        }
+
+        return view('products.promotions', compact('products', 'categories', 'cartCount'));
+    }
 }
