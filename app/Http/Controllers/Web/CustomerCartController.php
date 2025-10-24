@@ -48,10 +48,12 @@ class CustomerCartController extends Controller
             'shipping_address' => 'required|string|max:1000', // shipping_address la dia chi giao hang, bat buoc phai la chuoi va toi da 1000 ky tu
             'note' => 'nullable|string|max:500', // note la ghi chu, co the null, neu co thi phai la chuoi va toi da 500 ky tu
             'coupon_code' => 'nullable|string|max:50', // coupon_code la ma giam gia, co the null, neu co thi phai la chuoi va toi da 50 ky tu
+            'payment_method' => 'required|in:cod,vnpay', // payment_method la phuong thuc thanh toan, bat buoc phai la cod hoac vnpay
         ], [
             'shipping_name.required' => 'Vui lòng nhập họ và tên người nhận', // shipping_name.required
             'shipping_phone.required' => 'Vui lòng nhập số điện thoại', // shipping_phone.required
             'shipping_address.required' => 'Vui lòng nhập địa chỉ giao hàng', // shipping_address.required
+            'payment_method.required' => 'Vui lòng chọn phương thức thanh toán', // payment_method.required
         ]);
 
         // Lấy giỏ hàng của user hiện tại
@@ -163,6 +165,16 @@ class CustomerCartController extends Controller
 
             DB::commit(); // ket thuc giao dich
 
+            // Kiểm tra phương thức thanh toán
+            if ($request->payment_method === 'vnpay') {
+                // Lưu order_id vào session và redirect đến trang thanh toán VNPay
+                session(['pending_payment_order_id' => $order->order_id]);
+
+                return redirect()->route('payment.create.get')
+                    ->with('success', 'Đơn hàng đã được tạo. Đang chuyển đến trang thanh toán...');
+            }
+
+            // COD - Thanh toán khi nhận hàng
             $successMessage = 'Đặt hàng thành công! Đơn hàng của bạn đã được ghi nhận.';
             if ($discountAmount > 0) { // neu co so tien giam gia
                 $successMessage .= ' Bạn đã tiết kiệm được '.number_format($discountAmount, 0, ',', '.').' VND với mã giảm giá!';

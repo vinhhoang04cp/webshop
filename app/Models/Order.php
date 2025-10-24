@@ -22,10 +22,15 @@ class Order extends Model
         'shipping_phone',
         'shipping_address',
         'note',
+        'payment_status',
+        'payment_method',
+        'transaction_id',
+        'paid_at',
     ];
 
     protected $casts = [
         'order_date' => 'datetime', // dinh dang kieu datetime
+        'paid_at' => 'datetime', // dinh dang kieu datetime
     ];
 
     // Định nghĩa các trạng thái hợp lệ

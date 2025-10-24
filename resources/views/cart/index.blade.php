@@ -221,14 +221,50 @@
                                           placeholder="Ghi chú thêm về đơn hàng (không bắt buộc)">{{ old('note') }}</textarea>
                             </div>
 
-                            <div class="alert alert-warning mb-3" style="border-radius: 10px;">
-                                <i class="fas fa-money-bill-wave"></i>
-                                <strong>Thanh toán khi nhận hàng (COD)</strong>
-                                <p class="mb-0 mt-2 small">Bạn sẽ thanh toán bằng tiền mặt khi nhận được hàng</p>
+                            <!-- Chọn phương thức thanh toán -->
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">
+                                    <i class="fas fa-credit-card"></i> Chọn phương thức thanh toán
+                                    <span class="text-danger">*</span>
+                                </label>
+                                
+                                <!-- Thanh toán COD -->
+                                <div class="payment-method mb-3" style="border: 2px solid #e0e0e0; border-radius: 10px; padding: 15px; cursor: pointer; transition: all 0.3s;" onclick="selectPaymentMethod('cod')">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="payment_method" id="payment_cod" value="cod" checked>
+                                        <label class="form-check-label w-100" for="payment_cod" style="cursor: pointer;">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-money-bill-wave fa-2x text-warning me-3"></i>
+                                                <div>
+                                                    <strong>Thanh toán khi nhận hàng (COD)</strong>
+                                                    <p class="mb-0 small text-muted">Bạn sẽ thanh toán bằng tiền mặt khi nhận được hàng</p>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Thanh toán VNPay -->
+                                <div class="payment-method mb-3" style="border: 2px solid #e0e0e0; border-radius: 10px; padding: 15px; cursor: pointer; transition: all 0.3s;" onclick="selectPaymentMethod('vnpay')">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="payment_method" id="payment_vnpay" value="vnpay">
+                                        <label class="form-check-label w-100" for="payment_vnpay" style="cursor: pointer;">
+                                            <div class="d-flex align-items-center">
+                                                <div class="me-3" style="width: 50px; height: 50px; background: linear-gradient(135deg, #0088cc, #00aaff); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                                    <i class="fas fa-credit-card fa-lg text-white"></i>
+                                                </div>
+                                                <div>
+                                                    <strong>Thanh toán Online qua VNPay</strong>
+                                                    <p class="mb-0 small text-muted">Thanh toán bằng thẻ ATM, Visa, MasterCard qua cổng VNPay</p>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
 
-                            <button type="submit" class="btn btn-primary w-100 mb-3" style="padding: 12px; border-radius: 25px;">
-                                <i class="fas fa-check"></i> Đặt hàng
+                            <button type="submit" class="btn btn-primary w-100 mb-3" style="padding: 12px; border-radius: 25px; font-size: 1.1rem;">
+                                <i class="fas fa-check"></i> <span id="checkout-btn-text">Đặt hàng (COD)</span>
                             </button>
                         </form>
                         
@@ -293,5 +329,65 @@
         background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
         border: 1px solid #ffd700;
     }
+
+    /* Styling cho payment method selection */
+    .payment-method {
+        transition: all 0.3s ease;
+    }
+    
+    .payment-method:hover {
+        border-color: #667eea !important;
+        background-color: #f8f9ff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+    }
+    
+    .payment-method.active {
+        border-color: #667eea !important;
+        background-color: #f0f3ff;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+    }
+    
+    .payment-method .form-check-input:checked ~ .form-check-label {
+        color: #667eea;
+    }
 </style>
+@endsection
+
+@section('scripts')
+<script>
+    // Hàm chọn phương thức thanh toán
+    function selectPaymentMethod(method) {
+        // Remove active class from all
+        document.querySelectorAll('.payment-method').forEach(el => {
+            el.classList.remove('active');
+        });
+        
+        // Add active class to selected
+        if (method === 'cod') {
+            document.getElementById('payment_cod').checked = true;
+            document.getElementById('payment_cod').closest('.payment-method').classList.add('active');
+            document.getElementById('checkout-btn-text').textContent = 'Đặt hàng (COD)';
+        } else if (method === 'vnpay') {
+            document.getElementById('payment_vnpay').checked = true;
+            document.getElementById('payment_vnpay').closest('.payment-method').classList.add('active');
+            document.getElementById('checkout-btn-text').textContent = 'Thanh toán với VNPay';
+        }
+    }
+    
+    // Initialize on load
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set initial active state
+        selectPaymentMethod('cod');
+        
+        // Add click listeners to radio buttons
+        document.getElementById('payment_cod')?.addEventListener('change', function() {
+            if (this.checked) selectPaymentMethod('cod');
+        });
+        
+        document.getElementById('payment_vnpay')?.addEventListener('change', function() {
+            if (this.checked) selectPaymentMethod('vnpay');
+        });
+    });
+</script>
 @endsection

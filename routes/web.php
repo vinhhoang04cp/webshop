@@ -5,6 +5,7 @@ use App\Http\Controllers\Web\CustomerCartController;
 use App\Http\Controllers\Web\CustomerProductController;
 use App\Http\Controllers\Web\HomeController;
 use App\Http\Controllers\Web\PasswordResetController;
+use App\Http\Controllers\Web\PaymentController;
 use App\Http\Controllers\Web\ProfileController;
 use App\Http\Controllers\Web\SocialAuthController;
 use App\Http\Controllers\Web\UserManagementController;
@@ -46,6 +47,14 @@ Route::put('/cart/update/{cartItemId}', [CustomerCartController::class, 'update'
 Route::delete('/cart/remove/{cartItemId}', [CustomerCartController::class, 'remove'])->name('cart.remove');
 Route::delete('/cart/clear', [CustomerCartController::class, 'clear'])->name('cart.clear');
 Route::post('/cart/checkout', [CustomerCartController::class, 'checkout'])->name('cart.checkout');
+
+// Payment routes - Thanh toán
+Route::get('/payment/create', [PaymentController::class, 'createPayment'])->name('payment.create.get');
+Route::post('/payment/create', [PaymentController::class, 'createPayment'])->name('payment.create');
+Route::get('/payment/vnpay-return', [PaymentController::class, 'vnpayReturn'])->name('payment.vnpay.return');
+Route::post('/payment/vnpay-ipn', [PaymentController::class, 'vnpayIPN'])->name('payment.vnpay.ipn');
+Route::get('/payment/success', [PaymentController::class, 'success'])->name('payment.success');
+Route::get('/payment/failed', [PaymentController::class, 'failed'])->name('payment.failed');
 
 // Protected Dashboard Routes
 Route::middleware(['auth'])->group(function () {

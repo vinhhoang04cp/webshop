@@ -149,19 +149,50 @@ Tài liệu được tổ chức thành 7 file chính, mỗi file phục vụ m�
 ---
 
 ### 7️⃣ [DATABASE.md](./DATABASE.md) 🗄️
-**Database schema & relationships**
+**Complete database schema reference**
 
-- 📊 ERD Diagram
-- 📋 Table Structures (15 tables bao gồm coupons) ✨
-- 🔗 Relationships (One-to-Many, Many-to-Many)
-- 🔑 Indexes & Constraints
-- 📝 Migration Commands
+- 📊 Database Schema Overview
+- 📐 ERD (Entity Relationship Diagram)
+- 📋 Chi tiết từng table (13 tables):
+  - users (authentication)
+  - roles, user_roles (RBAC)
+  - categories, products, product_details
+  - inventories, carts, cart_items
+  - orders, order_items
+  - coupons ✨
+  - ratings
+- 🔗 Relationships & Foreign Keys
+- � Indexes & Performance
 
 **Đọc khi**:
-- Thiết kế queries
-- Tạo migration mới
-- Hiểu relationships giữa tables
-- Optimize database performance
+- Cần biết schema của table
+- Viết query phức tạp
+- Debug data integrity issues
+- Plan database migrations
+
+---
+
+### 8️⃣ [VNPAY_COMPLETE_GUIDE.md](./VNPAY_COMPLETE_GUIDE.md) 💳
+**Hướng dẫn hoàn chỉnh tích hợp VNPay Payment Gateway**
+
+- 📌 Tổng quan về VNPay và Ngrok
+- 🚀 13 bước triển khai chi tiết từ đầu đến cuối
+- 💻 Code Implementation đầy đủ (Controller, Routes, Views, Migration)
+- ⚙️ Cấu hình VNPay Sandbox và Production
+- 🧪 Testing với thẻ sandbox
+- 🔧 Troubleshooting common issues
+- ✅ Best Practices & Security
+- 📖 FAQ chi tiết
+
+**Đọc khi**:
+- Cần tích hợp VNPay payment
+- Debug lỗi thanh toán VNPay
+- Hiểu luồng thanh toán online
+- Deploy lên production
+
+---
+
+## 🎓 Hướng dẫn đọc cho các vai trò
 
 ---
 

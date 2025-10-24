@@ -86,6 +86,17 @@ services:
             - sail
         depends_on:
             - mysql
+    ngrok:
+        image: 'ngrok/ngrok:latest'
+        command: 'http laravel.test:80'
+        environment:
+            NGROK_AUTHTOKEN: '${NGROK_AUTHTOKEN}'
+        ports:
+            - '4040:4040'
+        networks:
+            - sail
+        depends_on:
+            - laravel.test
 networks:
     sail:
         driver: bridge
