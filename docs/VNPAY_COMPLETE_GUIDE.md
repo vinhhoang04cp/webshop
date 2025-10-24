@@ -134,6 +134,439 @@ Vì project Laravel đang chạy trên localhost (chưa deploy), VNPay không th
 └─────────┘
 ```
 
+### 1.4. Luồng hoạt động chi tiết bằng tiếng Việt
+
+#### 🔄 LUỒNG THANH TOÁN COD (Thanh toán khi nhận hàng)
+
+```
+Bước 1: Khách hàng vào trang giỏ hàng
+└─> Xem danh sách sản phẩm trong giỏ
+    └─> Kiểm tra tổng tiền
+
+Bước 2: Điền thông tin giao hàng
+├─> Họ tên người nhận
+├─> Số điện thoại
+├─> Địa chỉ giao hàng
+└─> Ghi chú (không bắt buộc)
+
+Bước 3: Chọn phương thức thanh toán
+└─> Click radio button "Thanh toán khi nhận hàng (COD)"
+    └─> Nút "Đặt hàng (COD)" màu xanh dương hiện ra
+
+Bước 4: Xác nhận đặt hàng
+└─> Click nút "Đặt hàng (COD)"
+    └─> CustomerCartController::checkout() được gọi
+        ├─> Validate dữ liệu form
+        ├─> Tạo Order mới (status=pending, payment_status=pending, payment_method=cod)
+        ├─> Tạo OrderItems từ CartItems
+        ├─> Xóa giỏ hàng
+        └─> Redirect về trang giỏ hàng với thông báo thành công
+
+Kết quả:
+✅ Đơn hàng được tạo
+✅ Giỏ hàng được xóa
+✅ Khách hàng nhận thông báo: "Đặt hàng thành công! Bạn sẽ thanh toán khi nhận hàng."
+```
+
+#### 💳 LUỒNG THANH TOÁN VNPAY (Thanh toán trực tuyến)
+
+```
+GIAI ĐOẠN 1: KHỞI TẠO THANH TOÁN
+═══════════════════════════════════
+
+Bước 1: Khách hàng vào trang giỏ hàng
+└─> URL: /cart
+    └─> Xem danh sách sản phẩm
+        └─> Tổng tiền hiển thị
+
+Bước 2: Điền thông tin giao hàng
+├─> Form validation:
+│   ├─> shipping_name (bắt buộc)
+│   ├─> shipping_phone (bắt buộc)
+│   ├─> shipping_address (bắt buộc)
+│   └─> note (tùy chọn)
+
+Bước 3: Chọn phương thức thanh toán VNPay
+└─> Click radio button "Thanh toán Online qua VNPay"
+    ├─> JavaScript selectPaymentMethod('vnpay') được gọi
+    ├─> Nút chuyển sang màu xanh lá: "Thanh toán với VNPay"
+    └─> Radio button được highlight
+
+Bước 4: Submit form thanh toán
+└─> Click "Thanh toán với VNPay"
+    └─> POST /cart/checkout
+        └─> CustomerCartController::checkout()
+            ├─> Validate: payment_method = 'vnpay'
+            ├─> Kiểm tra giỏ hàng không rỗng
+            ├─> Tính tổng tiền từ CartItems
+            │
+            ├─> TẠO ĐƠN HÀNG:
+            │   └─> Order::create([
+            │       'user_id' => auth()->id(),
+            │       'total_price' => $totalPrice,
+            │       'status' => 'pending',
+            │       'payment_status' => 'pending',
+            │       'payment_method' => 'vnpay',
+            │       'shipping_name' => ...,
+            │       'shipping_phone' => ...,
+            │       'shipping_address' => ...,
+            │   ])
+            │
+            ├─> TẠO ORDER ITEMS:
+            │   └─> Foreach CartItem:
+            │       └─> OrderItem::create([
+            │           'order_id' => $order->order_id,
+            │           'product_id' => ...,
+            │           'quantity' => ...,
+            │           'price' => ... (lock giá tại thời điểm đặt)
+            │       ])
+            │
+            ├─> LƯU ORDER_ID VÀO SESSION:
+            │   └─> session(['pending_order_id' => $order->order_id])
+            │
+            └─> REDIRECT ĐẾN PAYMENT CONTROLLER:
+                └─> return redirect()->route('payment.create.get')
+
+
+GIAI ĐOẠN 2: TẠO URL THANH TOÁN VNPAY
+════════════════════════════════════════
+
+Bước 5: PaymentController::createPayment()
+└─> Lấy order_id từ session
+    ├─> Kiểm tra session tồn tại
+    │   └─> Nếu không có: redirect về giỏ hàng với lỗi
+    │
+    ├─> Lấy thông tin Order từ database
+    │   └─> Order::findOrFail($orderId)
+    │
+    ├─> CHUẨN BỊ DỮ LIỆU VNPAY:
+    │   ├─> vnp_TmnCode: Lấy từ config
+    │   ├─> vnp_HashSecret: Lấy từ config
+    │   ├─> vnp_Url: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
+    │   ├─> vnp_ReturnUrl: URL callback sau khi thanh toán
+    │   ├─> vnp_TxnRef: {order_id}_{timestamp} (unique ID)
+    │   ├─> vnp_OrderInfo: "Thanh toán đơn hàng #{order_id}"
+    │   ├─> vnp_Amount: $order->total_price * 100 (VNPay tính đơn vị đồng)
+    │   └─> vnp_IpAddr: IP khách hàng
+    │
+    ├─> TẠO MẢNG THAM SỐ:
+    │   └─> $inputData = [
+    │       "vnp_Version" => "2.1.0",
+    │       "vnp_TmnCode" => ...,
+    │       "vnp_Amount" => ...,
+    │       "vnp_Command" => "pay",
+    │       "vnp_CreateDate" => YmdHis,
+    │       "vnp_CurrCode" => "VND",
+    │       "vnp_IpAddr" => ...,
+    │       "vnp_Locale" => "vn",
+    │       "vnp_OrderInfo" => ...,
+    │       "vnp_OrderType" => "billpayment",
+    │       "vnp_ReturnUrl" => ...,
+    │       "vnp_TxnRef" => ...,
+    │   ]
+    │
+    ├─> SẮP XẾP THEO ALPHABET:
+    │   └─> ksort($inputData)
+    │
+    ├─> TẠO CHUỖI HASH (BẢO MẬT):
+    │   ├─> Foreach $inputData:
+    │   │   └─> $hashdata .= urlencode($key) . "=" . urlencode($value) . "&"
+    │   │
+    │   └─> $vnpSecureHash = hash_hmac('sha512', $hashdata, $vnp_HashSecret)
+    │       └─> Hash HMAC-SHA512 để VNPay verify không bị giả mạo
+    │
+    ├─> TẠO QUERY STRING:
+    │   └─> $query = urlencode(key)=urlencode(value)&...
+    │
+    ├─> TẠO URL HOÀN CHỈNH:
+    │   └─> $vnp_Url = $vnp_Url . "?" . $query . "vnp_SecureHash=" . $vnpSecureHash
+    │
+    ├─> GHI LOG:
+    │   └─> Log::info('VNPay Payment URL: ' . $vnp_Url)
+    │
+    └─> REDIRECT KHÁCH HÀNG ĐẾN VNPAY:
+        └─> return redirect($vnp_Url)
+            └─> Trình duyệt chuyển sang trang VNPay
+
+
+GIAI ĐOẠN 3: KHÁCH HÀNG THANH TOÁN TRÊN VNPAY
+═══════════════════════════════════════════════
+
+Bước 6: Trang thanh toán VNPay
+└─> URL: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html?...
+    │
+    ├─> VNPAY HIỂN THỊ:
+    │   ├─> Thông tin đơn hàng
+    │   ├─> Số tiền cần thanh toán
+    │   ├─> Danh sách ngân hàng
+    │   └─> Form nhập thông tin thẻ
+    │
+    ├─> KHÁCH HÀNG CHỌN NGÂN HÀNG:
+    │   └─> Click vào logo ngân hàng (VCB, TCB, MB, ...)
+    │
+    ├─> KHÁCH HÀNG NHẬP THÔNG TIN THẺ:
+    │   ├─> Số thẻ: 9704198526191432198 (sandbox)
+    │   ├─> Tên chủ thẻ: NGUYEN VAN A
+    │   ├─> Ngày phát hành: 07/15
+    │   └─> Click "Thanh toán"
+    │
+    ├─> VNPAY XÁC THỰC OTP:
+    │   ├─> Hiển thị form nhập OTP
+    │   ├─> Khách hàng nhập: 123456 (sandbox)
+    │   └─> Click "Xác nhận"
+    │
+    └─> VNPAY XỬ LÝ GIAO DỊCH:
+        ├─> Kiểm tra số dư tài khoản
+        ├─> Trừ tiền (sandbox: giả lập)
+        ├─> Tạo mã giao dịch: vnp_TransactionNo
+        └─> Xác định kết quả:
+            ├─> vnp_ResponseCode = '00' (Thành công)
+            └─> hoặc mã lỗi khác (Thất bại)
+
+
+GIAI ĐOẠN 4: VNPAY CALLBACK VỀ WEBSITE
+════════════════════════════════════════
+
+Bước 7A: VNPay Return URL (Người dùng thấy)
+└─> VNPay redirect browser về:
+    └─> GET /payment/vnpay-return?vnp_Amount=...&vnp_ResponseCode=...&vnp_SecureHash=...
+        │
+        └─> PaymentController::vnpayReturn(Request $request)
+            │
+            ├─> LẤY DỮ LIỆU TỪ VNPAY:
+            │   ├─> $inputData = $request->all()
+            │   ├─> $vnp_SecureHash = $inputData['vnp_SecureHash']
+            │   └─> unset các field không cần hash
+            │
+            ├─> VERIFY CHỮ KÝ (QUAN TRỌNG):
+            │   ├─> ksort($inputData) - Sắp xếp alphabet
+            │   ├─> Tạo $hashData từ $inputData
+            │   ├─> $secureHash = hash_hmac('sha512', $hashData, $vnp_HashSecret)
+            │   └─> So sánh: $secureHash === $vnp_SecureHash
+            │       ├─> Nếu SAI → Redirect /payment/failed (Bị giả mạo!)
+            │       └─> Nếu ĐÚNG → Tiếp tục xử lý
+            │
+            ├─> PARSE THÔNG TIN:
+            │   ├─> $vnpTxnRef = $request->vnp_TxnRef
+            │   │   └─> Format: "{order_id}_{timestamp}"
+            │   │   └─> explode('_', $vnpTxnRef)[0] → Lấy order_id
+            │   │
+            │   ├─> $vnpResponseCode = $request->vnp_ResponseCode
+            │   │   └─> '00' = Thành công
+            │   │   └─> Khác = Thất bại
+            │   │
+            │   └─> $vnpTransactionNo = $request->vnp_TransactionNo
+            │       └─> Mã giao dịch từ VNPay
+            │
+            ├─> TÌM ORDER:
+            │   └─> Order::where('order_id', $orderId)->first()
+            │       └─> Nếu không tìm thấy → Redirect /payment/failed
+            │
+            ├─> KIỂM TRA KẾT QUẢ:
+            │   │
+            │   ├─> NẾU THÀNH CÔNG (vnp_ResponseCode == '00'):
+            │   │   │
+            │   │   ├─> CẬP NHẬT ORDER:
+            │   │   │   └─> $order->update([
+            │   │   │       'payment_status' => 'paid',
+            │   │   │       'transaction_id' => $vnpTransactionNo,
+            │   │   │       'paid_at' => now(),
+            │   │   │   ])
+            │   │   │
+            │   │   ├─> XÓA GIỎ HÀNG:
+            │   │   │   ├─> Tìm Cart của user
+            │   │   │   └─> CartItem::where('cart_id', $cart->cart_id)->delete()
+            │   │   │
+            │   │   ├─> XÓA SESSION:
+            │   │   │   └─> session()->forget('pending_order_id')
+            │   │   │
+            │   │   ├─> GHI LOG:
+            │   │   │   └─> Log::info('VNPay Payment Success: Order #...')
+            │   │   │
+            │   │   └─> REDIRECT ĐẾN TRANG THÀNH CÔNG:
+            │   │       └─> return redirect()->route('payment.success', [
+            │   │           'order_id' => $order->order_id
+            │   │       ])
+            │   │
+            │   └─> NẾU THẤT BẠI:
+            │       │
+            │       ├─> CẬP NHẬT ORDER:
+            │       │   └─> $order->update(['payment_status' => 'failed'])
+            │       │
+            │       ├─> GHI LOG:
+            │       │   └─> Log::warning('VNPay Payment Failed...')
+            │       │
+            │       └─> REDIRECT ĐẾN TRANG THẤT BẠI:
+            │           └─> return redirect()->route('payment.failed', [
+            │               'order_id' => $order->order_id
+            │           ])
+
+Bước 7B: VNPay IPN URL (Server-to-Server - Backup)
+└─> VNPay gọi API (không qua browser):
+    └─> POST /payment/vnpay-ipn
+        │
+        └─> PaymentController::vnpayIPN(Request $request)
+            │
+            ├─> VERIFY CHỮ KÝ (giống Return URL)
+            ├─> TÌM ORDER
+            ├─> CẬP NHẬT ORDER (nếu chưa update)
+            └─> TRẢ VỀ JSON:
+                ├─> Success: {"RspCode": "00", "Message": "Confirm Success"}
+                └─> Error: {"RspCode": "97", "Message": "Invalid signature"}
+
+    💡 LƯU Ý: IPN là backup, đảm bảo giao dịch được ghi nhận
+              ngay cả khi user đóng browser trước khi Return URL chạy
+
+
+GIAI ĐOẠN 5: HIỂN THỊ KẾT QUẢ CHO KHÁCH HÀNG
+═══════════════════════════════════════════════
+
+Bước 8A: Trang thanh toán thành công
+└─> URL: /payment/success/{order_id}
+    └─> PaymentController::success($order_id)
+        │
+        ├─> LẤY THÔNG TIN ORDER:
+        │   └─> Order::with('orderItems.product')
+        │       ->where('order_id', $order_id)
+        │       ->first()
+        │
+        └─> HIỂN THỊ VIEW: payment/success.blade.php
+            │
+            ├─> ✅ Icon tick xanh lớn
+            ├─> Tiêu đề: "Thanh toán thành công!"
+            ├─> Thông báo: "Cảm ơn bạn đã đặt hàng..."
+            │
+            ├─> THÔNG TIN ĐƠN HÀNG:
+            │   ├─> Mã đơn hàng: #{order_id}
+            │   ├─> Tổng tiền: {total_price} VNĐ
+            │   ├─> Phương thức: VNPay
+            │   ├─> Trạng thái: Badge "Đã thanh toán" (xanh lá)
+            │   ├─> Mã giao dịch: {transaction_id}
+            │   └─> Thời gian: {paid_at}
+            │
+            ├─> DANH SÁCH SẢN PHẨM:
+            │   └─> Table hiển thị:
+            │       ├─> Tên sản phẩm
+            │       ├─> Số lượng
+            │       ├─> Đơn giá
+            │       └─> Thành tiền
+            │
+            └─> CÁC NÚT HÀNH ĐỘNG:
+                ├─> "Về trang chủ" (btn-primary)
+                └─> "Xem đơn hàng của tôi" (btn-outline-primary)
+
+Bước 8B: Trang thanh toán thất bại
+└─> URL: /payment/failed/{order_id}
+    └─> PaymentController::failed($order_id)
+        │
+        ├─> LẤY THÔNG TIN ORDER (nếu có)
+        │
+        └─> HIỂN THỊ VIEW: payment/failed.blade.php
+            │
+            ├─> ❌ Icon X đỏ lớn
+            ├─> Tiêu đề: "Thanh toán thất bại!"
+            ├─> Thông báo: "Rất tiếc, giao dịch không thành công..."
+            │
+            ├─> THÔNG TIN ĐƠN HÀNG (nếu có):
+            │   ├─> Mã đơn hàng: #{order_id}
+            │   ├─> Tổng tiền: {total_price} VNĐ
+            │   └─> Trạng thái: Badge "Thanh toán thất bại" (đỏ)
+            │
+            ├─> CẢNH BÁO:
+            │   └─> "Đơn hàng vẫn được lưu. Bạn có thể thử lại..."
+            │
+            └─> CÁC NÚT HÀNH ĐỘNG:
+                ├─> "Thử lại thanh toán VNPay" (btn-primary)
+                │   └─> POST /payment/create với order_id
+                │
+                └─> "Quay lại giỏ hàng" (btn-outline-secondary)
+```
+
+#### 📊 TỔNG KẾT LUỒNG DỮ LIỆU
+
+```
+DATABASE CHANGES:
+═════════════════
+
+1. Tạo Order (Bước 4):
+   orders table:
+   ├─> order_id: auto increment
+   ├─> user_id: ID người dùng
+   ├─> total_price: Tổng tiền
+   ├─> status: 'pending'
+   ├─> payment_status: 'pending'
+   ├─> payment_method: 'vnpay'
+   ├─> transaction_id: NULL
+   ├─> paid_at: NULL
+   ├─> shipping_name: Họ tên
+   ├─> shipping_phone: SĐT
+   ├─> shipping_address: Địa chỉ
+   └─> created_at: Thời gian tạo
+
+2. Tạo OrderItems (Bước 4):
+   order_items table (foreach CartItem):
+   ├─> order_item_id: auto increment
+   ├─> order_id: FK to orders
+   ├─> product_id: FK to products
+   ├─> quantity: Số lượng
+   ├─> price: Giá tại thời điểm đặt (LOCKED)
+   └─> created_at: Thời gian tạo
+
+3. Cập nhật Order khi thanh toán thành công (Bước 7A):
+   orders table:
+   ├─> payment_status: 'pending' → 'paid'
+   ├─> transaction_id: NULL → '14211323' (từ VNPay)
+   ├─> paid_at: NULL → '2025-10-25 10:30:45'
+   └─> updated_at: Thời gian cập nhật
+
+4. Xóa Cart (Bước 7A):
+   cart_items table:
+   └─> DELETE WHERE cart_id = ...
+       └─> Giỏ hàng trống sau khi thanh toán thành công
+
+SESSION CHANGES:
+════════════════
+
+1. Lưu pending_order_id (Bước 4):
+   Session::put('pending_order_id', 123)
+   └─> Dùng để PaymentController biết đơn hàng nào cần thanh toán
+
+2. Xóa pending_order_id (Bước 7A):
+   Session::forget('pending_order_id')
+   └─> Sau khi thanh toán thành công
+
+LOG ENTRIES:
+════════════
+
+1. Log URL thanh toán (Bước 5):
+   [INFO] VNPay Payment URL: https://sandbox.vnpayment.vn/...
+
+2. Log thành công (Bước 7A):
+   [INFO] VNPay Payment Success: Order #123
+
+3. Log thất bại (Bước 7A):
+   [WARNING] VNPay Payment Failed: Order #123 - Code: 24
+
+4. Log lỗi chữ ký (Bước 7A/7B):
+   [ERROR] VNPay Return: Invalid signature
+```
+
+#### ⏱️ TIMELINE DỰ KIẾN
+
+```
+00:00 - User click "Thanh toán với VNPay"
+00:01 - Order được tạo trong database
+00:02 - Redirect đến VNPay
+00:03 - User nhập thông tin thẻ
+00:45 - User nhập OTP
+00:47 - VNPay xử lý giao dịch
+00:48 - VNPay callback về website
+00:49 - Order được cập nhật (payment_status = paid)
+00:50 - User thấy trang "Thanh toán thành công"
+
+💡 Tổng thời gian: ~50 giây (nếu user không chần chừ)
+```
+
 ---
 
 ## 2. YÊU CẦU HỆ THỐNG
