@@ -255,7 +255,7 @@ class OrderController extends Controller
             Order::STATUS_CANCELLED => 'Đã hủy', // key la trang thai, value la ten trang thai
         ];
 
-        $availableTransitions = Order::STATUS_TRANSITIONS[$currentStatus] ?? [];
+        $availableTransitions = Order::STATUS_TRANSITIONS[$currentStatus] ?? []; // lay cac trang thai co the chuyen
 
         $result = [];
         foreach ($availableTransitions as $status) {

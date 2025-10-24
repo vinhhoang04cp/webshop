@@ -54,16 +54,17 @@ class CustomerCartController extends Controller
             'shipping_address.required' => 'Vui lòng nhập địa chỉ giao hàng', // shipping_address.required
         ]);
 
+        // Lấy giỏ hàng của user hiện tại
         $cart = Auth::user()->cart; // $cart la gio hang cua user hien tai dang nhap
         if (! $cart || $cart->items()->count() == 0) { // ! $cart neu chua co cart, $cart->items()->count() == 0 neu so luong item trong gio hang bang 0
             return redirect()->route('cart.index')->with('error', 'Giỏ hàng trống!'); // chuyen huong den trang gio hang voi thong bao loi
         }
-
+        // Sau khi lay duoc gio hang, bat dau giao dich de dat hang
         DB::beginTransaction();
         try {
             // Kiểm tra tồn kho trước khi tạo đơn hàng
-            foreach ($cart->items as $item) { // duyet qua tung item trong gio hang
-                $product = $item->product; // $product la san pham cua item trong gio hang
+            foreach ($cart->items as $item) { // duyet qua tung item trong gio hang, $cart->items la cac item trong gio hang
+                $product = $item->product; // $product la bien chua san pham cua item trong gio hang
                 if (! $product) { // neu khong tim thay san pham
                     throw new \Exception('Sản phẩm không tồn tại!');
                 }
@@ -82,29 +83,31 @@ class CustomerCartController extends Controller
             // Xử lý coupon nếu có
             if ($request->filled('coupon_code')) { // $request->filled('coupon_code') neu co xuat hien coupon_code trong request
                 $couponCode = strtoupper(trim($request->coupon_code)); // chuyen doi coupon_code thanh chu hoa va cat bo khoang trang dau cuoi
-                $coupon = \App\Models\Coupon::where('code', $couponCode)->first(); // tim kiem coupon theo code
+                $coupon = \App\Models\Coupon::where('code', $couponCode)->first(); // eloquent de tim kiem coupon theo code trong bang coupons, first() lay ra coupon dau tien tim thay
 
                 if (! $coupon) { // neu khong tim thay coupon
-                    throw new \Exception('Mã giảm giá không hợp lệ!'); // thong bao loi ma giam gia khong hop le
+                    throw new \Exception('Mã giảm giá không hợp lệ!');
+                    // thong bao loi ma giam gia khong hop le
                 }
 
                 // Validate coupon
-                $validation = $coupon->isValid($totalAmount); // $coupon->isValid($totalAmount) kiem tra coupon co hop le khong voi tong tien gio hang
+                $validation = $coupon->isValid($totalAmount); // goi den ham isValid tu model Coupon de kiem tra tinh hop le cua coupon voi tong tien gio hang
                 if (! $validation['valid']) { // neu coupon khong hop le
                     throw new \Exception($validation['message']); // thong bao loi tu phuong thuc isValid
                 }
 
                 // Tính tiền giảm giá
                 $discountAmount = $coupon->calculateDiscount($totalAmount);
+                // tinh so tien giam gia tu coupon, $totalAmount la so tien tong cua gio hang, se duoc truyen vao ham calculateDiscount goi tu model de tinh toan
                 // $coupon->calculateDiscount($totalAmount) goi den ham calculateDiscount tu model Coupon de tinh so tien giam gia
                 $totalAmount = $totalAmount - $discountAmount;
-                // cap nhat lai tong tien gio hang sau khi tru giam gia
+                // tong tien sau cung se bang tong tien tru di so tien giam gia
             }
 
             // Tạo đơn hàng với thông tin giao hàng
             $order = new \App\Models\Order; // tao moi don hang thong qua model Order
             $order->user_id = Auth::id(); // su dung id cua user hien tai dang nhap lam user_id
-            $order->total_amount = $totalAmount; // Tổng tiền sau khi trừ coupon, tota
+            $order->total_amount = $totalAmount; // Tổng tiền sau khi trừ coupon, totalAmount
             $order->status = 'pending'; // trang thai don hang mac dinh la 'pending'
             $order->order_date = now();  // thoi gian dat hang la thoi diem hien tai
 
@@ -123,7 +126,7 @@ class CustomerCartController extends Controller
             }
 
             // Thêm các sản phẩm vào order_items VÀ TRỪ TỒN KHO NGAY
-            foreach ($cart->items as $item) { // voi moi item trong gio hang
+            foreach ($cart->items as $item) { // voi moi order item trong gio hang
                 $product = $item->product; // $product la san pham cua item trong gio hang
 
                 // Tạo order item
@@ -135,7 +138,9 @@ class CustomerCartController extends Controller
                 $orderItem->save(); // luu item trong don hang vao database
 
                 // TRỪ TỒN KHO NGAY KHI ĐẶT HÀNG (giữ hàng cho khách)
-                $product->decrement('stock_quantity', $item->quantity); // decrement la giam so luong ton kho cua san pham
+                $product->decrement('stock_quantity', $item->quantity);
+                // decrement la giam so luong ton kho cua san pham
+                // decrement('stock_quantity', $item->quantity) giam so luong ton kho cua san pham bang so luong cua item trong gio hang
 
                 // Cập nhật inventory - tăng stock_out và giảm current_stock
                 $inventory = \App\Models\Inventory::firstOrCreate( // firstOrCreate tim kiem hoac tao moi inventory cho san pham
@@ -146,23 +151,25 @@ class CustomerCartController extends Controller
                         'current_stock' => 0, // neu khong tim thay thi tao moi voi current_stock = 0
                     ]
                 );
-                $inventory->increment('stock_out', $item->quantity); // increment la tang so luong stock_out cua inventory
-                $inventory->decrement('current_stock', $item->quantity); // decrement la giam so luong current_stock cua inventory
+                $inventory->increment('stock_out', $item->quantity);
+                // increment la tang so luong stock_out cua inventory bang so luong cua item trong gio hang
+                $inventory->decrement('current_stock', $item->quantity);
+                // decrement la giam so luong current_stock cua inventory bang so luong cua item trong gio hang
                 $inventory->save(); // luu thay doi inventory vao database
             }
 
-            $cart->items()->delete(); // xoa toan bo item trong gio hang
+            $cart->items()->delete(); // xoa toan bo item trong gio hang sau khi dat hang
             // Không cần reset total_amount vì tính động
 
             DB::commit(); // ket thuc giao dich
 
             $successMessage = 'Đặt hàng thành công! Đơn hàng của bạn đã được ghi nhận.';
-            if ($discountAmount > 0) {
+            if ($discountAmount > 0) { // neu co so tien giam gia
                 $successMessage .= ' Bạn đã tiết kiệm được '.number_format($discountAmount, 0, ',', '.').' VND với mã giảm giá!';
             }
             $successMessage .= ' Chúng tôi sẽ liên hệ với bạn qua số điện thoại '.$request->shipping_phone.' để xác nhận.';
 
-            return redirect()->route('cart.index')->with('success', $successMessage);
+            return redirect()->route('cart.index')->with('success', $successMessage); // redirect ve trang gio hang
             // chuyen huong den trang gio hang voi thong bao thanh cong
         } catch (\Exception $e) { // neu co loi xay ra trong qua trinh dat hang
             DB::rollBack(); // quay lai trang thai truoc khi bat dau giao dich
@@ -206,8 +213,8 @@ class CustomerCartController extends Controller
             $cartItems = collect(); // Khởi tạo bộ sưu tập rỗng
 
             try {
-                $cartItems = $cart->items() // $cart->items() lay tat ca cac item trong gio hang
-                    ->with(['product' => function ($query) { // tai thong tin san pham cho moi item trong gio hang
+                $cartItems = $cart->items() // $cart->items() lay tat ca cac cart items trong gio hang
+                    ->with(['product' => function ($query) { // ham callback de lay thong tin product cho cart item
                         $query->with('category'); // tai thong tin danh muc cho san pham
                     }]) // lay thong tin quan he product va category
                     ->get(); // thuc thi truy van va lay ve ket qua
