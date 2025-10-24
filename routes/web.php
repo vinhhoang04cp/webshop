@@ -4,6 +4,8 @@ use App\Http\Controllers\Web\AuthController;
 use App\Http\Controllers\Web\CustomerCartController;
 use App\Http\Controllers\Web\CustomerProductController;
 use App\Http\Controllers\Web\HomeController;
+use App\Http\Controllers\Web\PasswordResetController;
+use App\Http\Controllers\Web\ProfileController;
 use App\Http\Controllers\Web\SocialAuthController;
 use App\Http\Controllers\Web\UserManagementController;
 use Illuminate\Support\Facades\Route;
@@ -19,6 +21,12 @@ Route::get('/register', [AuthController::class, 'showRegister'])->name('register
 Route::post('/register', [AuthController::class, 'register']);
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+// Password Reset Routes
+Route::get('/forgot-password', [PasswordResetController::class, 'showForgotForm'])->name('password.request');
+Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLink'])->name('password.email');
+Route::get('/reset-password/{token}', [PasswordResetController::class, 'showResetForm'])->name('password.reset');
+Route::post('/reset-password', [PasswordResetController::class, 'resetPassword'])->name('password.update');
 
 // Social Authentication Routes
 Route::get('/auth/{provider}/redirect', [SocialAuthController::class, 'redirect'])->name('social.redirect');
@@ -41,6 +49,11 @@ Route::post('/cart/checkout', [CustomerCartController::class, 'checkout'])->name
 
 // Protected Dashboard Routes
 Route::middleware(['auth'])->group(function () {
+    // Profile Management - Quản lý tài khoản cá nhân
+    Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
+    Route::put('/profile', [ProfileController::class, 'updateProfile'])->name('profile.update');
+    Route::put('/profile/password', [ProfileController::class, 'changePassword'])->name('profile.password');
+
     // Dashboard chính - cần quyền dashboard
     Route::get('/dashboard', [AuthController::class, 'dashboard'])->name('dashboard')
         ->middleware('role:dashboard');

@@ -20,9 +20,12 @@
                 <input type="password" class="form-control @error('password') is-invalid @enderror" id="password" name="password" required>
                 @error('password')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
-            <div class="form-check mb-3">
-                <input class="form-check-input" type="checkbox" id="remember" name="remember">
-                <label class="form-check-label" for="remember">Ghi nhớ đăng nhập</label>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="remember" name="remember">
+                    <label class="form-check-label" for="remember">Ghi nhớ đăng nhập</label>
+                </div>
+                <a href="{{ route('password.request') }}" class="text-decoration-none small">Quên mật khẩu?</a>
             </div>
             <div class="d-grid">
                 <button type="submit" class="btn btn-primary btn-lg">

@@ -34,6 +34,12 @@
             <i class="fas fa-users"></i> Người dùng
         </a>
         @endif
+        
+        <div class="border-top mt-3 pt-3" style="border-color: rgba(255,255,255,0.1) !important;"></div>
+        
+        <a class="nav-link {{ request()->routeIs('profile.*') ? 'active' : '' }}" href="{{ route('profile.index') }}">
+            <i class="fas fa-user-circle"></i> Tài khoản của tôi
+        </a>
     </nav>
     <div class="user-info mt-auto">
         <div class="user-name">{{ auth()->user()->name }}</div>

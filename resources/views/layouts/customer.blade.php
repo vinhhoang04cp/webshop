@@ -32,6 +32,46 @@
             font-size: 0.9rem;
         }
 
+        .header-top .dropdown-toggle::after {
+            margin-left: 5px;
+        }
+
+        .header-top .dropdown-menu {
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border: none;
+            margin-top: 8px;
+            min-width: 200px;
+        }
+
+        .header-top .dropdown-item {
+            padding: 10px 20px;
+            transition: all 0.3s;
+        }
+
+        .header-top .dropdown-item:hover {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        .header-top .dropdown-item i {
+            width: 20px;
+            margin-right: 8px;
+        }
+
+        .header-top .dropdown-item form {
+            margin: 0;
+        }
+
+        .header-top .dropdown-item button {
+            background: none;
+            border: none;
+            padding: 0;
+            color: inherit;
+            width: 100%;
+            text-align: left;
+        }
+
         .header-main {
             background: white;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -311,15 +351,34 @@
                 </div>
                 <div class="col-md-6 text-end">
                     @auth
-                        <a href="{{ route('dashboard') }}" class="text-white text-decoration-none me-3">
-                            <i class="fas fa-user"></i> {{ Auth::user()->name }}
-                        </a>
-                        <form action="{{ route('logout') }}" method="POST" class="d-inline">
-                            @csrf
-                            <button type="submit" class="btn btn-link text-white text-decoration-none p-0">
-                                <i class="fas fa-sign-out-alt"></i> Đăng xuất
-                            </button>
-                        </form>
+                        <div class="dropdown d-inline-block">
+                            <a href="#" class="text-white text-decoration-none dropdown-toggle" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-user"></i> {{ Auth::user()->name }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('profile.index') }}">
+                                        <i class="fas fa-user-circle"></i> Quản lý tài khoản
+                                    </a>
+                                </li>
+                                @if(Auth::user()->hasRole('admin') || Auth::user()->hasRole('manager'))
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('dashboard') }}">
+                                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                                    </a>
+                                </li>
+                                @endif
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <form action="{{ route('logout') }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="dropdown-item">
+                                            <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
                     @else
                         <a href="{{ route('login') }}" class="text-white text-decoration-none me-3">
                             <i class="fas fa-sign-in-alt"></i> Đăng nhập
@@ -356,6 +415,11 @@
                 </div>
                 <div class="col-md-3">
                     <div class="header-icons text-end">
+                        @auth
+                        <a href="{{ route('profile.index') }}" title="Tài khoản của tôi">
+                            <i class="fas fa-user-circle"></i>
+                        </a>
+                        @endauth
                         <a href="{{ route('cart.index') }}" title="Giỏ hàng">
                             <i class="fas fa-shopping-cart"></i>
                             @if(isset($cartCount) && $cartCount > 0)
