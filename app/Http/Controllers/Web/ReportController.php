@@ -51,7 +51,7 @@ class ReportController extends Controller
                 ->whereYear('order_date', Carbon::now()->year)
                 ->sum('total_amount');
 
-            return view('dashboard.reports.index', compact(
+            return view('dashboard.reports.index', compact( // su dung ham compact de truyen du lieu den view
                 'totalRevenue',
                 'totalOrders',
                 'totalCustomers',
@@ -70,36 +70,36 @@ class ReportController extends Controller
     /**
      * Báo cáo doanh thu chi tiết
      */
-    public function revenue(Request $request)
+    public function revenue(Request $request) // su dung Request de lay du lieu tu yeu cau HTTP
     {
-        $startDate = $request->get('start_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
-        $endDate = $request->get('end_date', Carbon::now()->endOfMonth()->format('Y-m-d'));
-        $groupBy = $request->get('group_by', 'day'); // day, week, month
+        $startDate = $request->get('start_date', Carbon::now()->startOfMonth()->format('Y-m-d')); // Carbon::now()->startOfMonth()->format('Y-m-d') tra ve ngay dau tien cua thang hien tai dinh dang 'Y-m-d'
+        $endDate = $request->get('end_date', Carbon::now()->endOfMonth()->format('Y-m-d')); // Carbon::now()->endOfMonth()->format('Y-m-d') tra ve ngay cuoi cung cua thang hien tai dinh dang 'Y-m-d'
+        $groupBy = $request->get('group_by', 'day'); // day, week, month la cac lua chon nhom du lieu
 
         // Doanh thu theo khoảng thời gian
-        $revenueData = $this->getRevenueByPeriod($startDate, $endDate, $groupBy);
+        $revenueData = $this->getRevenueByPeriod($startDate, $endDate, $groupBy); // goi phuong thuc getRevenueByPeriod de lay du lieu doanh thu theo khoang thoi gian va cach nhom du lieu
 
         // Tổng doanh thu trong khoảng thời gian
-        $totalRevenue = Order::where('status', '!=', Order::STATUS_CANCELLED)
-            ->whereBetween('order_date', [$startDate, $endDate])
-            ->sum('total_amount');
+        $totalRevenue = Order::where('status', '!=', Order::STATUS_CANCELLED) // loc cac don hang khong bi huy
+            ->whereBetween('order_date', [$startDate, $endDate]) // loc cac don hang trong khoang thoi gian tu startDate den endDate
+            ->sum('total_amount'); // tinh tong doanh thu trong khoang thoi gian
 
         // Số đơn hàng trong khoảng thời gian
-        $totalOrders = Order::where('status', '!=', Order::STATUS_CANCELLED)
-            ->whereBetween('order_date', [$startDate, $endDate])
-            ->count();
+        $totalOrders = Order::where('status', '!=', Order::STATUS_CANCELLED) // loc cac don hang khong bi huy
+            ->whereBetween('order_date', [$startDate, $endDate]) // loc cac don hang trong khoang thoi gian tu startDate den endDate
+            ->count(); // dem so don hang trong khoang thoi gian
 
         // Giá trị đơn hàng trung bình
-        $averageOrderValue = $totalOrders > 0 ? $totalRevenue / $totalOrders : 0;
+        $averageOrderValue = $totalOrders > 0 ? $totalRevenue / $totalOrders : 0; // ? la toan tu dieu kien, neu totalOrders > 0 thi tinh gia tri don hang trung binh, nguoc lai tra ve 0
 
-        return view('dashboard.reports.revenue', compact(
-            'revenueData',
-            'totalRevenue',
-            'totalOrders',
-            'averageOrderValue',
-            'startDate',
-            'endDate',
-            'groupBy'
+        return view('dashboard.reports.revenue', compact( // su dung ham compact de truyen du lieu den view
+            'revenueData', // du lieu doanh thu theo khoang thoi gian
+            'totalRevenue', // tong doanh thu trong khoang thoi gian
+            'totalOrders', // tong so don hang trong khoang thoi gian
+            'averageOrderValue', // gia tri don hang trung binh
+            'startDate', // ngay bat dau
+            'endDate', // ngay ket thuc
+            'groupBy' // phuong thuc nhom du lieu
         ));
     }
 
@@ -109,27 +109,30 @@ class ReportController extends Controller
     public function products(Request $request)
     {
         $startDate = $request->get('start_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
+        // ham Carbon la ham xu ly thoi gian trong PHP, Carbon::now() tra ve thoi gian hien tai, startOfMonth() tra ve ngay dau tien cua thang hien tai, format('Y-m-d') dinh dang lai thanh chuoi theo dinh dang 'Y-m-d'
         $endDate = $request->get('end_date', Carbon::now()->endOfMonth()->format('Y-m-d'));
+        // ham Carbon la ham xu ly thoi gian trong PHP, Carbon::now() tra ve thoi gian hien tai, endOfMonth() tra ve ngay cuoi cung cua thang hien tai, format('Y-m-d') dinh dang lai thanh chuoi theo dinh dang 'Y-m-d'
 
         // Top sản phẩm bán chạy
         $topProducts = $this->getTopSellingProducts(20, $startDate, $endDate);
+        // goi den ham getTopSellingProducts lay 20 san pham ban nhieu nhat trong khoang thoi gian tu startDate den endDate
 
         // Sản phẩm theo danh mục
-        $productsByCategory = OrderItem::select(
-            'categories.name as category_name',
-            DB::raw('SUM(order_items.quantity) as total_quantity'),
-            DB::raw('SUM(order_items.quantity * order_items.price) as total_revenue')
+        $productsByCategory = OrderItem::select( // su dung Eloquent de lay du lieu tu bang OrderItem
+            'categories.name as category_name', // lay ten danh muc san pham
+            DB::raw('SUM(order_items.quantity) as total_quantity'), // ham raw de viet cau truy van SQL thuan, SUM tinh tong so luong san pham da ban
+            DB::raw('SUM(order_items.quantity * order_items.price) as total_revenue') // SUM tinh tong doanh thu cua san pham theo danh muc
         )
-            ->join('products', 'order_items.product_id', '=', 'products.product_id')
-            ->join('categories', 'products.category_id', '=', 'categories.category_id')
-            ->join('orders', 'order_items.order_id', '=', 'orders.order_id')
-            ->where('orders.status', '!=', Order::STATUS_CANCELLED)
-            ->whereBetween('orders.order_date', [$startDate, $endDate])
-            ->groupBy('categories.category_id', 'categories.name')
-            ->orderBy('total_revenue', 'desc')
+            ->join('products', 'order_items.product_id', '=', 'products.product_id') // ket noi bang products voi order_items qua truong product_id
+            ->join('categories', 'products.category_id', '=', 'categories.category_id') // ket noi bang categories voi products qua truong category_id
+            ->join('orders', 'order_items.order_id', '=', 'orders.order_id') // ket noi bang orders voi order_items qua truong order_id
+            ->where('orders.status', '!=', Order::STATUS_CANCELLED) // loc cac don hang khong bi huy
+            ->whereBetween('orders.order_date', [$startDate, $endDate]) // loc cac don hang trong khoang thoi gian duoc chon
+            ->groupBy('categories.category_id', 'categories.name') // nhom ket qua theo danh muc san pham
+            ->orderBy('total_revenue', 'desc') // sap xep giam dan theo tong doanh thu
             ->get();
 
-        return view('dashboard.reports.products', compact(
+        return view('dashboard.reports.products', compact( // su dung ham compact de truyen du lieu den view
             'topProducts',
             'productsByCategory',
             'startDate',
@@ -140,45 +143,45 @@ class ReportController extends Controller
     /**
      * Báo cáo khách hàng
      */
-    public function customers(Request $request)
+    public function customers(Request $request) // su dung Request de lay du lieu tu yeu cau HTTP
     {
-        $startDate = $request->get('start_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
-        $endDate = $request->get('end_date', Carbon::now()->endOfMonth()->format('Y-m-d'));
+        $startDate = $request->get('start_date', Carbon::now()->startOfMonth()->format('Y-m-d')); // lay ngay bat dau tu yeu cau, neu khong co thi mac dinh la ngay dau tien cua thang hien tai
+        $endDate = $request->get('end_date', Carbon::now()->endOfMonth()->format('Y-m-d')); // lay ngay ket thuc tu yeu cau, neu khong co thi mac dinh la ngay cuoi cung cua thang hien tai
 
         // Top khách hàng theo doanh thu
-        $topCustomers = Order::select(
-            'users.name',
-            'users.email',
-            DB::raw('COUNT(orders.order_id) as total_orders'),
-            DB::raw('SUM(orders.total_amount) as total_spent')
+        $topCustomers = Order::select( // select la ham de chon cac truong can thiet tu bang orders
+            'users.name', // lay ten khach hang tu bang users
+            'users.email', // lay email khach hang tu bang users
+            DB::raw('COUNT(orders.order_id) as total_orders'), // raw la ham de viet cau truy van SQL thuan, COUNT dem so luong don hang cua moi khach hang
+            DB::raw('SUM(orders.total_amount) as total_spent') // SUM tinh tong so tien ma moi khach hang da chi tieu
         )
-            ->join('users', 'orders.user_id', '=', 'users.id')
-            ->where('orders.status', '!=', Order::STATUS_CANCELLED)
-            ->whereBetween('orders.order_date', [$startDate, $endDate])
-            ->groupBy('users.id', 'users.name', 'users.email')
-            ->orderBy('total_spent', 'desc')
-            ->limit(20)
-            ->get();
+            ->join('users', 'orders.user_id', '=', 'users.id') // ket noi bang users voi orders qua truong user_id va id
+            ->where('orders.status', '!=', Order::STATUS_CANCELLED) // loc cac don hang khong bi huy
+            ->whereBetween('orders.order_date', [$startDate, $endDate]) // loc cac don hang trong khoang thoi gian duoc chon
+            ->groupBy('users.id', 'users.name', 'users.email') // nhom ket qua theo khach hang
+            ->orderBy('total_spent', 'desc') // sap xep giam dan theo tong chi tieu
+            ->limit(20) // gioi han 20 khach hang dau tien
+            ->get(); // thuc thi cau truy van va lay ket qua
 
         // Khách hàng mới
-        $newCustomers = User::whereHas('roles', function ($query) {
-            $query->where('role_name', 'customer');
+        $newCustomers = User::whereHas('roles', function ($query) { // su dung ham whereHas de dem so luong khach hang co vai tro la 'customer' bang callback function
+            $query->where('role_name', 'customer'); // loc nhung nguoi dung co vai tro la 'customer'
         })
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->count();
+            ->whereBetween('created_at', [$startDate, $endDate]) // loc nhung khach hang duoc tao trong khoang thoi gian duoc chon
+            ->count(); // dem so luong khach hang moi
 
         // Khách hàng có đơn hàng
-        $activeCustomers = Order::where('status', '!=', Order::STATUS_CANCELLED)
-            ->whereBetween('order_date', [$startDate, $endDate])
-            ->distinct('user_id')
-            ->count();
+        $activeCustomers = Order::where('status', '!=', Order::STATUS_CANCELLED) // loc cac don hang khong bi huy
+            ->whereBetween('order_date', [$startDate, $endDate]) // loc cac don hang trong khoang thoi gian duoc chon
+            ->distinct('user_id') // chon nhung user_id khac nhau
+            ->count(); // dem so luong khach hang co don hang
 
-        return view('dashboard.reports.customers', compact(
-            'topCustomers',
-            'newCustomers',
-            'activeCustomers',
-            'startDate',
-            'endDate'
+        return view('dashboard.reports.customers', compact( // su dung ham compact de truyen du lieu den view
+            'topCustomers', // du lieu top khach hang theo doanh thu
+            'newCustomers', // so luong khach hang moi
+            'activeCustomers',  // so luong khach hang co don hang
+            'startDate', // ngay bat dau
+            'endDate' // ngay ket thuc
         ));
     }
 
