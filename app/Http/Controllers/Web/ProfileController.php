@@ -3,7 +3,8 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Http\Requests\ChangePasswordRequest;
+use App\Http\Requests\ProfileUpdateRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -27,24 +28,9 @@ class ProfileController extends Controller
      *
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function updateProfile(Request $request)
+    public function updateProfile(ProfileUpdateRequest $request)
     {
         $user = Auth::user();
-
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'phone' => 'nullable|string|max:20',
-            'address' => 'nullable|string|max:500',
-            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-        ], [
-            'name.required' => 'Vui lòng nhập họ tên.',
-            'name.max' => 'Họ tên không được vượt quá 255 ký tự.',
-            'phone.max' => 'Số điện thoại không được vượt quá 20 ký tự.',
-            'address.max' => 'Địa chỉ không được vượt quá 500 ký tự.',
-            'avatar.image' => 'File phải là hình ảnh.',
-            'avatar.mimes' => 'Hình ảnh phải có định dạng: jpeg, png, jpg, gif.',
-            'avatar.max' => 'Kích thước hình ảnh không được vượt quá 2MB.',
-        ]);
 
         $user->name = $request->name;
         $user->phone = $request->phone;
@@ -72,21 +58,10 @@ class ProfileController extends Controller
      *
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function changePassword(Request $request)
+    public function changePassword(ChangePasswordRequest $request)
     {
         $user = Auth::user();
 
-        $request->validate([
-            'current_password' => 'required',
-            'new_password' => 'required|min:8|confirmed',
-        ], [
-            'current_password.required' => 'Vui lòng nhập mật khẩu hiện tại.',
-            'new_password.required' => 'Vui lòng nhập mật khẩu mới.',
-            'new_password.min' => 'Mật khẩu mới phải có ít nhất 8 ký tự.',
-            'new_password.confirmed' => 'Mật khẩu xác nhận không khớp.',
-        ]);
-
-        // Kiểm tra mật khẩu hiện tại
         if (! Hash::check($request->current_password, $user->password)) {
             return back()->withErrors(['current_password' => 'Mật khẩu hiện tại không đúng.']);
         }

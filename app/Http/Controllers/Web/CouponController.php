@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\CouponRequest;
 use App\Models\Coupon;
 use App\Models\Product;
 use Illuminate\Http\Request;
@@ -59,26 +60,9 @@ class CouponController extends Controller
     /**
      * Lưu coupon mới
      */
-    public function store(Request $request)
+    public function store(CouponRequest $request)
     {
-        $request->validate([
-            'code' => 'required|string|max:50|unique:coupons,code', // code la truong bat buoc, string, max 50 ky tu, unique trong bang coupons, code
-            'discount_type' => 'required|in:percentage,fixed',
-            'discount_value' => 'required|numeric|min:0', // discount_value la truong bat buoc, numeric, min 0
-            'product_id' => 'nullable|exists:products,product_id', // product_id la truong nullable, exists trong bang products, product_id
-            'start_date' => 'required|date', // start_date la truong bat buoc, date
-            'end_date' => 'required|date|after:start_date',
-            'is_active' => 'boolean',
-        ]);
-
         try {
-            // Validate giá trị phần trăm
-            if ($request->discount_type === 'percentage' && $request->discount_value > 100) { // neu gia tri cua discount_type la phan tram va discount_value lon hon 100 thi tra ve loi
-                return redirect()->back() // tra ve trang truoc do
-                    ->withInput() // truyen input vao view
-                    ->withErrors(['discount_value' => 'Giá trị phần trăm không được vượt quá 100%']); // truyen error vao view
-            }
-
             $coupon = Coupon::create([
                 'code' => strtoupper($request->code), // code la truong bat buoc, string, max 50 ky tu, unique trong bang coupons, code
                 'discount_type' => $request->discount_type,
@@ -138,34 +122,12 @@ class CouponController extends Controller
     /**
      * Cập nhật coupon
      */
-    public function update(Request $request, $id) // update(Request $request, $id) la ham de cap nhat coupon
+    public function update(CouponRequest $request, $id)
     {
-        $request->validate([
-            'code' => 'required|string|max:50|unique:coupons,code,'.$id.',coupon_id', // code la truong bat buoc, string, max 50 ky tu, unique trong bang coupons, code
-            'discount_type' => 'required|in:percentage,fixed',
-            'discount_value' => 'required|numeric|min:0', // discount_value la truong bat buoc, numeric, min 0
-            'product_id' => 'nullable|exists:products,product_id', // product_id la truong nullable, exists trong bang products, product_id
-            'start_date' => 'required|date', // start_date la truong bat buoc, date
-            'end_date' => 'required|date|after:start_date', // end_date la truong bat buoc, date, after:start_date
-            'is_active' => 'boolean',
-        ]);
-
         try {
-            $coupon = Coupon::findOrFail($id); // Tìm coupon qua id
-            $oldProductId = $coupon->product_id; // $oldProductId là biến lưu id của product
-            $oldIsActive = $coupon->is_active; // $oldActive là biến lưu trạng thái
-
-            // Validate giá trị phần trăm
-            if ($request->discount_type === 'percentage' && $request->discount_value > 100) { // neu gia tri cua discount_type la phan tram va discount_value lon hon 100 thi tra ve loi
-                return redirect()->back() // tra ve trang truoc do
-                    ->withInput() // truyen input vao view
-                    ->withErrors(['discount_value' => 'Giá trị phần trăm không được vượt quá 100%']); // truyen error vao view
-            }
-
-            // truong hop san pham dang co ma giam gia se restore gia goc
-            if ($oldIsActive && $oldProductId) { // neu co ton tai oldIsActive la bien chua trang thai cu va oldProductId la bien chua id san pham cu
-                $this->restoreProductPrice($oldProductId); // khôi phục giá gốc cho sản phẩm cũ qua ham restoreProductPrice
-            }
+            $coupon = Coupon::findOrFail($id);
+            $oldProductId = $coupon->product_id;
+            $oldIsActive = $coupon->is_active;
 
             $coupon->update([ // update coupon
                 'code' => strtoupper($request->code), // code la truong bat buoc, string, max 50 ky tu, unique trong bang coupons, code

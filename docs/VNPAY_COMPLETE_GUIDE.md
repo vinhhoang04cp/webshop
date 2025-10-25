@@ -29,6 +29,7 @@
 - **PHẢI đăng ký VNPay Sandbox** tại http://sandbox.vnpayment.vn/devreg/ để lấy credentials riêng
 - Credentials demo công khai KHÔNG hoạt động
 - Sau khi nhận email, cập nhật `VNPAY_TMN_CODE` và `VNPAY_HASH_SECRET` vào `.env`
+- Cần phải cập nhật VNPAY_TMN_CODE và UELMZJAAMYUZYNJDVUOMVXXOZNJGYSOR lấy từ mail của VNpay sau 1 thời gian nhất định hoặc khi reset
 
 **Tính năng đã tích hợp:**
 - ✅ Thanh toán COD (Thanh toán khi nhận hàng)
@@ -38,7 +39,7 @@
 - ✅ Lưu trạng thái thanh toán vào database
 - ✅ Auto-update ngrok URL script
 
-**Nếu gặp lỗi "Invalid Signature":**
+**Nếu gặp lỗi "Invalid Signature hay Sai Chữ kí Thì phải cập Nhật các key trong .env như đã ghi chú ở phần Lưu Ý Quan Trọng"** 
 1. Đăng ký tài khoản VNPay sandbox (bắt buộc!)
 2. Cập nhật credentials vào `.env` (không có quotes, không có khoảng trắng)
 3. Chạy: `./vendor/bin/sail artisan config:clear`

@@ -12,6 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
+            // Thêm các trường provider, provider_id, avatar vào bảng users sau trường remember_token
+            // provider: tên provider (google, facebook, github), kiểu dữ liệu là string, giá trị mặc định là null
+            // provider_id: id của provider, kiểu dữ liệu là string, giá trị mặc định là null
+            // avatar: url avatar của user, kiểu dữ liệu là string, giá trị mặc định là null
             $table->string('provider')->nullable()->after('remember_token');
             $table->string('provider_id')->nullable()->after('provider');
             $table->string('avatar')->nullable()->after('provider_id');

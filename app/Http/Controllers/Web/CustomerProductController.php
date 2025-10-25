@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\RatingRequest;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Rating;
@@ -162,20 +163,8 @@ class CustomerProductController extends Controller
         return view('products.category', compact('category', 'products', 'categories', 'cartCount'));
     }
 
-    public function addRating(Request $request, $productId)
+    public function storeRating(RatingRequest $request, $productId)
     {
-        // Kiểm tra đăng nhập
-        if (! Auth::check()) {
-            return redirect()->route('login')->with('error', 'Bạn phải đăng nhập để đánh giá sản phẩm.');
-        }
-
-        // Kiểm tra sản phẩm có tồn tại không
-        $product = Product::find($productId);
-        if (! $product) {
-            return redirect()->back()->with('error', 'Sản phẩm không tồn tại.');
-        }
-
-        // Kiểm tra user đã đánh giá sản phẩm này chưa
         $existingRating = Rating::where('user_id', Auth::id())
             ->where('product_id', $productId)
             ->first();
@@ -183,19 +172,6 @@ class CustomerProductController extends Controller
         if ($existingRating) {
             return redirect()->back()->with('error', 'Bạn đã đánh giá sản phẩm này rồi.');
         }
-
-        // Validate dữ liệu
-        $request->validate([
-            'rating' => 'required|integer|min:1|max:5',
-            'review' => 'nullable|string|max:1000',
-        ], [
-            'rating.required' => 'Bạn phải chọn số sao đánh giá.',
-            'rating.min' => 'Số sao tối thiểu là 1.',
-            'rating.max' => 'Số sao tối đa là 5.',
-            'review.max' => 'Nhận xét không được quá 1000 ký tự.',
-        ]);
-
-        // Tạo rating mới
         $rating = new Rating;
         $rating->user_id = Auth::id();
         $rating->product_id = $productId;

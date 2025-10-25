@@ -65,6 +65,7 @@ class CartRequest extends FormRequest
      */
     private function getItemRules(): array
     {
+        // Nếu có items array (bulk operations)
         if ($this->has('items')) {
             return [
                 'items' => ['required', 'array', 'min:1'],
@@ -73,9 +74,17 @@ class CartRequest extends FormRequest
             ];
         }
 
+        // Nếu có product_id trong request (API hoặc form với product_id)
+        if ($this->has('product_id')) {
+            return [
+                'product_id' => ['required', 'integer', 'exists:products,product_id'],
+                'quantity' => ['nullable', 'integer', 'min:1'],
+            ];
+        }
+
+        // Trường hợp add từ route parameter (chỉ cần quantity)
         return [
-            'product_id' => ['required', 'integer', 'exists:products,product_id'],
-            'quantity' => ['required', 'integer', 'min:1'],
+            'quantity' => ['nullable', 'integer', 'min:1'],
         ];
     }
 }

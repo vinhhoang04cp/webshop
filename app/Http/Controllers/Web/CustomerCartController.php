@@ -3,243 +3,177 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\CartRequest;
+use App\Http\Requests\CheckoutRequest;
 use App\Models\Cart;
 use App\Models\CartItem;
-use App\Models\Category;
+use App\Models\Coupon;
+use App\Models\Inventory;
+use App\Models\Order;
 use App\Models\Product;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class CustomerCartController extends Controller
 {
     /**
-     * Xử lý thanh toán giỏ hàng (Checkout)
+     * Xử lý thanh toán giỏ hàng
      *
-     * Chức năng: Xử lý việc đặt hàng và thanh toán COD (Cash on Delivery)
-     * Hoạt động:
-     * - Kiểm tra người dùng đã đăng nhập chưa
-     * - Validate thông tin giao hàng (tên, SĐT, địa chỉ, ghi chú)
-     * - Lấy giỏ hàng của user hiện tại
-     * - Kiểm tra giỏ hàng có rỗng không
-     * - Sử dụng database transaction để đảm bảo tính toàn vẹn dữ liệu:
-     *   + Kiểm tra tồn kho của từng sản phẩm
-     *   + Tạo đơn hàng mới với thông tin giao hàng
-     *   + Tạo các order items từ cart items
-     *   + TRỪ TỒN KHO NGAY (giữ hàng cho khách)
-     *   + Cập nhật inventory (tăng stock_out, giảm current_stock)
-     *   + Xóa items trong giỏ hàng
-     * - Redirect đến trang chi tiết đơn hàng với thông báo thành công
-     * - Rollback và hiển thị lỗi nếu có vấn đề xảy ra
-     *
-     * @param  \Illuminate\Http\Request  $request  Thông tin giao hàng từ form
-     * @return \Illuminate\Http\RedirectResponse
+     * Lưu ý: TRỪ TỒN KHO NGAY khi đặt hàng để giữ hàng cho khách
      */
-    public function checkout(Request $request) // Ham checkout de xu ly thanh toan gio hang
+    public function checkout(CheckoutRequest $request)
     {
-        if (! Auth::check()) { // neu user chua dang nhap
-            return redirect()->route('login')->with('error', 'Vui lòng đăng nhập để thanh toán!'); // chuyen huong den trang dang nhap voi thong bao loi
+        if (! Auth::check()) {
+            return redirect()->route('login')->with('error', 'Vui lòng đăng nhập để thanh toán!');
         }
 
-        // Validate thông tin giao hàng
-        $request->validate([
-            'shipping_name' => 'required|string|max:255', // shipping_name la ten nguoi nhan, bat buoc phai la chuoi va toi da 255 ky tu
-            'shipping_phone' => 'required|string|max:20', // shipping_phone la so dien thoai nguoi nhan, bat buoc phai la chuoi va toi da 20 ky tu
-            'shipping_address' => 'required|string|max:1000', // shipping_address la dia chi giao hang, bat buoc phai la chuoi va toi da 1000 ky tu
-            'note' => 'nullable|string|max:500', // note la ghi chu, co the null, neu co thi phai la chuoi va toi da 500 ky tu
-            'coupon_code' => 'nullable|string|max:50', // coupon_code la ma giam gia, co the null, neu co thi phai la chuoi va toi da 50 ky tu
-            'payment_method' => 'required|in:cod,vnpay', // payment_method la phuong thuc thanh toan, bat buoc phai la cod hoac vnpay
-        ], [
-            'shipping_name.required' => 'Vui lòng nhập họ và tên người nhận', // shipping_name.required
-            'shipping_phone.required' => 'Vui lòng nhập số điện thoại', // shipping_phone.required
-            'shipping_address.required' => 'Vui lòng nhập địa chỉ giao hàng', // shipping_address.required
-            'payment_method.required' => 'Vui lòng chọn phương thức thanh toán', // payment_method.required
-        ]);
-
-        // Lấy giỏ hàng của user hiện tại
-        $cart = Auth::user()->cart; // $cart la gio hang cua user hien tai dang nhap
-        if (! $cart || $cart->items()->count() == 0) { // ! $cart neu chua co cart, $cart->items()->count() == 0 neu so luong item trong gio hang bang 0
-            return redirect()->route('cart.index')->with('error', 'Giỏ hàng trống!'); // chuyen huong den trang gio hang voi thong bao loi
+        $cart = Auth::user()->cart;
+        if (! $cart || $cart->items()->count() == 0) {
+            return redirect()->route('cart.index')->with('error', 'Giỏ hàng trống!');
         }
-        // Sau khi lay duoc gio hang, bat dau giao dich de dat hang
+
         DB::beginTransaction();
         try {
-            // Kiểm tra tồn kho trước khi tạo đơn hàng
-            foreach ($cart->items as $item) { // duyet qua tung item trong gio hang, $cart->items la cac item trong gio hang
-                $product = $item->product; // $product la bien chua san pham cua item trong gio hang
-                if (! $product) { // neu khong tim thay san pham
+            // Kiểm tra tồn kho
+            foreach ($cart->items as $item) {
+                $product = $item->product;
+                if (! $product) {
                     throw new \Exception('Sản phẩm không tồn tại!');
                 }
 
-                // Kiểm tra số lượng tồn kho
-                if ($product->stock_quantity < $item->quantity) { // neu so luong ton kho cua san pham nho hon so luong trong gio hang
-                    throw new \Exception("Sản phẩm '{$product->name}' chỉ còn {$product->stock_quantity} sản phẩm trong kho!"); // thong bao loi so luong ton kho khong du
+                if ($product->stock_quantity < $item->quantity) {
+                    throw new \Exception("Sản phẩm '{$product->name}' chỉ còn {$product->stock_quantity} sản phẩm trong kho!");
                 }
             }
 
-            // Tính tổng tiền giỏ hàng
-            $totalAmount = $cart->totalPrice(); // totalPrice() la ham tinh tong tien cua gio hang lay tu model Cart
-            $discountAmount = 0; // discountAmount la so tien giam gia
-            $coupon = null; // coupon la bien chua coupon neu co
+            $totalAmount = $cart->totalPrice();
+            $discountAmount = 0;
+            $coupon = null;
 
-            // Xử lý coupon nếu có
-            if ($request->filled('coupon_code')) { // $request->filled('coupon_code') neu co xuat hien coupon_code trong request
-                $couponCode = strtoupper(trim($request->coupon_code)); // chuyen doi coupon_code thanh chu hoa va cat bo khoang trang dau cuoi
-                $coupon = \App\Models\Coupon::where('code', $couponCode)->first(); // eloquent de tim kiem coupon theo code trong bang coupons, first() lay ra coupon dau tien tim thay
+            // Xử lý coupon
+            if ($request->filled('coupon_code')) {
+                $couponCode = strtoupper(trim($request->coupon_code));
+                $coupon = \App\Models\Coupon::where('code', $couponCode)->first();
 
-                if (! $coupon) { // neu khong tim thay coupon
+                if (! $coupon) {
                     throw new \Exception('Mã giảm giá không hợp lệ!');
-                    // thong bao loi ma giam gia khong hop le
                 }
 
-                // Validate coupon
-                $validation = $coupon->isValid($totalAmount); // goi den ham isValid tu model Coupon de kiem tra tinh hop le cua coupon voi tong tien gio hang
-                if (! $validation['valid']) { // neu coupon khong hop le
-                    throw new \Exception($validation['message']); // thong bao loi tu phuong thuc isValid
+                $validation = $coupon->isValid($totalAmount);
+                if (! $validation['valid']) {
+                    throw new \Exception($validation['message']);
                 }
 
-                // Tính tiền giảm giá
                 $discountAmount = $coupon->calculateDiscount($totalAmount);
-                // tinh so tien giam gia tu coupon, $totalAmount la so tien tong cua gio hang, se duoc truyen vao ham calculateDiscount goi tu model de tinh toan
-                // $coupon->calculateDiscount($totalAmount) goi den ham calculateDiscount tu model Coupon de tinh so tien giam gia
                 $totalAmount = $totalAmount - $discountAmount;
-                // tong tien sau cung se bang tong tien tru di so tien giam gia
             }
 
-            // Tạo đơn hàng với thông tin giao hàng
-            $order = new \App\Models\Order; // tao moi don hang thong qua model Order
-            $order->user_id = Auth::id(); // su dung id cua user hien tai dang nhap lam user_id
-            $order->total_amount = $totalAmount; // Tổng tiền sau khi trừ coupon, totalAmount
-            $order->status = 'pending'; // trang thai don hang mac dinh la 'pending'
-            $order->order_date = now();  // thoi gian dat hang la thoi diem hien tai
+            // Tạo đơn hàng
+            $order = new \App\Models\Order;
+            $order->user_id = Auth::id();
+            $order->total_amount = $totalAmount;
+            $order->status = 'pending';
+            $order->order_date = now();
+            $order->shipping_name = $request->shipping_name;
+            $order->shipping_phone = $request->shipping_phone;
+            $order->shipping_address = $request->shipping_address;
+            $order->note = $request->note;
+            $order->save();
 
-            // Thêm thông tin giao hàng COD
-            $order->shipping_name = $request->shipping_name; // Lấy tên người nhận từ form
-            $order->shipping_phone = $request->shipping_phone; // Lấy số điện thoại từ form
-            $order->shipping_address = $request->shipping_address; // Lấy địa chỉ từ form
-            $order->note = $request->note; // Lấy ghi chú từ form (có thể null)
-
-            $order->save(); // luu don hang vao database
-
-            // Tăng used_count của coupon nếu đã sử dụng
-            if ($coupon) { // neu co coupon
-                $coupon->increment('used_count'); // increment la tang gia tri cua used_count len 1
-                $coupon->save(); // luu thay doi coupon vao database
+            if ($coupon) {
+                $coupon->increment('used_count');
+                $coupon->save();
             }
 
-            // Thêm các sản phẩm vào order_items VÀ TRỪ TỒN KHO NGAY
-            foreach ($cart->items as $item) { // voi moi order item trong gio hang
-                $product = $item->product; // $product la san pham cua item trong gio hang
+            // Tạo order items và trừ tồn kho
+            foreach ($cart->items as $item) {
+                $product = $item->product;
 
-                // Tạo order item
-                $orderItem = new \App\Models\OrderItem; // Su dung model OrderItem de tao moi item trong don hang
-                $orderItem->order_id = $order->order_id; // gan order_id cua item trong don hang bang order_id cua don hang vua tao
-                $orderItem->product_id = $item->product_id; // gan product_id cua item trong don hang bang product_id cua item trong gio hang
-                $orderItem->quantity = $item->quantity; // gan so luong cua item trong don hang bang so luong cua item trong gio hang
-                $orderItem->price = $item->price ?? $product->price; // gan gia cua item trong don hang bang gia cua item trong gio hang, neu khong co thi lay gia cua san pham
-                $orderItem->save(); // luu item trong don hang vao database
+                $orderItem = new \App\Models\OrderItem;
+                $orderItem->order_id = $order->order_id;
+                $orderItem->product_id = $item->product_id;
+                $orderItem->quantity = $item->quantity;
+                $orderItem->price = $item->price ?? $product->price;
+                $orderItem->save();
 
-                // TRỪ TỒN KHO NGAY KHI ĐẶT HÀNG (giữ hàng cho khách)
+                // Trừ tồn kho
                 $product->decrement('stock_quantity', $item->quantity);
-                // decrement la giam so luong ton kho cua san pham
-                // decrement('stock_quantity', $item->quantity) giam so luong ton kho cua san pham bang so luong cua item trong gio hang
 
-                // Cập nhật inventory - tăng stock_out và giảm current_stock
-                $inventory = \App\Models\Inventory::firstOrCreate( // firstOrCreate tim kiem hoac tao moi inventory cho san pham
-                    ['product_id' => $product->product_id], // dieu kien tim kiem inventory theo product_id
+                // Cập nhật inventory
+                $inventory = \App\Models\Inventory::firstOrCreate(
+                    ['product_id' => $product->product_id],
                     [
-                        'stock_in' => 0, // neu khong tim thay thi tao moi voi stock_in = 0
-                        'stock_out' => 0, // neu khong tim thay thi tao moi voi stock_out = 0
-                        'current_stock' => 0, // neu khong tim thay thi tao moi voi current_stock = 0
+                        'stock_in' => 0,
+                        'stock_out' => 0,
+                        'current_stock' => 0,
                     ]
                 );
                 $inventory->increment('stock_out', $item->quantity);
-                // increment la tang so luong stock_out cua inventory bang so luong cua item trong gio hang
                 $inventory->decrement('current_stock', $item->quantity);
-                // decrement la giam so luong current_stock cua inventory bang so luong cua item trong gio hang
-                $inventory->save(); // luu thay doi inventory vao database
+                $inventory->save();
             }
 
-            $cart->items()->delete(); // xoa toan bo item trong gio hang sau khi dat hang
-            // Không cần reset total_amount vì tính động
+            $cart->items()->delete();
 
-            DB::commit(); // ket thuc giao dich
+            DB::commit();
 
             // Kiểm tra phương thức thanh toán
             if ($request->payment_method === 'vnpay') {
-                // Lưu order_id vào session và redirect đến trang thanh toán VNPay
                 session(['pending_payment_order_id' => $order->order_id]);
 
                 return redirect()->route('payment.create.get')
                     ->with('success', 'Đơn hàng đã được tạo. Đang chuyển đến trang thanh toán...');
             }
 
-            // COD - Thanh toán khi nhận hàng
             $successMessage = 'Đặt hàng thành công! Đơn hàng của bạn đã được ghi nhận.';
-            if ($discountAmount > 0) { // neu co so tien giam gia
+            if ($discountAmount > 0) {
                 $successMessage .= ' Bạn đã tiết kiệm được '.number_format($discountAmount, 0, ',', '.').' VND với mã giảm giá!';
             }
             $successMessage .= ' Chúng tôi sẽ liên hệ với bạn qua số điện thoại '.$request->shipping_phone.' để xác nhận.';
 
-            return redirect()->route('cart.index')->with('success', $successMessage); // redirect ve trang gio hang
-            // chuyen huong den trang gio hang voi thong bao thanh cong
-        } catch (\Exception $e) { // neu co loi xay ra trong qua trinh dat hang
-            DB::rollBack(); // quay lai trang thai truoc khi bat dau giao dich
+            return redirect()->route('cart.index')->with('success', $successMessage);
+        } catch (\Exception $e) {
+            DB::rollBack();
 
-            return redirect()->route('cart.index')->with('error', 'Có lỗi xảy ra khi đặt hàng: '.$e->getMessage()); // chuyen huong den trang gio hang voi thong bao loi
+            return redirect()->route('cart.index')->with('error', 'Có lỗi xảy ra khi đặt hàng: '.$e->getMessage());
         }
     }
 
     /**
      * Hiển thị giỏ hàng của khách hàng
-     *
-     * Chức năng: Hiển thị danh sách sản phẩm trong giỏ hàng của user
-     * Hoạt động:
-     * - Kiểm tra người dùng đã đăng nhập chưa
-     * - Lấy giỏ hàng của user, nếu chưa có thì tạo mới
-     * - Load cart items kèm theo thông tin product và category (eager loading)
-     * - Xử lý exception khi load cart items
-     * - Tính tổng số lượng sản phẩm trong giỏ hàng
-     * - Lấy danh sách categories để hiển thị menu
-     * - Trả về view giỏ hàng với đầy đủ dữ liệu
-     *
-     * @return \Illuminate\Http\RedirectResponse|\Illuminate\View\View
      */
-    public function index() // ham index de hien thi gio hang
+    public function index()
     {
-        if (! Auth::check()) { // neu check user chua dang nhap
-            return redirect()->route('login')->with('error', 'Vui lòng đăng nhập để xem giỏ hàng!'); // chuyen huong den trang dang nhap voi thong bao loi
+        if (! Auth::check()) {
+            return redirect()->route('login')->with('error', 'Vui lòng đăng nhập để xem giỏ hàng!');
         }
 
         try {
-            $cart = Auth::user()->cart; // $cart la gio hang cua user hien tai dang nhap
+            $cart = Auth::user()->cart;
 
-            // Nếu chưa có giỏ hàng, tạo mới
-            if (! $cart) { // !cart neu chua co gio hang thi tao moi
-                $cart = Cart::create([ // $cart la doi tuong cart moi duoc tao thong qua phuong thuc create cua model Cart
-                    'user_id' => Auth::id(), // lay id cua user hien tai dang nhap lam user_id
+            if (! $cart) {
+                $cart = Cart::create([
+                    'user_id' => Auth::id(),
                 ]);
             }
 
-            // Tải các mục trong giỏ hàng cùng với thông tin sản phẩm và danh mục
-            $cartItems = collect(); // Khởi tạo bộ sưu tập rỗng
+            $cartItems = collect();
 
             try {
-                $cartItems = $cart->items() // $cart->items() lay tat ca cac cart items trong gio hang
-                    ->with(['product' => function ($query) { // ham callback de lay thong tin product cho cart item
-                        $query->with('category'); // tai thong tin danh muc cho san pham
-                    }]) // lay thong tin quan he product va category
-                    ->get(); // thuc thi truy van va lay ve ket qua
+                $cartItems = $cart->items()
+                    ->with(['product' => function ($query) {
+                        $query->with('category');
+                    }])
+                    ->get();
             } catch (\Exception $e) {
                 \Log::error('Error loading cart items: '.$e->getMessage());
-                // Return empty collection on error
                 $cartItems = collect();
             }
 
-            $categories = \App\Models\Category::withCount('products')->get(); // Model Category lay ve danh sach danh muc voi so luong san pham trong tung danh muc
-            $cartCount = $cartItems->sum('quantity'); // tinh tong so luong san pham trong gio hang
+            $categories = \App\Models\Category::withCount('products')->get();
+            $cartCount = $cartItems->sum('quantity');
 
-            return view('cart.index', compact('cart', 'cartItems', 'categories', 'cartCount')); // truyen du lieu ra view cart.index voi cac bien cart, cartItems, categories, cartCount
+            return view('cart.index', compact('cart', 'cartItems', 'categories', 'cartCount'));
 
         } catch (\Exception $e) {
             \Log::error('Error in cart index: '.$e->getMessage());
@@ -250,77 +184,48 @@ class CustomerCartController extends Controller
 
     /**
      * Thêm sản phẩm vào giỏ hàng
-     *
-     * Chức năng: Thêm một sản phẩm vào giỏ hàng của khách hàng
-     * Hoạt động:
-     * - Kiểm tra người dùng đã đăng nhập
-     * - Validate số lượng sản phẩm (tối thiểu 1)
-     * - Tìm sản phẩm theo ID, kiểm tra tồn tại
-     * - Kiểm tra tồn kho sản phẩm có đủ không
-     * - Lấy hoặc tạo giỏ hàng cho user
-     * - Kiểm tra sản phẩm đã có trong giỏ hàng chưa:
-     *   + Nếu có: tăng số lượng
-     *   + Nếu chưa: tạo cart item mới
-     * - Redirect về trang trước với thông báo
-     *
-     * @param  \Illuminate\Http\Request  $request  Chứa thông tin số lượng
-     * @param  int  $productId  ID của sản phẩm cần thêm
-     * @return \Illuminate\Http\RedirectResponse
      */
-    public function add(Request $request, $productId) // ham add de them san pham vao gio hang voi tham so truyen vao la Request $request va $productId
+    public function add(CartRequest $request, $productId)
     {
-        if (! Auth::check()) { // neu user chua dang nhap
+        if (! Auth::check()) {
             return redirect()->route('login')->with('error', 'Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!');
         }
 
-        $request->validate([ // validate du lieu truyen vao
-            'quantity' => 'sometimes|integer|min:1', // quantity la so luong san pham, neu co thi phai la so nguyen va lon hon hoac bang 1
-        ]);
-
-        $quantity = $request->get('quantity', 1); // neu khong co tham so quantity thi mac dinh la 1
+        $quantity = $request->get('quantity', 1);
 
         try {
-            DB::beginTransaction(); // bat dau giao dich
+            DB::beginTransaction();
 
-            // Lấy sản phẩm
-            $product = Product::findOrFail($productId); // tim kiem san pham theo productId, neu khong tim thay thi tra ve loi 404
+            $product = Product::findOrFail($productId);
 
-            // Lấy hoặc tạo giỏ hàng
-            $cart = Auth::user()->cart; // lay gio hang cua user hien tai dang nhap
-            if (! $cart) { // neu chua co gio hang thi tao moi
-                $cart = Cart::create([ // tao moi gio hang
-                    'user_id' => Auth::id(), // lay id cua user hien tai dang nhap lam user_id
+            $cart = Auth::user()->cart;
+            if (! $cart) {
+                $cart = Cart::create([
+                    'user_id' => Auth::id(),
                 ]);
             }
 
-            // Kiểm tra xem sản phẩm đã có trong giỏ chưa
-            $cartItem = CartItem::where('cart_id', $cart->cart_id) // $cartItem la bien chua item trong gio hang
-                ->where('product_id', $productId) // tim kiem item trong gio hang theo cart_id va product_id
-                ->first(); // lay ve item dau tien tim thay, neu khong tim thay thi tra ve null
-            // Bien $cartItem se chua item trong gio hang neu tim thay, neu khong tim thay thi se la null
+            $cartItem = CartItem::where('cart_id', $cart->cart_id)
+                ->where('product_id', $productId)
+                ->first();
 
-            if ($cartItem) { // neu tim thay item trong gio hang
-                // Nếu có rồi, tăng số lượng
-                $cartItem->quantity += $quantity; // tang so luong item trong gio hang qua bien quantity
-                $cartItem->save(); // luu thay doi
+            if ($cartItem) {
+                $cartItem->quantity += $quantity;
+                $cartItem->save();
             } else {
-                // Nếu chưa có, thêm mới
                 CartItem::create([
-                    'cart_id' => $cart->cart_id, // lay cart_id cua gio hang hien tai
-                    'product_id' => $productId, // lay product_id cua san pham can them vao gio hang
-                    'quantity' => $quantity, // so luong san pham can them vao gio hang
-                    'price' => $product->price, // gia cua san pham tai thoi diem them vao gio hang
+                    'cart_id' => $cart->cart_id,
+                    'product_id' => $productId,
+                    'quantity' => $quantity,
+                    'price' => $product->price,
                 ]);
             }
 
-            // Cập nhật tổng tiền không cần thiết vì sẽ tính động từ items
-            // $cart->total_amount sẽ được tính qua method totalPrice()
-
-            DB::commit(); // ket thuc giao dich
+            DB::commit();
 
             return redirect()->back()->with('success', 'Đã thêm sản phẩm vào giỏ hàng!');
 
-        } catch (\Exception $e) { // neu co loi xay ra trong qua trinh them san pham vao gio hang
+        } catch (\Exception $e) {
             DB::rollBack();
 
             return redirect()->back()->with('error', 'Có lỗi xảy ra: '.$e->getMessage());
@@ -329,106 +234,67 @@ class CustomerCartController extends Controller
 
     /**
      * Cập nhật số lượng sản phẩm trong giỏ hàng
-     *
-     * Chức năng: Thay đổi số lượng của một sản phẩm đã có trong giỏ hàng
-     * Hoạt động:
-     * - Kiểm tra người dùng đã đăng nhập
-     * - Validate số lượng mới (phải là số nguyên >= 1)
-     * - Tìm cart item theo ID
-     * - Kiểm tra cart item có thuộc về user hiện tại không (bảo mật)
-     * - Kiểm tra tồn kho sản phẩm có đủ cho số lượng mới không
-     * - Cập nhật số lượng mới vào cart item
-     * - Lưu thay đổi vào database
-     * - Redirect về trang giỏ hàng với thông báo
-     *
-     * @param  \Illuminate\Http\Request  $request  Chứa số lượng mới
-     * @param  int  $cartItemId  ID của cart item cần cập nhật
-     * @return \Illuminate\Http\RedirectResponse
      */
-    public function update(Request $request, $cartItemId) // ham update de cap nhat so luong san pham trong gio hang voi tham so truyen vao la Request $request va $cartItemId
+    public function update(CartRequest $request, $cartItemId)
     {
-        // check user da dang nhap chua
-        if (! Auth::check()) { // neu user chua dang nhap
-            return redirect()->route('login')->with('error', 'Vui lòng đăng nhập!'); // chuyen huong den trang dang nhap voi thong bao loi
+        if (! Auth::check()) {
+            return redirect()->route('login')->with('error', 'Vui lòng đăng nhập!');
         }
 
-        $request->validate([ // validate du lieu truyen vao
-            'quantity' => 'required|integer|min:1', // quantity la so luong san pham, bat buoc phai la so nguyen va lon hon hoac bang 1
-        ]);
-
         try {
-            DB::beginTransaction(); // bat dau giao dich
+            DB::beginTransaction();
 
-            $cartItem = CartItem::findOrFail($cartItemId); // tim kiem item trong gio hang theo cartItemId, neu khong tim thay thi tra ve loi 404
+            $cartItem = CartItem::findOrFail($cartItemId);
 
-            // Kiểm tra quyền sở hữu
-            if ($cartItem->cart->user_id != Auth::id()) { // neu user_id cua gio hang khac voi id cua user hien tai dang nhap
-                return redirect()->route('cart.index')->with('error', 'Không có quyền!'); // chuyen huong den trang gio hang voi thong bao loi
+            if ($cartItem->cart->user_id != Auth::id()) {
+                return redirect()->route('cart.index')->with('error', 'Không có quyền!');
             }
 
-            $cartItem->quantity = $request->quantity; // cap nhat so luong san pham trong gio hang qua bien quantity
-            $cartItem->save(); // luu thay doi
+            $cartItem->quantity = $request->quantity;
+            $cartItem->save();
 
-            // Cập nhật tổng tiền không cần thiết - tính động
-            $cart = $cartItem->cart; // lay gio hang cua item trong gio hang
+            $cart = $cartItem->cart;
 
-            DB::commit(); // ket thuc giao dich
+            DB::commit();
 
-            return redirect()->route('cart.index')->with('success', 'Đã cập nhật số lượng sản phẩm!'); // chuyen huong den trang gio hang voi thong bao thanh cong
+            return redirect()->route('cart.index')->with('success', 'Đã cập nhật số lượng sản phẩm!');
 
-        } catch (\Exception $e) { // neu co loi xay ra trong qua trinh cap nhat so luong san pham trong gio hang
-            DB::rollBack(); // quay lai trang thai truoc khi bat dau giao dich
+        } catch (\Exception $e) {
+            DB::rollBack();
 
-            return redirect()->route('cart.index')->with('error', 'Có lỗi xảy ra: '.$e->getMessage()); // chuyen huong den trang gio hang voi thong bao loi
+            return redirect()->route('cart.index')->with('error', 'Có lỗi xảy ra: '.$e->getMessage());
         }
     }
 
     /**
      * Xóa sản phẩm khỏi giỏ hàng
-     *
-     * Chức năng: Loại bỏ một sản phẩm cụ thể ra khỏi giỏ hàng
-     * Hoạt động:
-     * - Kiểm tra người dùng đã đăng nhập
-     * - Tìm cart item theo ID
-     * - Kiểm tra quyền sở hữu (cart item phải thuộc về user hiện tại)
-     * - Xóa cart item khỏi database
-     * - Redirect về trang giỏ hàng với thông báo
-     * - Sử dụng transaction để đảm bảo tính toàn vẹn dữ liệu
-     *
-     * @param  int  $cartItemId  ID của cart item cần xóa
-     * @return \Illuminate\Http\RedirectResponse
      */
     public function remove($cartItemId)
     {
-        if (! Auth::check()) { // neu user chua dang nhap
-            return redirect()->route('login')->with('error', 'Vui lòng đăng nhập!'); // chuyen huong den trang dang nhap voi thong bao loi
+        if (! Auth::check()) {
+            return redirect()->route('login')->with('error', 'Vui lòng đăng nhập!');
         }
 
         try {
-            DB::beginTransaction(); // bat dau giao dich
+            DB::beginTransaction();
 
             $cartItem = CartItem::findOrFail($cartItemId);
-            // $cartItem la bien chua item trong gio hang, tim kiem item trong gio hang theo cartItemId, neu khong tim thay thi tra ve loi 404
 
-            // Kiểm tra quyền sở hữu
-            if ($cartItem->cart->user_id != Auth::id()) { // neu user_id cua gio hang khac voi id cua user hien tai dang nhap
-                // $cartItem->cart-> user_id la cach truy cap user_id cua gio hang thong qua item trong gio hang
-                return redirect()->route('cart.index')->with('error', 'Không có quyền!'); // chuyen huong den trang gio hang voi thong bao loi
+            if ($cartItem->cart->user_id != Auth::id()) {
+                return redirect()->route('cart.index')->with('error', 'Không có quyền!');
             }
 
-            $cart = $cartItem->cart; // $cart la bien chua gio hang cua item trong gio hang
-            $cartItem->delete(); // xoa item trong gio hang
+            $cart = $cartItem->cart;
+            $cartItem->delete();
 
-            // Cập nhật tổng tiền không cần thiết - tính động
+            DB::commit();
 
-            DB::commit(); // ket thuc giao dich
+            return redirect()->route('cart.index')->with('success', 'Đã xóa sản phẩm khỏi giỏ hàng!');
 
-            return redirect()->route('cart.index')->with('success', 'Đã xóa sản phẩm khỏi giỏ hàng!'); // chuyen huong den trang gio hang voi thong bao thanh cong
+        } catch (\Exception $e) {
+            DB::rollBack();
 
-        } catch (\Exception $e) { // neu co loi xay ra trong qua trinh xoa san pham khoi gio hang
-            DB::rollBack(); // quay lai trang thai truoc khi bat dau giao dich
-
-            return redirect()->route('cart.index')->with('error', 'Có lỗi xảy ra: '.$e->getMessage()); // chuyen huong den trang gio hang voi thong bao loi
+            return redirect()->route('cart.index')->with('error', 'Có lỗi xảy ra: '.$e->getMessage());
         }
     }
 
@@ -437,21 +303,20 @@ class CustomerCartController extends Controller
      */
     public function clear()
     {
-        if (! Auth::check()) { // neu user chua dang nhap
-            return redirect()->route('login')->with('error', 'Vui lòng đăng nhập!'); // tra ve trang login voi yeu cau dang nhap
+        if (! Auth::check()) {
+            return redirect()->route('login')->with('error', 'Vui lòng đăng nhập!');
         }
 
-        try { // bat dau khoi tao try catch de bat loi
-            $cart = Auth::user()->cart; // lay gio hang cua user hien tai dang nhap
-            if ($cart) { // neu co gio hang
-                $cart->items()->delete(); // xoa toan bo item trong gio hang
-                // Không cần reset total_amount vì tính động
+        try {
+            $cart = Auth::user()->cart;
+            if ($cart) {
+                $cart->items()->delete();
             }
 
-            return redirect()->back()->with('success', 'Đã xóa toàn bộ giỏ hàng!'); // tra ve trang truoc do voi thong bao thanh cong
+            return redirect()->back()->with('success', 'Đã xóa toàn bộ giỏ hàng!');
 
-        } catch (\Exception $e) { // neu co loi xay ra trong qua trinh xoa toan bo gio hang
-            return redirect()->back()->with('error', 'Có lỗi xảy ra: '.$e->getMessage()); // tra ve trang truoc do voi thong bao loi
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Có lỗi xảy ra: '.$e->getMessage());
         }
     }
 }

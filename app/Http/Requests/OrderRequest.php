@@ -21,20 +21,21 @@ class OrderRequest extends FormRequest
      */
     public function rules(): array
     {
-        $rules = [
+        // Nếu là request update status (PUT/PATCH), chỉ validate status
+        if ($this->isMethod('put') || $this->isMethod('patch')) {
+            return [
+                'status' => ['required', 'string', 'in:pending,processing,shipped,delivered,cancelled'],
+            ];
+        }
+
+        // Nếu là request tạo order mới (POST)
+        return [
             'user_id' => ['required', 'integer', 'exists:users,id'],
             'order_date' => ['required', 'date'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.product_id' => ['required', 'integer', 'exists:products,product_id'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
         ];
-
-        // Thêm validation cho status khi update
-        if ($this->isMethod('put') || $this->isMethod('patch')) {
-            $rules['status'] = ['sometimes', 'string', 'in:pending,processing,shipped,delivered,cancelled'];
-        }
-
-        return $rules;
     }
 
     public function messages()
@@ -49,7 +50,8 @@ class OrderRequest extends FormRequest
             'items.*.product_id.exists' => 'Product not found for item',
             'items.*.quantity.required' => 'Quantity is required for each item',
             'items.*.quantity.min' => 'Quantity must be at least 1 for each item',
-            'status.in' => 'Status must be one of: pending, processing, shipped, delivered, cancelled',
+            'status.required' => 'Trạng thái đơn hàng là bắt buộc',
+            'status.in' => 'Trạng thái phải là một trong: pending, processing, shipped, delivered, cancelled',
         ];
     }
 

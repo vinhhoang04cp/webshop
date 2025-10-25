@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\OrderRequest;
 use App\Models\Inventory;
 use App\Models\Order;
 use Illuminate\Http\Request;
@@ -152,12 +153,8 @@ class OrderController extends Controller
      * @param  int  $id  ID của order cần cập nhật
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function update(Request $request, $id)
+    public function update(OrderRequest $request, $id)
     {
-        $request->validate([
-            'status' => 'required|string|in:pending,processing,shipped,delivered,cancelled',
-        ]);
-
         try {
             $order = Order::findOrFail($id);
             $oldStatus = $order->status;

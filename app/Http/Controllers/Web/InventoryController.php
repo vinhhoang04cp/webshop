@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\InventoryAdjustmentRequest;
+use App\Http\Requests\InventoryRequest;
 use App\Models\Inventory;
 use App\Models\Product;
 use Illuminate\Http\Request;
@@ -153,16 +155,10 @@ class InventoryController extends Controller
      * @param  int  $id  ID của inventory cần cập nhật
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function update(Request $request, $id)
+    public function update(InventoryRequest $request, $id)
     {
-        $request->validate([ // validate du lieu tu request
-            'stock_in' => 'required|integer|min:0', // stock_in bat buoc phai la so nguyen lon hon hoac bang 0
-            'stock_out' => 'required|integer|min:0', // stock_out bat buoc phai la so nguyen lon hon hoac bang 0
-            'current_stock' => 'required|integer|min:0', // current_stock bat buoc phai la so nguyen lon hon hoac bang 0
-        ]);
-
         try {
-            $inventory = Inventory::findOrFail($id); // tim kiem inventory theo id, neu khong tim thay thi throw exception su dung eloquent
+            $inventory = Inventory::findOrFail($id);
 
             $inventory->update([ // cap nhat du lieu inventory
                 'stock_in' => $request->stock_in, // cap nhat stock_in tu request
@@ -201,16 +197,10 @@ class InventoryController extends Controller
      * @param  int  $id  ID của inventory cần điều chỉnh
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function adjustStock(Request $request, $id)
+    public function adjustStock(InventoryAdjustmentRequest $request, $id)
     {
-        $request->validate([ // validate du lieu tu request
-            'adjustment_type' => 'required|in:in,out', // adjustment_type la truong du lieu bieu thi loai dieu chinh (in: nhap kho, out: xuat kho)
-            'quantity' => 'required|integer|min:1', // quantity bat buoc phai la so nguyen lon hon 0
-            'note' => 'nullable|string|max:500', // note khong bat buoc, la chuoi ky tu, toi da 500 ky tu
-        ]);
-
         try {
-            $inventory = Inventory::findOrFail($id); // tim kiem inventory theo id, neu khong tim thay thi throw exception su dung eloquent
+            $inventory = Inventory::findOrFail($id);
 
             if ($request->adjustment_type === 'in') { // neu adjustment_type la 'in' (nhap kho)
                 // Stock in - nhập kho

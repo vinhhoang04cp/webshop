@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ProductRequest;
 use App\Models\Category;
 use App\Models\Inventory;
 use App\Models\Product;
@@ -124,33 +125,10 @@ class ProductController extends Controller
      * @param  \Illuminate\Http\Request  $request  Dữ liệu từ form tạo product
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function store(Request $request) // Request $request de lay du lieu tu Http request
+    public function store(ProductRequest $request)
     {
-
-        $request->validate([ // Validate du lieu tu request
-            'name' => 'required|string|max:255', // name bat buoc phai co, kieu string, do dai toi da 255 ky tu
-            'description' => 'nullable|string', // description co the khong co, neu co phai la kieu string
-            'price' => 'required|numeric|min:0', // price bat buoc phai co, kieu numeric, gia tri toi thieu 0
-            'category_id' => 'required|integer|exists:categories,category_id', // category_id bat buoc phai co, kieu integer, phai ton tai trong bang categories cot category_id
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // image co the khong co, neu co phai la anh, dinh dang jpeg,png,jpg,gif, kich thuoc toi da 2MB
-            'image_url' => 'nullable|url', // image_url co the khong co, neu co phai la kieu url
-            'stock_quantity' => 'required|integer|min:0', // stock_quantity bat buoc phai co, kieu integer, gia tri toi thieu 0
-            // Thêm validation cho ProductDetail fields
-            'color' => 'nullable|string|max:100', // color co the khong co, neu co phai la kieu string, do dai toi da 100 ky tu
-            'storage' => 'nullable|string|max:100', // storage co the khong co, neu co phai la kieu string, do dai toi da 100 ky tu
-            'ram' => 'nullable|string|max:100', // ram co the khong co, neu co phai la kieu string, do dai toi da 100 ky tu
-            'screen_size' => 'nullable|string|max:100', // screen_size co the khong co, neu co phai la kieu string, do dai toi da 100 ky tu
-            'chip' => 'nullable|string|max:100',
-            'battery' => 'nullable|string|max:100', // battery co the khong co, neu co phai la kieu string, do dai toi da 100 ky tu
-            'camera_main' => 'nullable|string|max:100', // camera_main co the khong co, neu co phai la kieu string, do dai toi da 100 ky tu
-            'camera_front' => 'nullable|string|max:100', // camera_front co the khong co, neu co phai la kieu string, do dai toi da 100 ky tu
-            'os' => 'nullable|string|max:100',
-            'special_features' => 'nullable|string', // special_features co the khong co, neu co phai la kieu string
-        ]);
-
         try {
-            // Xử lý upload ảnh
-            $imagePath = null; // imagePath la bien luu gia tri cua image path
+            $imagePath = null;
             if ($request->hasFile('image')) { // Kiểm tra xem có file ảnh được upload không
                 // Tạo tên file unique để tránh trùng lặp
                 $imageName = time().'_'.$request->file('image')->getClientOriginalName(); // imageName la bien luu gia tri cua image name
@@ -293,33 +271,10 @@ class ProductController extends Controller
      * @param  int  $id  ID của product cần cập nhật
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function update(Request $request, $id)
-    // Request $request de lay du lieu tu Http request, $id la id cua product can update
+    public function update(ProductRequest $request, $id)
     {
-        $request->validate([
-            'name' => 'required|string|max:255', // name bat buoc phai co, kieu string, do dai toi da 255 ky tu
-            'description' => 'nullable|string', // description co the khong co, neu co phai la kieu string
-            'price' => 'required|numeric|min:0', // price bat buoc phai co, kieu numeric, gia tri toi thieu 0
-            'category_id' => 'required|integer|exists:categories,category_id', // category_id bat buoc phai co, kieu integer, phai ton tai trong bang categories cot category_id
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // image co the khong co, neu co phai la anh, dinh dang jpeg,png,jpg,gif, kich thuoc toi da 2MB
-            'image_url' => 'nullable|url', // image_url co the khong co, neu co phai la kieu url
-            'stock_quantity' => 'required|integer|min:0', // stock_quantity bat buoc phai co, kieu integer, gia tri toi thieu 0
-            // Thêm validation cho ProductDetail fields
-            'color' => 'nullable|string|max:100',
-            'storage' => 'nullable|string|max:100',
-            'ram' => 'nullable|string|max:100',
-            'screen_size' => 'nullable|string|max:100',
-            'chip' => 'nullable|string|max:100',
-            'battery' => 'nullable|string|max:100',
-            'camera_main' => 'nullable|string|max:100',
-            'camera_front' => 'nullable|string|max:100',
-            'os' => 'nullable|string|max:100',
-            'special_features' => 'nullable|string',
-        ]);
-
         try {
-            // Tìm và cập nhật product
-            $product = Product::findOrFail($id); // dau tien tim product can update bang phuong thuc findOrFail($id) cua eloquent
+            $product = Product::findOrFail($id);
 
             // Xử lý upload ảnh mới
             $imageUrl = $product->image_url; // Giữ ảnh cũ làm mặc định

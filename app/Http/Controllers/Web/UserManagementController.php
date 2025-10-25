@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\UserRoleRequest;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\UserRole;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class UserManagementController extends Controller
@@ -101,15 +101,10 @@ class UserManagementController extends Controller
      * @param  User  $user  Instance của user cần cập nhật
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function update(Request $request, User $user) // User $user: user can cap nhat
+    public function update(UserRoleRequest $request, User $user)
     {
-        $request->validate([
-            'roles' => 'array', // roles phai la mang
-            'roles.*' => 'exists:roles,role_id', // moi phan tu trong mang phai ton tai trong bang roles
-        ]);
-
         try {
-            DB::beginTransaction(); // Bat dau giao dich
+            DB::beginTransaction();
 
             // Xóa tất cả role cũ
             UserRole::where('user_id', $user->id)->delete();   // Xoa cac role hien tai cua user
@@ -152,13 +147,8 @@ class UserManagementController extends Controller
      * @param  User  $user  Instance của user cần gán role
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function assignRole(Request $request, User $user)
+    public function assignRole(UserRoleRequest $request, User $user)
     {
-        $request->validate([
-            'role_id' => 'required|exists:roles,role_id',
-        ]);
-
-        // Kiểm tra user đã có role này chưa
         if (UserRole::where('user_id', $user->id)
             ->where('role_id', $request->role_id)
             ->exists()) {

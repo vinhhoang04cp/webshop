@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\PasswordResetLinkRequest;
+use App\Http\Requests\PasswordResetRequest;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -27,18 +29,8 @@ class PasswordResetController extends Controller
      *
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function sendResetLink(Request $request)
+    public function sendResetLink(PasswordResetLinkRequest $request)
     {
-        // Validate email
-        $request->validate([
-            'email' => 'required|email|exists:users,email',
-        ], [
-            'email.required' => 'Vui lòng nhập email.',
-            'email.email' => 'Email không đúng định dạng.',
-            'email.exists' => 'Email không tồn tại trong hệ thống.',
-        ]);
-
-        // Tạo token ngẫu nhiên
         $token = Str::random(64);
 
         // Lưu token vào database
@@ -85,23 +77,8 @@ class PasswordResetController extends Controller
      *
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function resetPassword(Request $request)
+    public function resetPassword(PasswordResetRequest $request)
     {
-        // Validate dữ liệu
-        $request->validate([
-            'email' => 'required|email|exists:users,email',
-            'password' => 'required|min:8|confirmed',
-            'token' => 'required',
-        ], [
-            'email.required' => 'Vui lòng nhập email.',
-            'email.email' => 'Email không đúng định dạng.',
-            'email.exists' => 'Email không tồn tại trong hệ thống.',
-            'password.required' => 'Vui lòng nhập mật khẩu mới.',
-            'password.min' => 'Mật khẩu phải có ít nhất 8 ký tự.',
-            'password.confirmed' => 'Mật khẩu xác nhận không khớp.',
-        ]);
-
-        // Kiểm tra token
         $passwordReset = DB::table('password_reset_tokens')
             ->where('email', $request->email)
             ->first();

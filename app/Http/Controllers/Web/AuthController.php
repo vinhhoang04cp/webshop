@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers\Web;
 
-use App\Http\Controllers\Controller; // Import controller de truy cap cac ham trong controller
-use App\Models\Role; // Import model Role de truy cap bang roles
-use App\Models\User; // Import model User de truy cap bang users
-use App\Models\UserRole; // Import model UserRole de tu dong gan role cho user moi dang ky
-use Illuminate\Http\Request; // Thu vien Request dung de lay du lieu tu form
-use Illuminate\Support\Facades\Auth; // Thu vien Auth dung de xac thuc
-use Illuminate\Support\Facades\DB; // Thu vien DB dung de truy van database
-use Illuminate\Support\Facades\Hash; // Thu vien Hash dung de ma hoa password
+use App\Http\Controllers\Controller;
+use App\Http\Requests\LoginRequest;
+use App\Http\Requests\RegisterRequest;
+use App\Models\Role;
+use App\Models\User;
+use App\Models\UserRole;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
@@ -70,24 +71,14 @@ class AuthController extends Controller
      * @param  \Illuminate\Http\Request  $request  Dữ liệu từ form đăng nhập
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function login(Request $request) // (Request $request) la tham so truyen vao ham , duoc gui tu form login
+    public function login(LoginRequest $request)
     {
-        // $request la doi tuong chua cac tham so truyen tu client qua URL den controller se duoc su dung de lay du lieu tu form
-        $request->validate([ // Validate du lieu dau vao duoc truyen tu form login
-            'email' => 'required|email', // email bat buoc va phai dung dinh dang email
-            'password' => 'required', // password bat buoc
-        ]);
+        $user = User::where('email', $request->email)->first();
 
-        // Tìm user theo email
-        $user = User::where('email', $request->email)->first(); // su dung query builder de tim user theo email
-        // User lay tu model User, tim user dau tien co email giong voi email tu form, ham first() de lay user dau tien neu co nhieu user trung email
-
-        // Kiểm tra credentials
-        if (! $user || ! Hash::check($request->password, $user->password)) { // ! $user neu khong tim thay user hoac password khong dung, Hash::check de kiem tra password neu khong trung
-            // !user neu khong tim thay user hoac password khong dung, Hash::check de kiem tra password neu khong trung
-            return back()->withErrors([ // Quay lai trang truoc do voi loi, withErrors de truyen loi ve view
-                'email' => 'Thông tin đăng nhập không chính xác.', // Thong bao loi
-            ])->withInput(); // withInput de giu lai du lieu nguoi dung da nhap
+        if (! $user || ! Hash::check($request->password, $user->password)) {
+            return back()->withErrors([
+                'email' => 'Thông tin đăng nhập không chính xác.',
+            ])->withInput();
         }
 
         // Đăng nhập user
@@ -123,18 +114,9 @@ class AuthController extends Controller
      * @param  \Illuminate\Http\Request  $request  Dữ liệu từ form đăng ký
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function register(Request $request) // (request $request) la tham so truyen vao ham , duoc gui tu form register
+    public function register(RegisterRequest $request)
     {
-        $request->validate([ // Validate du lieu dau vao tu form register
-            'name' => 'required|string|max:255', // name bat buoc, kieu chuoi, do dai toi da 255 ky tu
-            'email' => 'required|string|email|max:255|unique:users', // email bat buoc, kieu chuoi, dung dinh dang email, do dai toi da 255 ky tu, phai duy nhat trong bang users
-            'password' => 'required|string|min:8|confirmed', // password bat buoc, kieu chuoi, do dai toi thieu 8 ky tu, phai giong voi password_confirmation
-            'phone' => 'nullable|string|max:20', // phone khong bat buoc, kieu chuoi, do dai toi da 20 ky tu
-            'address' => 'nullable|string|max:500', // address khong bat buoc, kieu chuoi, do dai toi da 500 ky tu
-        ]);
-
-        // Tạo user mới
-        $user = User::create([ // su dung model User de tao user moi voi eloquent
+        $user = User::create([
             'name' => $request->name, // Lay name tu form
             'email' => $request->email, // Lay email tu form
             'password' => Hash::make($request->password), // Ma hoa password truoc khi luu vao database
