@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests;
 
-use App\Models\User;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -11,17 +10,11 @@ use Illuminate\Validation\Rule;
 
 class CartRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
         return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     */
     public function rules(): array
     {
         $commonRules = [
@@ -60,9 +53,6 @@ class CartRequest extends FormRequest
         ], 422));
     }
 
-    /**
-     * Get item validation rules based on request structure
-     */
     private function getItemRules(): array
     {
         // Nếu có items array (bulk operations)

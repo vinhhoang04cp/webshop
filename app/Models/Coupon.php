@@ -36,17 +36,11 @@ class Coupon extends Model
         'discount_value' => 'decimal:2',
     ];
 
-    /**
-     * Quan hệ với Product (1 coupon thuộc về 1 sản phẩm hoặc null = tất cả)
-     */
     public function product()
     {
         return $this->belongsTo(Product::class, 'product_id', 'product_id');
     }
 
-    /**
-     * Kiểm tra xem coupon có hợp lệ không
-     */
     public function isValid($orderAmount = 0)
     {
         $now = Carbon::now();

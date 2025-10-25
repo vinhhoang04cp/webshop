@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
+use App\Models\Order;
+use App\Models\Product;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\UserRole;
@@ -14,17 +16,6 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    /**
-     * Hiển thị form đăng nhập
-     *
-     * Chức năng: Hiển thị giao diện form đăng nhập cho người dùng
-     * Hoạt động:
-     * - Kiểm tra xem người dùng đã đăng nhập chưa
-     * - Nếu đã đăng nhập, chuyển hướng về trang dashboard
-     * - Nếu chưa đăng nhập, hiển thị view form đăng nhập
-     *
-     * @return \Illuminate\Http\RedirectResponse|\Illuminate\View\View
-     */
     public function showLogin()
     {
         if (Auth::check()) {
@@ -115,12 +106,12 @@ class AuthController extends Controller
         }
 
         try {
-            $productsCount = \App\Models\Product::count();
-            $ordersCount = \App\Models\Order::count();
-            $usersCount = \App\Models\User::count();
-            $totalRevenue = \App\Models\Order::where('status', '!=', 'cancelled')->sum('total_amount');
+            $productsCount = Product::count();
+            $ordersCount = Order::count();
+            $usersCount = User::count();
+            $totalRevenue = Order::where('status', '!=', 'cancelled')->sum('total_amount');
 
-            $recentOrders = \App\Models\Order::with('user')
+            $recentOrders = Order::with('user')
                 ->orderBy('order_date', 'desc')
                 ->limit(5)
                 ->get()

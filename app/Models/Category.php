@@ -9,20 +9,19 @@ class Category extends Model
 {
     use HasFactory;
 
-    protected $table = 'categories'; // Su dung ten bang tuong ung la 'categories'
+    protected $table = 'categories';
 
-    protected $primaryKey = 'category_id'; // Su dung khoa chinh la 'category_id'
+    protected $primaryKey = 'category_id';
 
-    public $timestamps = true; // Su dung cot 'created_at' va 'updated_at' de theo doi thoi gian
+    public $timestamps = true;
 
-    protected $fillable = [ // Cac cot co the gan gia tri hang loat
+    protected $fillable = [
         'name',
         'description',
     ];
 
-    public function products() // Quan he 1-n voi Product
+    public function products()
     {
-        return $this->hasMany(Product::class, 'category_id', 'category_id'); // Quan he voi model Product
-        // (Product::class: model Product, 'category_id': khoa ngoai trong bang products tham chieu den khoa chinh cua bang categories)
+        return $this->hasMany(Product::class, 'category_id', 'category_id');
     }
 }

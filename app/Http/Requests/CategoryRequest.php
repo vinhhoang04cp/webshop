@@ -9,17 +9,11 @@ use Illuminate\Validation\Rule;
 
 class CategoryRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
         return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     */
     public function rules(): array
     {
         $categoryId = null;
@@ -38,9 +32,6 @@ class CategoryRequest extends FormRequest
         ];
     }
 
-    /**
-     * Handle a failed validation attempt.
-     */
     protected function failedValidation(Validator $validator)
     {
         if ($this->expectsJson() || $this->is('api/*')) {
@@ -53,9 +44,6 @@ class CategoryRequest extends FormRequest
         parent::failedValidation($validator);
     }
 
-    /**
-     * Get custom messages for validator errors.
-     */
     public function messages()
     {
         return [
@@ -65,9 +53,6 @@ class CategoryRequest extends FormRequest
         ];
     }
 
-    /**
-     * Get custom attributes for validator errors.
-     */
     public function attributes()
     {
         return [

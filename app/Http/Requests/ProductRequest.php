@@ -9,17 +9,11 @@ use Illuminate\Validation\Rule;
 
 class ProductRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
         return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     */
     public function rules(): array
     {
         $productId = null;
@@ -55,9 +49,6 @@ class ProductRequest extends FormRequest
         ];
     }
 
-    /**
-     * Handle a failed validation attempt.
-     */
     protected function failedValidation(Validator $validator)
     {
         if ($this->expectsJson() || $this->is('api/*')) {
