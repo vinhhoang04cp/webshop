@@ -12,146 +12,98 @@ use Illuminate\Support\Facades\Auth;
 
 class CustomerProductController extends Controller
 {
-    /**
-     * Hiển thị danh sách sản phẩm cho khách hàng
-     *
-     * Chức năng: Hiển thị trang danh sách sản phẩm với các tính năng tìm kiếm, lọc và sắp xếp
-     * Hoạt động:
-     * - Khởi tạo query với eager loading category
-     * - Tìm kiếm theo tên hoặc mô tả sản phẩm (tham số 'q')
-     * - Lọc theo danh mục (tham số 'category')
-     * - Lọc theo khoảng giá (min_price, max_price)
-     * - Sắp xếp theo nhiều tiêu chí: latest, price_asc, price_desc, name_asc, name_desc
-     * - Phân trang 12 sản phẩm mỗi trang
-     * - Lấy danh sách categories kèm số lượng sản phẩm
-     * - Đếm số lượng sản phẩm trong giỏ hàng nếu user đã đăng nhập
-     * - Trả về view với đầy đủ dữ liệu
-     *
-     * @param  \Illuminate\Http\Request  $request  Chứa các tham số search, filter, sort
-     * @return \Illuminate\View\View
-     */
-    public function index(Request $request) // Request $request la cac tham so truyen vao de loc, tim kiem, sap xep san pham
+    public function index(Request $request)
     {
-        $query = Product::with('category'); // $query la mot doi tuong query builder de truy van du lieu tu bang products voi quan he voi bang categories
+        $query = Product::with('category');
 
-        // Tìm kiếm theo tên
-        if ($request->has('q') && $request->q) { // neu co tham so q va q khac rong
+        if ($request->has('q') && $request->q) {
             $query->where('name', 'like', "%{$request->q}%")
                 ->orWhere('description', 'like', "%{$request->q}%");
         }
 
-        // Lọc theo danh mục
-        if ($request->has('category') && $request->category) { // neu request co tham so category va category khac rong duoc truyen len
-            $query->where('category_id', $request->category); // query builder se them dieu kien where de loc theo category_id
+        if ($request->has('category') && $request->category) {
+            $query->where('category_id', $request->category);
         }
 
-        // Lọc theo giá
-        if ($request->has('min_price') && $request->min_price) { // neu co tham so min_price va min_price khac rong
+        if ($request->has('min_price') && $request->min_price) {
             $query->where('price', '>=', $request->min_price);
         }
-        if ($request->has('max_price') && $request->max_price) { // neu co tham so max_price va max_price khac rong
+        if ($request->has('max_price') && $request->max_price) {
             $query->where('price', '<=', $request->max_price);
         }
 
-        // Sắp xếp
-        $sortBy = $request->get('sort', 'latest'); // $sortBy la bien tao ra chua result cua tham so sort, neu khong co tham so sort thi mac dinh la 'latest'
-        switch ($sortBy) { // su dung switch de kiem tra gia tri cua $sortBy voi tham so $sortBy la tham so chua request truyen vao
-            case 'price_asc': // neu tham so sort la price_asc thi sap xep theo gia tang dan
+        $sortBy = $request->get('sort', 'latest');
+        switch ($sortBy) {
+            case 'price_asc':
                 $query->orderBy('price', 'asc');
                 break;
-            case 'price_desc': // neu tham so sort la price_desc thi sap xep theo gia giam dan
+            case 'price_desc':
                 $query->orderBy('price', 'desc');
                 break;
-            case 'name_asc': // neu tham so sort la name_asc thi sap xep theo ten tang dan
+            case 'name_asc':
                 $query->orderBy('name', 'asc');
                 break;
-            case 'name_desc': // neu tham so sort la name_desc thi sap xep theo ten giam dan
+            case 'name_desc':
                 $query->orderBy('name', 'desc');
                 break;
             default:
                 $query->latest('created_at');
         }
 
-        $products = $query->paginate(12); // phan trang 12 san pham tren mot trang
-        $categories = Category::withCount('products')->get(); // Model Category lay ve danh sach danh muc voi so luong san pham trong tung danh muc
+        $products = $query->paginate(12);
+        $categories = Category::withCount('products')->get();
 
-        // Đếm số lượng sản phẩm trong giỏ hàng
-        $cartCount = 0; // Khoi tao cartCount bang 0
-        if (Auth::check()) { // check neu user da dang nhap bang ham auth()
-            $cart = Auth::user()->cart; // neu user da dang nhap thi lay gio hang cua user hien tai
-            if ($cart) { // neu co gio hang thi tinh tong so luong san pham trong gio hang
+        $cartCount = 0;
+        if (Auth::check()) {
+            $cart = Auth::user()->cart;
+            if ($cart) {
                 $cartCount = $cart->items()->sum('quantity');
-                // $cart->items() goi den quan he items de lay ve danh sach cac item trong gio hang, sau do tinh tong so luong san pham trong gio hang bang ham sum('quantity')
             }
         }
 
-        return view('products.index', compact('products', 'categories', 'cartCount')); // tra ve product view, compact dung de truyen du lieu ra view
+        return view('products.index', compact('products', 'categories', 'cartCount'));
     }
 
-    /**
-     * Hiển thị chi tiết sản phẩm cho khách hàng
-     *
-     * Chức năng: Hiển thị trang chi tiết một sản phẩm cụ thể với thông tin đầy đủ
-     * Hoạt động:
-     * - Tìm sản phẩm theo ID với eager loading (category, details, inventory)
-     * - Throw 404 exception nếu không tìm thấy
-     * - Lấy 4 sản phẩm liên quan cùng danh mục (loại trừ sản phẩm hiện tại)
-     * - Đếm số lượng sản phẩm trong giỏ hàng nếu user đã đăng nhập
-     * - Lấy danh sách categories để hiển thị menu
-     * - Trả về view chi tiết với product, relatedProducts, categories, cartCount
-     *
-     * @param  int  $id  ID của sản phẩm cần hiển thị
-     * @return \Illuminate\View\View
-     */
-    public function show($id) // $id la tham so cua san pham can hien thi chi tiet
+    public function show($id)
     {
-        $product = Product::with(['category', 'details', 'inventory', 'ratings.user']) // Model Product lay ve san pham voi quan he voi category, details, inventory, ratings va user
-            ->findOrFail($id); // tim kiem san pham theo id, neu khong tim thay thi tra ve loi 404
+        $product = Product::with(['category', 'details', 'inventory', 'ratings.user'])
+            ->findOrFail($id);
 
-        // Sản phẩm liên quan (cùng danh mục)
-        $relatedProducts = Product::with('category') // Model Product lay ve san pham voi quan he voi category
-            ->where('category_id', $product->category_id) // loc nhung san pham cung danh muc voi san pham hien tai
-            ->where('product_id', '!=', $id) // loai bo san pham hien tai ra khoi danh sach san pham lien quan
-            ->take(4) // lay 4 san pham lien quan
-            ->get(); // lay ve danh sach san pham lien quan
+        $relatedProducts = Product::with('category')
+            ->where('category_id', $product->category_id)
+            ->where('product_id', '!=', $id)
+            ->take(4)
+            ->get();
 
-        // Đếm số lượng sản phẩm trong giỏ hàng
-        $cartCount = 0; // Khoi tao cartCount bang 0
-        if (Auth::check()) { // Neu user da dang nhap
-            $cart = Auth::user()->cart; // lay gio hang cua user hien tai
-            if ($cart) { // neu co gio hang thi tinh tong so luong san pham trong gio hang
-                $cartCount = $cart->items()->sum('quantity'); // $cart->items() goi den quan he items de lay ve danh sach cac item trong gio hang, sau do tinh tong so luong san pham trong gio hang bang ham sum('quantity')
+        $cartCount = 0;
+        if (Auth::check()) {
+            $cart = Auth::user()->cart;
+            if ($cart) {
+                $cartCount = $cart->items()->sum('quantity');
             }
         }
 
-        $categories = Category::withCount('products')->get(); // lay so luong san pham trong tung danh muc
+        $categories = Category::withCount('products')->get();
 
-        return view('products.show', compact('product', 'relatedProducts', 'categories', 'cartCount')); // Tra ve view chi tiet , truyen du lieu qua ham compact
+        return view('products.show', compact('product', 'relatedProducts', 'categories', 'cartCount'));
     }
 
-    /**
-     * Tìm kiếm sản phẩm
-     */
-    public function search(Request $request) // su dung Request de lay tham so truyen vao de tim kiem
+    public function search(Request $request)
     {
         return $this->index($request);
     }
 
-    /**
-     * Hiển thị sản phẩm theo danh mục
-     */
-    public function category($id) // $id la tham so cua danh muc can hien thi san pham
+    public function category($id)
     {
-        $category = Category::findOrFail($id); // Tim category qua id
+        $category = Category::findOrFail($id);
 
-        $products = Product::with('category') // Tim product co quan he voi Category qua model Product
-            ->where('category_id', $id) //
+        $products = Product::with('category')
+            ->where('category_id', $id)
             ->latest('created_at')
             ->paginate(12);
 
         $categories = Category::withCount('products')->get();
 
-        // Đếm số lượng sản phẩm trong giỏ hàng
         $cartCount = 0;
         if (Auth::check()) {
             $cart = Auth::user()->cart;
@@ -182,34 +134,16 @@ class CustomerProductController extends Controller
         return redirect()->back()->with('success', 'Cảm ơn bạn đã đánh giá sản phẩm!');
     }
 
-    /**
-     * Hiển thị trang sản phẩm khuyến mãi
-     *
-     * Chức năng: Hiển thị danh sách các sản phẩm đang có giảm giá/khuyến mãi
-     * Hoạt động:
-     * - Lấy các sản phẩm có original_price khác NULL và khác price (đang giảm giá)
-     * - Sắp xếp theo % giảm giá cao nhất
-     * - Eager load category
-     * - Phân trang 12 sản phẩm mỗi trang
-     * - Lấy danh sách categories
-     * - Đếm số lượng sản phẩm trong giỏ hàng
-     * - Trả về view với dữ liệu
-     *
-     * @return \Illuminate\View\View
-     */
     public function promotions()
     {
-        // Lấy sản phẩm có khuyến mãi (có original_price và khác với price hiện tại)
         $products = Product::with('category')
             ->whereNotNull('original_price')
             ->whereColumn('original_price', '>', 'price')
-            ->orderByRaw('((original_price - price) / original_price) DESC') // Sắp xếp theo % giảm giá cao nhất
+            ->orderByRaw('((original_price - price) / original_price) DESC')
             ->paginate(12);
 
-        // Lấy danh sách categories để hiển thị menu
         $categories = Category::withCount('products')->get();
 
-        // Đếm số lượng sản phẩm trong giỏ hàng
         $cartCount = 0;
         if (Auth::check() && Auth::user()->cart) {
             $cartCount = Auth::user()->cart->items()->sum('quantity');

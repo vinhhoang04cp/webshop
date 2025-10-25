@@ -9,9 +9,6 @@ use Illuminate\Http\Request;
 
 class CategoryController extends Controller
 {
-    /**
-     * Hiển thị danh sách danh mục với tính năng tìm kiếm và phân trang
-     */
     public function index(Request $request)
     {
         try {
@@ -37,17 +34,11 @@ class CategoryController extends Controller
         }
     }
 
-    /**
-     * Hiển thị form tạo danh mục mới
-     */
     public function create()
     {
         return view('dashboard.categories.create');
     }
 
-    /**
-     * Lưu danh mục mới vào database
-     */
     public function store(CategoryRequest $request)
     {
         try {
@@ -65,9 +56,6 @@ class CategoryController extends Controller
         }
     }
 
-    /**
-     * Hiển thị chi tiết danh mục và danh sách sản phẩm
-     */
     public function show($id)
     {
         try {
@@ -80,9 +68,6 @@ class CategoryController extends Controller
         }
     }
 
-    /**
-     * Hiển thị form chỉnh sửa danh mục
-     */
     public function edit($id)
     {
         try {
@@ -95,9 +80,6 @@ class CategoryController extends Controller
         }
     }
 
-    /**
-     * Cập nhật thông tin danh mục
-     */
     public function update(CategoryRequest $request, $id)
     {
         try {
@@ -116,11 +98,6 @@ class CategoryController extends Controller
         }
     }
 
-    /**
-     * Xóa danh mục khỏi database
-     *
-     * Lưu ý: Cần kiểm tra ràng buộc với sản phẩm trước khi xóa
-     */
     public function destroy($id)
     {
         try {

@@ -16,11 +16,6 @@ use Illuminate\Support\Facades\DB;
 
 class CustomerCartController extends Controller
 {
-    /**
-     * Xử lý thanh toán giỏ hàng
-     *
-     * Lưu ý: TRỪ TỒN KHO NGAY khi đặt hàng để giữ hàng cho khách
-     */
     public function checkout(CheckoutRequest $request)
     {
         if (! Auth::check()) {
@@ -139,9 +134,6 @@ class CustomerCartController extends Controller
         }
     }
 
-    /**
-     * Hiển thị giỏ hàng của khách hàng
-     */
     public function index()
     {
         if (! Auth::check()) {
@@ -182,9 +174,6 @@ class CustomerCartController extends Controller
         }
     }
 
-    /**
-     * Thêm sản phẩm vào giỏ hàng
-     */
     public function add(CartRequest $request, $productId)
     {
         if (! Auth::check()) {
@@ -232,9 +221,6 @@ class CustomerCartController extends Controller
         }
     }
 
-    /**
-     * Cập nhật số lượng sản phẩm trong giỏ hàng
-     */
     public function update(CartRequest $request, $cartItemId)
     {
         if (! Auth::check()) {
@@ -266,9 +252,6 @@ class CustomerCartController extends Controller
         }
     }
 
-    /**
-     * Xóa sản phẩm khỏi giỏ hàng
-     */
     public function remove($cartItemId)
     {
         if (! Auth::check()) {
@@ -298,9 +281,6 @@ class CustomerCartController extends Controller
         }
     }
 
-    /**
-     * Xóa toàn bộ giỏ hàng
-     */
     public function clear()
     {
         if (! Auth::check()) {
