@@ -350,7 +350,7 @@ class CartService
     /**
      * Find or create cart for user
      */
-    public function findOrCreateCartForUser($cartId = null, $userId)
+    public function findOrCreateCartForUser($cartId, $userId)
     {
         if ($cartId) {
             $cart = Cart::where('cart_id', $cartId)
@@ -510,7 +510,7 @@ class CartService
     public function createCartItem(array $data)
     {
         $cartItem = CartItem::create($data);
-        
+
         return $cartItem->fresh();
     }
 
@@ -529,7 +529,7 @@ class CartService
     {
         $cartItem = CartItem::findOrFail($id);
         $cartItem->update($data);
-        
+
         return $cartItem->fresh();
     }
 

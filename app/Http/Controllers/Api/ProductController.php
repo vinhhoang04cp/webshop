@@ -55,7 +55,7 @@ class ProductController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
-                'message' => 'Error creating product: ' . $e->getMessage(),
+                'message' => 'Error creating product: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -67,7 +67,7 @@ class ProductController extends Controller
     {
         $product = $this->productService->findProduct($id);
 
-        if (!$product) {
+        if (! $product) {
             return response()->json([
                 'status' => false,
                 'message' => 'Product not found',
@@ -91,7 +91,7 @@ class ProductController extends Controller
         try {
             $product = $this->productService->updateProductFull($id, $request->validated());
 
-            if (!$product) {
+            if (! $product) {
                 return response()->json([
                     'status' => false,
                     'message' => 'Product not found',
@@ -107,7 +107,7 @@ class ProductController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
-                'message' => 'Error updating product: ' . $e->getMessage(),
+                'message' => 'Error updating product: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -120,7 +120,7 @@ class ProductController extends Controller
         try {
             $deleted = $this->productService->deleteProductById($id);
 
-            if (!$deleted) {
+            if (! $deleted) {
                 return response()->json([
                     'status' => false,
                     'message' => 'Product not found',
@@ -135,7 +135,7 @@ class ProductController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
-                'message' => 'Error deleting product: ' . $e->getMessage(),
+                'message' => 'Error deleting product: '.$e->getMessage(),
             ], 500);
         }
     }

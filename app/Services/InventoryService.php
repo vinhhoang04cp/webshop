@@ -184,13 +184,13 @@ class InventoryService
         if ($existingInventory) {
             $existingInventory->update($preparedData);
             $existingInventory->load('product');
-            
+
             return ['inventory' => $existingInventory, 'created' => false];
         }
 
         $inventory = Inventory::create($preparedData);
         $inventory->load('product');
-        
+
         return ['inventory' => $inventory, 'created' => true];
     }
 
@@ -199,7 +199,7 @@ class InventoryService
      */
     public function updateInventoryById($inventoryId, array $data, $existingInventory = null)
     {
-        if (!$existingInventory) {
+        if (! $existingInventory) {
             $existingInventory = Inventory::where('inventory_id', $inventoryId)->firstOrFail();
         }
 
@@ -275,7 +275,7 @@ class InventoryService
      */
     protected function prepareInventoryData(array $data, $existingInventory = null)
     {
-        if (!isset($data['current_stock'])) {
+        if (! isset($data['current_stock'])) {
             if ($existingInventory && (isset($data['stock_in']) || isset($data['stock_out']))) {
                 $stockIn = $data['stock_in'] ?? $existingInventory->stock_in;
                 $stockOut = $data['stock_out'] ?? $existingInventory->stock_out;

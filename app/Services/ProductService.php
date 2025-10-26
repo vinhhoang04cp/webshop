@@ -431,27 +431,27 @@ class ProductService
         $query = Product::with(['category', 'details']);
 
         // Lọc theo category
-        if (!empty($filters['category'])) {
+        if (! empty($filters['category'])) {
             $query->where('category_id', $filters['category']);
         }
 
         // Lọc theo tên (tìm gần đúng)
-        if (!empty($filters['name'])) {
-            $query->where('name', 'LIKE', '%' . $filters['name'] . '%');
+        if (! empty($filters['name'])) {
+            $query->where('name', 'LIKE', '%'.$filters['name'].'%');
         }
 
         // Lọc theo giá tối thiểu
-        if (!empty($filters['min_price'])) {
+        if (! empty($filters['min_price'])) {
             $query->where('price', '>=', $filters['min_price']);
         }
 
         // Lọc theo giá tối đa
-        if (!empty($filters['max_price'])) {
+        if (! empty($filters['max_price'])) {
             $query->where('price', '<=', $filters['max_price']);
         }
 
         // Lọc theo số lượng tồn kho
-        if (!empty($filters['stock_quantity'])) {
+        if (! empty($filters['stock_quantity'])) {
             $query->where('stock_quantity', $filters['stock_quantity']);
         }
 
@@ -502,7 +502,7 @@ class ProductService
     {
         $product = Product::find($productId);
 
-        if (!$product) {
+        if (! $product) {
             return null;
         }
 
@@ -537,7 +537,7 @@ class ProductService
     {
         $product = Product::find($productId);
 
-        if (!$product) {
+        if (! $product) {
             return false;
         }
 
@@ -560,28 +560,28 @@ class ProductService
     {
         $query = ProductDetail::query();
 
-        if (!empty($filters['product_id'])) {
+        if (! empty($filters['product_id'])) {
             $query->where('product_id', $filters['product_id']);
         }
 
-        if (!empty($filters['color'])) {
+        if (! empty($filters['color'])) {
             $query->where('color', $filters['color']);
         }
 
-        if (!empty($filters['storage'])) {
+        if (! empty($filters['storage'])) {
             $query->where('storage', $filters['storage']);
         }
 
-        if (!empty($filters['ram'])) {
+        if (! empty($filters['ram'])) {
             $query->where('ram', $filters['ram']);
         }
 
-        if (!empty($filters['chip'])) {
-            $query->where('chip', 'LIKE', '%' . $filters['chip'] . '%');
+        if (! empty($filters['chip'])) {
+            $query->where('chip', 'LIKE', '%'.$filters['chip'].'%');
         }
 
-        if (!empty($filters['os'])) {
-            $query->where('os', 'LIKE', '%' . $filters['os'] . '%');
+        if (! empty($filters['os'])) {
+            $query->where('os', 'LIKE', '%'.$filters['os'].'%');
         }
 
         return $query->paginate(10);
@@ -610,7 +610,7 @@ class ProductService
     {
         $productDetail = ProductDetail::find($detailId);
 
-        if (!$productDetail) {
+        if (! $productDetail) {
             return null;
         }
 
@@ -626,7 +626,7 @@ class ProductService
     {
         $productDetail = ProductDetail::find($detailId);
 
-        if (!$productDetail) {
+        if (! $productDetail) {
             return false;
         }
 

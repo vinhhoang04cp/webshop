@@ -75,12 +75,12 @@ class CartController extends Controller
         try {
             $cartData = $request->validated();
             $userId = $request->user()->id;
-            
+
             $cart = $this->cartService->findOrCreateCartForUser(
                 $cartData['cart_id'] ?? null,
                 $userId
             );
-            
+
             $itemsToAdd = $this->cartService->prepareItemsData($cartData);
             $cart = $this->cartService->addItemsToCart($cart, $itemsToAdd);
 

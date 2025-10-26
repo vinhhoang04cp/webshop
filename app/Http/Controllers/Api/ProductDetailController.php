@@ -64,7 +64,7 @@ class ProductDetailController extends Controller
     {
         $productDetail = $this->productService->findProductDetail($id);
 
-        if (!$productDetail) {
+        if (! $productDetail) {
             return response()->json(['message' => 'Product detail not found'], 404);
         }
 
@@ -79,7 +79,7 @@ class ProductDetailController extends Controller
         try {
             $productDetail = $this->productService->updateProductDetail($id, $request->validated());
 
-            if (!$productDetail) {
+            if (! $productDetail) {
                 return response()->json(['message' => 'Product detail not found'], 404);
             }
 
@@ -102,7 +102,7 @@ class ProductDetailController extends Controller
     {
         $deleted = $this->productService->deleteProductDetail($id);
 
-        if (!$deleted) {
+        if (! $deleted) {
             return response()->json(['message' => 'Product detail not found'], 404);
         }
 

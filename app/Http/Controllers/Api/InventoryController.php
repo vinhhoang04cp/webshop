@@ -61,7 +61,7 @@ class InventoryController extends Controller
     {
         $inventory = $this->inventoryService->findInventory($id);
 
-        if (!$inventory) {
+        if (! $inventory) {
             return response()->json([
                 'success' => false,
                 'message' => 'Inventory not found',
@@ -82,7 +82,7 @@ class InventoryController extends Controller
         try {
             $inventory = $this->inventoryService->findInventory($id);
 
-            if (!$inventory) {
+            if (! $inventory) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Inventory not found',
@@ -113,7 +113,7 @@ class InventoryController extends Controller
         try {
             $inventory = $this->inventoryService->findInventory($id);
 
-            if (!$inventory) {
+            if (! $inventory) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Inventory not found',

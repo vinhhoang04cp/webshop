@@ -134,7 +134,7 @@ class CategoryService
     public function createCategoryWithFresh(array $data)
     {
         $category = $this->createCategory($data);
-        
+
         return $category->fresh();
     }
 
@@ -144,7 +144,7 @@ class CategoryService
     public function updateCategoryWithFresh($categoryId, array $data)
     {
         $category = $this->updateCategory($categoryId, $data);
-        
+
         return $category->fresh();
     }
 }

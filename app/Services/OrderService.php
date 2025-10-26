@@ -244,11 +244,11 @@ class OrderService
     public function createOrderItem(array $data)
     {
         $orderItem = OrderItem::create($data);
-        
+
         try {
             OrderItem::reorderIds();
         } catch (\Exception $e) {
-            \Log::warning('Failed to reorder OrderItem IDs: ' . $e->getMessage());
+            \Log::warning('Failed to reorder OrderItem IDs: '.$e->getMessage());
         }
 
         return $orderItem->fresh();
@@ -261,11 +261,11 @@ class OrderService
     {
         $orderItem = OrderItem::findOrFail($orderItemId);
         $orderItem->update($data);
-        
+
         try {
             OrderItem::reorderIds();
         } catch (\Exception $e) {
-            \Log::warning('Failed to reorder OrderItem IDs: ' . $e->getMessage());
+            \Log::warning('Failed to reorder OrderItem IDs: '.$e->getMessage());
         }
 
         return $orderItem->fresh();
@@ -282,7 +282,7 @@ class OrderService
         try {
             OrderItem::reorderIds();
         } catch (\Exception $e) {
-            \Log::warning('Failed to reorder OrderItem IDs: ' . $e->getMessage());
+            \Log::warning('Failed to reorder OrderItem IDs: '.$e->getMessage());
         }
 
         return true;
@@ -295,7 +295,7 @@ class OrderService
     {
         $query = Order::with('user');
 
-        if (!$isAdmin) {
+        if (! $isAdmin) {
             $query->where('user_id', $userId);
         } else {
             if (isset($filters['user_id'])) {
@@ -336,13 +336,13 @@ class OrderService
 
         // Validate stock
         $stockValidation = $this->validateStock($items);
-        if (!$stockValidation['valid']) {
+        if (! $stockValidation['valid']) {
             throw new \Exception(implode(', ', $stockValidation['errors']));
         }
 
         $itemsWithPrices = $this->calculateItemPrices($items);
         $data['total_amount'] = $this->calculateTotalAmount($itemsWithPrices);
-        
+
         $order = Order::create($data);
         $this->createOrderItems($order, $itemsWithPrices);
         $this->updateStock($items);
@@ -355,14 +355,14 @@ class OrderService
      */
     public function updateOrder($orderId, array $data, $order = null)
     {
-        if (!$order) {
+        if (! $order) {
             $order = Order::findOrFail($orderId);
         }
 
         $items = $data['items'] ?? [];
         unset($data['items']);
 
-        if (!empty($items)) {
+        if (! empty($items)) {
             $order->items()->delete();
             $itemsWithPrices = $this->calculateItemPrices($items);
             $data['total_amount'] = $this->calculateTotalAmount($itemsWithPrices);
@@ -385,7 +385,7 @@ class OrderService
         try {
             Order::reOrderIds();
         } catch (\Exception $e) {
-            \Log::warning('Failed to reorder Order IDs: ' . $e->getMessage());
+            \Log::warning('Failed to reorder Order IDs: '.$e->getMessage());
         }
 
         return true;
@@ -420,9 +420,10 @@ class OrderService
                 ->lockForUpdate()
                 ->first();
 
-            if (!$product) {
+            if (! $product) {
                 $errors[] = "Product with ID {$item['product_id']} not found";
                 $valid = false;
+
                 continue;
             }
 

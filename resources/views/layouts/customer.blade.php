@@ -475,12 +475,12 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">
+                        <a class="nav-link" href="{{ route('about') }}">
                             <i class="fas fa-info-circle"></i> Về chúng tôi
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">
+                        <a class="nav-link" href="{{ route('contact') }}">
                             <i class="fas fa-phone"></i> Liên hệ
                         </a>
                     </li>
@@ -530,10 +530,10 @@
                 <div class="col-md-2">
                     <h5>Về chúng tôi</h5>
                     <ul>
-                        <li><a href="#">Giới thiệu</a></li>
+                        <li><a href="{{ route('about') }}">Giới thiệu</a></li>
                         <li><a href="#">Tuyển dụng</a></li>
                         <li><a href="#">Tin tức</a></li>
-                        <li><a href="#">Liên hệ</a></li>
+                        <li><a href="{{ route('contact') }}">Liên hệ</a></li>
                     </ul>
                 </div>
                 <div class="col-md-3">

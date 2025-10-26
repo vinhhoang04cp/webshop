@@ -48,7 +48,7 @@ class OrderItemController extends Controller
     {
         $orderItem = $this->orderService->findOrderItem($id);
 
-        if (!$orderItem) {
+        if (! $orderItem) {
             return response()->json([
                 'status' => false,
                 'message' => 'Order item not found',
@@ -65,7 +65,7 @@ class OrderItemController extends Controller
     {
         $orderItem = $this->orderService->findOrderItem($id);
 
-        if (!$orderItem) {
+        if (! $orderItem) {
             return response()->json([
                 'status' => false,
                 'message' => 'Order item not found',
@@ -90,7 +90,7 @@ class OrderItemController extends Controller
     {
         $orderItem = $this->orderService->findOrderItem($id);
 
-        if (!$orderItem) {
+        if (! $orderItem) {
             return response()->json([
                 'status' => false,
                 'message' => 'Order item not found',

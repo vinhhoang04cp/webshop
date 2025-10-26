@@ -26,7 +26,7 @@ class OrderController extends Controller
     public function index(Request $request)
     {
         $filters = [];
-        
+
         if ($request->user()->isAdmin()) {
             $filters = $request->only(['user_id', 'min_date', 'max_date', 'min_total', 'max_total']);
         }
@@ -55,7 +55,7 @@ class OrderController extends Controller
             try {
                 Order::reorderIds();
             } catch (\Exception $e) {
-                \Log::warning('Failed to reorder Order IDs: ' . $e->getMessage());
+                \Log::warning('Failed to reorder Order IDs: '.$e->getMessage());
             }
 
             return (new OrderResource($order))->response()->setStatusCode(201);
@@ -78,14 +78,14 @@ class OrderController extends Controller
     {
         $order = $this->orderService->findOrder($id);
 
-        if (!$order) {
+        if (! $order) {
             return response()->json([
                 'status' => false,
                 'message' => 'Order not found',
             ], 404);
         }
 
-        if (!$request->user()->isAdmin() && !$this->orderService->userOwnsOrder($order, $request->user()->id)) {
+        if (! $request->user()->isAdmin() && ! $this->orderService->userOwnsOrder($order, $request->user()->id)) {
             return response()->json([
                 'status' => false,
                 'message' => 'Access denied. You can only access your own orders.',
@@ -105,16 +105,18 @@ class OrderController extends Controller
         try {
             $order = $this->orderService->findOrder($id);
 
-            if (!$order) {
+            if (! $order) {
                 DB::rollback();
+
                 return response()->json([
                     'status' => false,
                     'message' => 'Order not found',
                 ], 404);
             }
 
-            if (!$request->user()->isAdmin() && !$this->orderService->userOwnsOrder($order, $request->user()->id)) {
+            if (! $request->user()->isAdmin() && ! $this->orderService->userOwnsOrder($order, $request->user()->id)) {
                 DB::rollback();
+
                 return response()->json([
                     'status' => false,
                     'message' => 'Access denied. You can only update your own orders.',
@@ -124,16 +126,18 @@ class OrderController extends Controller
             $orderData = $request->validated();
 
             if (isset($orderData['status']) && $orderData['status'] !== $order->status) {
-                if (!$request->user()->isAdmin()) {
+                if (! $request->user()->isAdmin()) {
                     DB::rollback();
+
                     return response()->json([
                         'status' => false,
                         'message' => 'Only admin can change order status.',
                     ], 403);
                 }
 
-                if (!$this->orderService->canTransitionToStatus($order, $orderData['status'])) {
+                if (! $this->orderService->canTransitionToStatus($order, $orderData['status'])) {
                     DB::rollback();
+
                     return response()->json([
                         'status' => false,
                         'message' => "Cannot change status from '{$order->status}' to '{$orderData['status']}'. Invalid status transition.",
@@ -148,7 +152,7 @@ class OrderController extends Controller
             try {
                 Order::reorderIds();
             } catch (\Exception $e) {
-                \Log::warning('Failed to reorder Order IDs: ' . $e->getMessage());
+                \Log::warning('Failed to reorder Order IDs: '.$e->getMessage());
             }
 
             DB::commit();
@@ -173,14 +177,14 @@ class OrderController extends Controller
     {
         $order = $this->orderService->findOrder($id);
 
-        if (!$order) {
+        if (! $order) {
             return response()->json([
                 'status' => false,
                 'message' => 'Order not found',
             ], 404);
         }
 
-        if (!$request->user()->isAdmin() && !$this->orderService->userOwnsOrder($order, $request->user()->id)) {
+        if (! $request->user()->isAdmin() && ! $this->orderService->userOwnsOrder($order, $request->user()->id)) {
             return response()->json([
                 'status' => false,
                 'message' => 'Access denied. You can only delete your own orders.',

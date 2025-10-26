@@ -208,7 +208,7 @@ class CouponService
     public function createCouponWithFresh(array $data)
     {
         $coupon = $this->createCoupon($data);
-        
+
         return $coupon->fresh();
     }
 
@@ -218,7 +218,7 @@ class CouponService
     public function updateCouponWithFresh($couponId, array $data)
     {
         $coupon = $this->updateCoupon($couponId, $data);
-        
+
         return $coupon->fresh();
     }
 
