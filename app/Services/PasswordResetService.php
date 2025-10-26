@@ -12,9 +12,19 @@ class PasswordResetService
 {
     /**
      * Gửi link reset password qua email
+     *
+     * @param  string  $email  Email người dùng
+     * @param  string|null  $resetUrl  URL tùy chỉnh (cho API/SPA), nếu null sẽ dùng route Web mặc định
+     * @return array Trả về token và link (hữu ích cho API testing)
      */
-    public function sendResetLink($email)
+    public function sendResetLink($email, $resetUrl = null)
     {
+        // Kiểm tra email có tồn tại không
+        $user = User::where('email', $email)->first();
+        if (! $user) {
+            throw new \Exception('Email không tồn tại trong hệ thống.');
+        }
+
         $token = Str::random(64);
 
         // Lưu token vào database
@@ -27,7 +37,13 @@ class PasswordResetService
         );
 
         // Tạo link reset password
-        $resetLink = route('password.reset', ['token' => $token, 'email' => $email]);
+        if ($resetUrl) {
+            // API/SPA: dùng URL tùy chỉnh
+            $resetLink = $resetUrl.'?token='.$token.'&email='.urlencode($email);
+        } else {
+            // Web: dùng route Laravel
+            $resetLink = route('password.reset', ['token' => $token, 'email' => $email]);
+        }
 
         // Gửi email
         Mail::send('emails.reset-password', ['resetLink' => $resetLink], function ($message) use ($email) {
@@ -35,7 +51,11 @@ class PasswordResetService
             $message->subject('Yêu cầu đặt lại mật khẩu');
         });
 
-        return true;
+        return [
+            'success' => true,
+            'token' => $token, // Chỉ dùng cho testing, không nên trả về trong production
+            'reset_link' => $resetLink,
+        ];
     }
 
     /**

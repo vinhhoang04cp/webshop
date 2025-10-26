@@ -27,9 +27,9 @@ class AuthService
     }
 
     /**
-     * Đăng ký user mới
+     * Đăng ký user mới (dùng chung cho Web và API)
      */
-    public function register($data)
+    public function register($data, $autoAssignRole = true)
     {
         DB::beginTransaction();
 
@@ -42,14 +42,16 @@ class AuthService
                 'address' => $data['address'] ?? null,
             ]);
 
-            // Gán role customer mặc định
-            $customerRole = Role::where('role_name', 'customer')->first();
-            if ($customerRole) {
-                UserRole::create([
-                    'user_id' => $user->id,
-                    'role_id' => $customerRole->role_id,
-                    'assigned_at' => now(),
-                ]);
+            // Gán role customer mặc định nếu được yêu cầu
+            if ($autoAssignRole) {
+                $customerRole = Role::where('role_name', 'customer')->first();
+                if ($customerRole) {
+                    UserRole::create([
+                        'user_id' => $user->id,
+                        'role_id' => $customerRole->role_id,
+                        'assigned_at' => now(),
+                    ]);
+                }
             }
 
             DB::commit();
@@ -132,17 +134,29 @@ class AuthService
     }
 
     /**
-     * Đăng ký user cho API (không cần gán role)
+     * Kiểm tra user có được xác thực không
      */
-    public function registerForApi($data)
+    public function isAuthenticated($user)
     {
-        return User::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'password' => Hash::make($data['password']),
-            'phone' => $data['phone'] ?? null,
-            'address' => $data['address'] ?? null,
-        ]);
+        return $user !== null;
+    }
+
+    /**
+     * Lấy thông tin user kèm roles
+     */
+    public function getUserWithRoles($user)
+    {
+        return [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'phone' => $user->phone,
+            'address' => $user->address,
+            'email_verified_at' => $user->email_verified_at,
+            'roles' => $user->roles->pluck('role_name')->toArray(),
+            'created_at' => $user->created_at,
+            'updated_at' => $user->updated_at,
+        ];
     }
 
     /**

@@ -10,9 +10,10 @@ use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
-    protected $authService;
+    protected $authService; // Dịch vụ xác thực
 
-    public function __construct(AuthService $authService)
+    // Khởi tạo với dịch vụ xác thực
+    public function __construct(AuthService $authService) // __construct la phương thức khởi tạo
     {
         $this->authService = $authService;
     }

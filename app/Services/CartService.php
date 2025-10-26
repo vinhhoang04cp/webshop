@@ -15,11 +15,17 @@ use Illuminate\Support\Facades\DB;
 class CartService
 {
     /**
-     * Xử lý checkout đơn hàng
+     * Xử lý checkout đơn hàng (dùng chung cho Web và API)
+     *
+     * @param  array  $data  Dữ liệu checkout (shipping info, payment method, coupon)
+     * @param  int|null  $userId  User ID (nếu null, dùng Auth::id())
+     * @return array ['success', 'order', 'discount_amount', 'payment_method']
      */
-    public function processCheckout(array $data)
+    public function processCheckout(array $data, $userId = null)
     {
-        $cart = Auth::user()->cart;
+        // Lấy cart của user (hỗ trợ cả Web session và API token)
+        $userId = $userId ?? Auth::id();
+        $cart = Cart::where('user_id', $userId)->first();
 
         if (! $cart || $cart->items()->count() == 0) {
             throw new \Exception('Giỏ hàng trống!');
@@ -43,7 +49,7 @@ class CartService
             }
 
             // Tạo đơn hàng
-            $order = $this->createOrder($data, $totalAmount);
+            $order = $this->createOrder($data, $totalAmount, $userId);
 
             // Tăng số lần sử dụng coupon
             if ($coupon) {
@@ -61,7 +67,7 @@ class CartService
 
             return [
                 'success' => true,
-                'order' => $order,
+                'order' => $order->fresh(['items']), // Reload với items
                 'discount_amount' => $discountAmount,
                 'payment_method' => $data['payment_method'] ?? 'cod',
             ];
@@ -118,10 +124,10 @@ class CartService
     /**
      * Tạo đơn hàng
      */
-    protected function createOrder(array $data, $totalAmount)
+    protected function createOrder(array $data, $totalAmount, $userId = null)
     {
         $order = new Order;
-        $order->user_id = Auth::id();
+        $order->user_id = $userId ?? Auth::id();
         $order->total_amount = $totalAmount;
         $order->status = 'pending';
         $order->order_date = now();
@@ -177,7 +183,7 @@ class CartService
     }
 
     /**
-     * Lấy hoặc tạo giỏ hàng
+     * Lấy hoặc tạo giỏ hàng (với relationships cho API)
      */
     public function getOrCreateCart()
     {
@@ -188,6 +194,9 @@ class CartService
                 'user_id' => Auth::id(),
             ]);
         }
+
+        // Load relationships cho API Resource
+        $cart->load(['items.product.category']);
 
         return $cart;
     }
@@ -313,7 +322,7 @@ class CartService
      */
     public function getCarts($userId = null, $isAdmin = false, $filters = [])
     {
-        $query = Cart::with('items.product');
+        $query = Cart::with(['items.product.category']);
 
         if (! $isAdmin) {
             $query->where('user_id', $userId);
@@ -322,7 +331,9 @@ class CartService
         }
 
         if (isset($filters['product_id'])) {
-            $query->where('product_id', $filters['product_id']);
+            $query->whereHas('items', function ($q) use ($filters) {
+                $q->where('product_id', $filters['product_id']);
+            });
         }
 
         return $query->paginate(10);
@@ -436,11 +447,11 @@ class CartService
     }
 
     /**
-     * Get cart by ID
+     * Get cart by ID (with full relationships)
      */
     public function getCartById($cartId)
     {
-        return Cart::with('items.product')->findOrFail($cartId);
+        return Cart::with(['items.product.category'])->findOrFail($cartId);
     }
 
     /**

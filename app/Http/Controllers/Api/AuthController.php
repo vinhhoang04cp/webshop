@@ -50,13 +50,17 @@ class AuthController extends Controller
     public function register(RegisterRequest $request)
     {
         try {
-            $user = $this->authService->registerForApi($request->validated());
+            // Sử dụng phương thức register chung, gán role customer mặc định
+            $user = $this->authService->register($request->validated(), true);
             $token = $this->authService->createApiToken($user);
+
+            // Lấy thông tin user kèm roles
+            $userWithRoles = $this->authService->getUserWithRoles($user);
 
             return response()->json([
                 'status' => true,
                 'message' => 'Registration successful',
-                'user' => $user,
+                'user' => $userWithRoles,
                 'token' => $token,
             ], 201);
         } catch (\Exception $e) {
@@ -86,14 +90,64 @@ class AuthController extends Controller
      */
     public function profile(Request $request)
     {
-        $userProfile = $this->authService->getUserProfile($request->user());
+        $userWithRoles = $this->authService->getUserWithRoles($request->user());
 
         return response()->json([
             'status' => true,
             'message' => 'Profile retrieved successfully',
             'data' => [
-                'user' => $userProfile,
+                'user' => $userWithRoles,
             ],
+        ], 200);
+    }
+
+    /**
+     * Lấy dữ liệu dashboard (chỉ dành cho admin/manager)
+     */
+    public function dashboard(Request $request)
+    {
+        /** @var \App\Models\User $user */
+        $user = $request->user();
+
+        // Kiểm tra quyền truy cập dashboard
+        if (! $this->authService->canAccessDashboard($user)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Unauthorized. Only admin or manager can access dashboard.',
+            ], 403);
+        }
+
+        $dashboardData = $this->authService->getDashboardData();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Dashboard data retrieved successfully',
+            'data' => $dashboardData,
+        ], 200);
+    }
+
+    /**
+     * Kiểm tra trạng thái xác thực
+     */
+    public function checkAuth(Request $request)
+    {
+        $user = $request->user();
+
+        if (! $this->authService->isAuthenticated($user)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Not authenticated',
+                'authenticated' => false,
+            ], 401);
+        }
+
+        $userWithRoles = $this->authService->getUserWithRoles($user);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Authenticated',
+            'authenticated' => true,
+            'user' => $userWithRoles,
         ], 200);
     }
 }

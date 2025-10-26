@@ -4,13 +4,27 @@ use App\Http\Controllers\Api\CategoryController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
+// Authentication Routes
 Route::post('/login', [\App\Http\Controllers\Api\AuthController::class, 'login']); // Route dang nhap
 Route::post('/register', [\App\Http\Controllers\Api\AuthController::class, 'register']); // Route dang ky
+
+// Password Reset Routes
+Route::post('/forgot-password', [\App\Http\Controllers\Api\PasswordResetController::class, 'forgotPassword']);
+Route::post('/reset-password', [\App\Http\Controllers\Api\PasswordResetController::class, 'resetPassword']);
+Route::post('/validate-reset-token', [\App\Http\Controllers\Api\PasswordResetController::class, 'validateToken']);
+
+// Social Authentication Routes
+Route::get('/auth/{provider}/redirect', [\App\Http\Controllers\Api\SocialAuthController::class, 'redirect']);
+Route::get('/auth/{provider}/callback', [\App\Http\Controllers\Api\SocialAuthController::class, 'callback']);
+Route::post('/auth/social/token', [\App\Http\Controllers\Api\SocialAuthController::class, 'loginWithToken']); // For mobile/SPA
 
 // Public product routes - Khách có thể xem sản phẩm mà không cần đăng nhập
 Route::prefix('products')->middleware('throttle:60,1')->group(function () {
     Route::get('/', [\App\Http\Controllers\Api\ProductController::class, 'index']);
     Route::get('/{id}', [\App\Http\Controllers\Api\ProductController::class, 'show']);
+
+    // Public rating routes - Khách có thể xem ratings
+    Route::get('/{id}/ratings', [\App\Http\Controllers\Api\ProductController::class, 'getRatings']);
 });
 
 // Public category routes - Khách có thể xem danh mục
@@ -31,8 +45,29 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () { // boc
     // Get user profile with additional info (alternative route)
     Route::get('/profile', [\App\Http\Controllers\Api\AuthController::class, 'profile']);
 
+    // Check authentication status
+    Route::get('/check-auth', [\App\Http\Controllers\Api\AuthController::class, 'checkAuth']);
+
+    // Dashboard data (Admin/Manager only)
+    Route::get('/dashboard', [\App\Http\Controllers\Api\AuthController::class, 'dashboard']);
+
     // Logout route
     Route::post('/logout', [\App\Http\Controllers\Api\AuthController::class, 'logout']);
+
+    // Profile Management Routes
+    Route::prefix('profile')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Api\ProfileController::class, 'show']);
+        Route::put('/', [\App\Http\Controllers\Api\ProfileController::class, 'update']);
+        Route::put('/password', [\App\Http\Controllers\Api\ProfileController::class, 'changePassword']);
+        Route::delete('/avatar', [\App\Http\Controllers\Api\ProfileController::class, 'deleteAvatar']);
+    });
+
+    // Product Rating Routes (cần đăng nhập)
+    Route::prefix('products/{id}')->group(function () {
+        Route::post('/ratings', [\App\Http\Controllers\Api\ProductController::class, 'addRating']);
+        Route::put('/ratings/{ratingId}', [\App\Http\Controllers\Api\ProductController::class, 'updateRating']);
+        Route::delete('/ratings/{ratingId}', [\App\Http\Controllers\Api\ProductController::class, 'deleteRating']);
+    });
 
     // Category management (Admin only)
     Route::prefix('categories')->middleware('admin')->group(function () {
@@ -77,6 +112,30 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () { // boc
     });
 
     // Cart management (User chỉ quản lý cart của mình)
+    Route::prefix('cart')->group(function () {
+        // Get current user's cart
+        Route::get('/', [\App\Http\Controllers\Api\CartController::class, 'current']);
+
+        // Add product to cart (simple version)
+        Route::post('/add/{productId}', [\App\Http\Controllers\Api\CartController::class, 'addProduct']);
+
+        // Update cart item quantity
+        Route::put('/items/{cartItemId}', [\App\Http\Controllers\Api\CartController::class, 'updateItem']);
+
+        // Remove item from cart
+        Route::delete('/items/{cartItemId}', [\App\Http\Controllers\Api\CartController::class, 'removeItem']);
+
+        // Clear entire cart
+        Route::delete('/clear', [\App\Http\Controllers\Api\CartController::class, 'clear']);
+
+        // Validate coupon before checkout
+        Route::post('/validate-coupon', [\App\Http\Controllers\Api\CartController::class, 'validateCoupon']);
+
+        // Checkout
+        Route::post('/checkout', [\App\Http\Controllers\Api\CartController::class, 'checkout']);
+    });
+
+    // Advanced cart management (Admin có thể xem tất cả)
     Route::prefix('carts')->group(function () {
         Route::get('/', [\App\Http\Controllers\Api\CartController::class, 'index']);
         Route::post('/', [\App\Http\Controllers\Api\CartController::class, 'store']);

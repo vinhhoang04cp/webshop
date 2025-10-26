@@ -20,7 +20,32 @@ class CartItemResource extends JsonResource
             'product_id' => $this->product_id,
             'quantity' => $this->quantity,
             'price' => $this->price,
-            'total_price' => $this->total_price,
+
+            // Product information (when loaded)
+            'product' => $this->when($this->relationLoaded('product'), function () {
+                return [
+                    'product_id' => $this->product->product_id,
+                    'name' => $this->product->name,
+                    'slug' => $this->product->slug ?? null,
+                    'description' => $this->product->description,
+                    'price' => $this->product->price,
+                    'original_price' => $this->product->original_price,
+                    'image' => $this->product->image,
+                    'stock_quantity' => $this->product->stock_quantity,
+                    'category' => $this->when($this->product->relationLoaded('category'), function () {
+                        return [
+                            'category_id' => $this->product->category->category_id,
+                            'name' => $this->product->category->name,
+                        ];
+                    }),
+                ];
+            }),
+
+            // Calculated fields
+            'subtotal' => $this->when($this->relationLoaded('product'), function () {
+                return $this->quantity * $this->product->price;
+            }),
+
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];
