@@ -106,22 +106,71 @@ resources/views/components/
 **Định tuyến Web** (`routes/web.php`):
 ```php
 // Định tuyến công khai
-Route::get('/', [HomeController::class, 'index']);
-Route::get('/products', [CustomerProductController::class, 'index']);
+Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/products', [CustomerProductController::class, 'index'])->name('products.index');
+Route::get('/product/{id}', [CustomerProductController::class, 'show'])->name('product.show');
+Route::get('/category/{id}', [CustomerProductController::class, 'category'])->name('category.show');
+
+// Trang tĩnh
+Route::get('/about', [PageController::class, 'about'])->name('about');
+Route::get('/contact', [PageController::class, 'contact'])->name('contact');
+Route::post('/contact', [PageController::class, 'submitContact'])->name('contact.submit');
 
 // Định tuyến xác thực
-Route::get('/login', [AuthController::class, 'showLogin']);
+Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
+Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+// Đặt lại mật khẩu
+Route::get('/forgot-password', [PasswordResetController::class, 'showForgotForm'])->name('password.request');
+Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLink'])->name('password.email');
+Route::get('/reset-password/{token}', [PasswordResetController::class, 'showResetForm'])->name('password.reset');
+Route::post('/reset-password', [PasswordResetController::class, 'resetPassword'])->name('password.update');
+
+// Đăng nhập mạng xã hội
+Route::get('/auth/{provider}/redirect', [SocialAuthController::class, 'redirect'])->name('social.redirect');
+Route::get('/auth/{provider}/callback', [SocialAuthController::class, 'callback'])->name('social.callback');
+
+// Giỏ hàng (công khai và xác thực)
+Route::get('/cart', [CustomerCartController::class, 'index'])->name('cart.index');
+Route::post('/cart/add/{productId}', [CustomerCartController::class, 'add'])->name('cart.add');
+Route::put('/cart/update/{cartItemId}', [CustomerCartController::class, 'update'])->name('cart.update');
+Route::delete('/cart/remove/{cartItemId}', [CustomerCartController::class, 'remove'])->name('cart.remove');
+Route::delete('/cart/clear', [CustomerCartController::class, 'clear'])->name('cart.clear');
+Route::post('/cart/checkout', [CustomerCartController::class, 'checkout'])->name('cart.checkout');
+
+// Thanh toán
+Route::get('/payment/create', [PaymentController::class, 'createPayment'])->name('payment.create');
+Route::get('/payment/vnpay-return', [PaymentController::class, 'vnpayReturn'])->name('payment.vnpay.return');
+Route::post('/payment/vnpay-ipn', [PaymentController::class, 'vnpayIPN'])->name('payment.vnpay.ipn');
+Route::get('/payment/success', [PaymentController::class, 'success'])->name('payment.success');
+Route::get('/payment/failed', [PaymentController::class, 'failed'])->name('payment.failed');
 
 // Định tuyến được bảo vệ
 Route::middleware(['auth'])->group(function () {
-    Route::get('/cart', [CustomerCartController::class, 'index']);
-    Route::post('/cart/checkout', [CustomerCartController::class, 'checkout']);
+    // Hồ sơ người dùng
+    Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
+    Route::put('/profile', [ProfileController::class, 'updateProfile'])->name('profile.update');
+    Route::put('/profile/password', [ProfileController::class, 'changePassword'])->name('profile.password');
+    
+    // Dashboard
+    Route::get('/dashboard', [AuthController::class, 'dashboard'])->name('dashboard')
+        ->middleware('role:dashboard');
 });
 
-// Định tuyến Admin
+// Định tuyến Admin/Manager
 Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::resource('dashboard/products', ProductController::class);
+    Route::resource('dashboard/categories', CategoryController::class);
+    Route::resource('dashboard/users', UserManagementController::class);
+    Route::resource('dashboard/coupons', CouponController::class);
+});
+
+Route::middleware(['auth', 'role:manager'])->group(function () {
+    Route::get('dashboard/inventory', [InventoryController::class, 'index'])->name('dashboard.inventory.index');
+    Route::get('dashboard/reports', [ReportController::class, 'index'])->name('dashboard.reports.index');
 });
 ```
 
@@ -161,6 +210,7 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
 ```
 app/Http/Controllers/Web/
 ├── HomeController.php              # Trang chủ
+├── PageController.php              # Trang tĩnh (Về chúng tôi, Liên hệ)
 ├── AuthController.php              # Đăng nhập/Đăng ký
 ├── CustomerProductController.php   # Xem sản phẩm (khách hàng)
 ├── CustomerCartController.php      # Giỏ hàng (khách hàng)
@@ -170,7 +220,11 @@ app/Http/Controllers/Web/
 ├── InventoryController.php         # Quản lý tồn kho (manager)
 ├── ReportController.php            # Báo cáo thống kê (manager)
 ├── UserManagementController.php    # Quản lý người dùng (admin)
-└── CouponController.php            # Quản lý coupon (admin)
+├── CouponController.php            # Quản lý coupon (admin)
+├── PasswordResetController.php     # Đặt lại mật khẩu
+├── PaymentController.php           # Xử lý thanh toán VNPay
+├── ProfileController.php           # Quản lý hồ sơ người dùng
+└── SocialAuthController.php        # Đăng nhập mạng xã hội (Google, Facebook)
 ```
 
 **API Controllers**:
@@ -706,45 +760,87 @@ Product::factory()->count(50)->create();
 ```php
 // Public routes
 Route::get('/', [HomeController::class, 'index'])->name('home');
-Route::get('/products', [ProductController::class, 'publicIndex'])->name('products.public');
-Route::get('/products/{product}', [ProductController::class, 'publicShow'])->name('products.public.show');
-Route::get('/categories/{category}', [CategoryController::class, 'publicShow'])->name('categories.public.show');
+Route::get('/products', [CustomerProductController::class, 'index'])->name('products.index');
+Route::get('/products/search', [CustomerProductController::class, 'search'])->name('products.search');
+Route::get('/products/promotions', [CustomerProductController::class, 'promotions'])->name('products.promotions');
+Route::get('/product/{id}', [CustomerProductController::class, 'show'])->name('product.show');
+Route::get('/category/{id}', [CustomerProductController::class, 'category'])->name('category.show');
+
+// Static Pages
+Route::get('/about', [PageController::class, 'about'])->name('about');
+Route::get('/contact', [PageController::class, 'contact'])->name('contact');
+Route::post('/contact', [PageController::class, 'submitContact'])->name('contact.submit');
+
+// Authentication
+Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+Route::post('/login', [AuthController::class, 'login']);
+Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+// Password Reset
+Route::get('/forgot-password', [PasswordResetController::class, 'showForgotForm'])->name('password.request');
+Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLink'])->name('password.email');
+Route::get('/reset-password/{token}', [PasswordResetController::class, 'showResetForm'])->name('password.reset');
+Route::post('/reset-password', [PasswordResetController::class, 'resetPassword'])->name('password.update');
+
+// Social Authentication
+Route::get('/auth/{provider}/redirect', [SocialAuthController::class, 'redirect'])->name('social.redirect');
+Route::get('/auth/{provider}/callback', [SocialAuthController::class, 'callback'])->name('social.callback');
+
+// Cart (public + authenticated)
+Route::get('/cart', [CustomerCartController::class, 'index'])->name('cart.index');
+Route::post('/cart/add/{productId}', [CustomerCartController::class, 'add'])->name('cart.add');
+Route::put('/cart/update/{cartItemId}', [CustomerCartController::class, 'update'])->name('cart.update');
+Route::delete('/cart/remove/{cartItemId}', [CustomerCartController::class, 'remove'])->name('cart.remove');
+Route::delete('/cart/clear', [CustomerCartController::class, 'clear'])->name('cart.clear');
+Route::post('/cart/checkout', [CustomerCartController::class, 'checkout'])->name('cart.checkout');
+
+// Payment
+Route::get('/payment/create', [PaymentController::class, 'createPayment'])->name('payment.create');
+Route::get('/payment/vnpay-return', [PaymentController::class, 'vnpayReturn'])->name('payment.vnpay.return');
+Route::post('/payment/vnpay-ipn', [PaymentController::class, 'vnpayIPN'])->name('payment.vnpay.ipn');
+Route::get('/payment/success', [PaymentController::class, 'success'])->name('payment.success');
+Route::get('/payment/failed', [PaymentController::class, 'failed'])->name('payment.failed');
 
 // Authenticated routes
-Route::middleware(['web', 'auth'])->group(function () {
+Route::middleware(['auth'])->group(function () {
     // Dashboard
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', [AuthController::class, 'dashboard'])->name('dashboard')
+        ->middleware('role:dashboard');
+    
+    // Profile Management
+    Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
+    Route::put('/profile', [ProfileController::class, 'updateProfile'])->name('profile.update');
+    Route::put('/profile/password', [ProfileController::class, 'changePassword'])->name('profile.password');
     
     // Admin/Manager routes
-    Route::middleware(['role:admin,manager'])->prefix('dashboard')->group(function () {
-        Route::resource('products', ProductController::class);
-        Route::resource('categories', CategoryController::class);
-        Route::resource('coupons', CouponController::class);
-        Route::post('coupons/{coupon}/toggle-status', [CouponController::class, 'toggleStatus'])
-            ->name('coupons.toggle-status');
-        Route::resource('orders', OrderController::class)->only(['index', 'show', 'update']);
-    });
-    
-    // Admin only routes
     Route::middleware(['role:admin'])->prefix('dashboard')->group(function () {
-        Route::resource('users', UserController::class);
+        // Products CRUD (admin only create/edit/delete)
+        Route::get('products/create', [ProductController::class, 'create'])->name('dashboard.products.create');
+        Route::post('products', [ProductController::class, 'store'])->name('dashboard.products.store');
+        Route::get('products/{id}/edit', [ProductController::class, 'edit'])->name('dashboard.products.edit');
+        Route::put('products/{id}', [ProductController::class, 'update'])->name('dashboard.products.update');
+        Route::delete('products/{id}', [ProductController::class, 'destroy'])->name('dashboard.products.destroy');
+        
+        // Categories CRUD
+        Route::resource('categories', CategoryController::class);
+        
+        // User Management
+        Route::resource('users', UserManagementController::class);
+        
+        // Coupons
+        Route::resource('coupons', CouponController::class);
     });
     
-    // Customer routes
-    Route::prefix('cart')->group(function () {
-        Route::get('/', [CartController::class, 'index'])->name('cart.index');
-        Route::post('/add', [CartController::class, 'add'])->name('cart.add');
-        Route::patch('/update/{cartItem}', [CartController::class, 'update'])->name('cart.update');
-        Route::delete('/remove/{cartItem}', [CartController::class, 'remove'])->name('cart.remove');
+    // Manager+ routes
+    Route::middleware(['role:manager'])->prefix('dashboard')->group(function () {
+        Route::get('products', [ProductController::class, 'index'])->name('dashboard.products.index');
+        Route::get('products/{id}', [ProductController::class, 'show'])->name('dashboard.products.show');
+        Route::get('orders', [OrderController::class, 'index'])->name('dashboard.orders.index');
+        Route::get('inventory', [InventoryController::class, 'index'])->name('dashboard.inventory.index');
+        Route::get('reports', [ReportController::class, 'index'])->name('dashboard.reports.index');
     });
-    
-    Route::prefix('checkout')->group(function () {
-        Route::get('/', [CheckoutController::class, 'index'])->name('checkout.index');
-        Route::post('/', [CheckoutController::class, 'process'])->name('checkout.process');
-    });
-    
-    // Rating system
-    Route::post('products/{product}/rate', [RatingController::class, 'store'])->name('ratings.store');
 });
 ```
 
@@ -815,6 +911,38 @@ Route::prefix('api/v1')->middleware('api')->group(function () {
 ---
 
 ## 🎨 Frontend Architecture & Components
+
+### Views Structure
+
+```
+resources/views/
+├── layouts/
+│   ├── app.blade.php           # Layout admin/auth
+│   ├── customer.blade.php      # Layout khách hàng (navigation, footer)
+│   └── dashboard.blade.php     # Layout dashboard
+├── components/
+│   ├── rating-stars.blade.php  # Component hiển thị sao đánh giá
+│   ├── product-price.blade.php # Component hiển thị giá sản phẩm
+│   ├── alerts.blade.php        # Component hiển thị thông báo
+│   └── sidebar.blade.php       # Component sidebar admin
+├── pages/
+│   ├── about.blade.php         # Trang về chúng tôi
+│   └── contact.blade.php       # Trang liên hệ
+├── home.blade.php              # Trang chủ
+├── products/                   # Views sản phẩm
+├── cart/                       # Views giỏ hàng
+├── payment/                    # Views thanh toán
+├── auth/                       # Views đăng nhập/đăng ký
+├── profile/                    # Views hồ sơ người dùng
+└── dashboard/                  # Views quản trị
+    ├── products/
+    ├── categories/
+    ├── orders/
+    ├── users/
+    ├── inventory/
+    ├── coupons/
+    └── reports/
+```
 
 ### Blade Components System
 
@@ -893,7 +1021,77 @@ function addToCart(productId) {
 
 ---
 
-**Cập nhật lần cuối**: 23/10/2025  
-**Phiên bản**: 3.1  
+## 📄 Static Pages (Trang tĩnh)
+
+### PageController
+
+**File**: `app/Http/Controllers/Web/PageController.php`
+
+**Chức năng**:
+- Quản lý các trang tĩnh như "Về chúng tôi" và "Liên hệ"
+- Xử lý form liên hệ với validation
+- Có thể mở rộng cho các trang tĩnh khác
+
+**Methods**:
+```php
+// Hiển thị trang Về chúng tôi
+public function about()
+{
+    return view('pages.about');
+}
+
+// Hiển thị trang Liên hệ
+public function contact()
+{
+    return view('pages.contact');
+}
+
+// Xử lý form liên hệ
+public function submitContact(Request $request)
+{
+    $validated = $request->validate([
+        'name' => 'required|string|max:255',
+        'email' => 'required|email|max:255',
+        'phone' => 'nullable|string|max:20',
+        'subject' => 'required|string|max:255',
+        'message' => 'required|string|max:2000',
+    ]);
+    
+    // TODO: Send email or save to database
+    
+    return redirect()->route('contact')
+        ->with('success', 'Cảm ơn bạn đã liên hệ!');
+}
+```
+
+### Static Pages Views
+
+**About Page** (`resources/views/pages/about.blade.php`):
+- Câu chuyện công ty
+- Giá trị cốt lõi (Uy tín, Tận tâm, Đổi mới)
+- Thống kê (10,000+ khách hàng, 5,000+ sản phẩm)
+- Lý do chọn WebShop
+- CTA (Call to Action) mua sắm ngay
+
+**Contact Page** (`resources/views/pages/contact.blade.php`):
+- Thông tin liên hệ (địa chỉ, hotline, email, giờ làm việc)
+- Form liên hệ với validation
+- Google Maps tích hợp
+- FAQ (Câu hỏi thường gặp)
+
+**Navigation Integration**:
+- Links trong `layouts/customer.blade.php`
+- Menu chính: "Về chúng tôi" và "Liên hệ"
+- Footer links: cập nhật với routes mới
+
+---
+
+**Cập nhật lần cuối**: 26/10/2025  
+**Phiên bản**: 3.2  
 **Tác giả**: Hoàng Quang Vinh  
-**Thay đổi mới nhất**: Thêm Blade Components và tối ưu hóa Frontend
+**Thay đổi mới nhất**: 
+- Thêm PageController cho trang tĩnh
+- Thêm trang About (Về chúng tôi)
+- Thêm trang Contact (Liên hệ) với form validation
+- Cập nhật routes với static pages
+- Cập nhật navigation và footer links

@@ -136,106 +136,40 @@ protected $fillable = [
 ];
 ```
 
-### Bước 4: Tạo SocialAuthController
+### Bước 4: Tạo SocialAuthService và Controller
 
-#### 4.1. Generate controller
+#### 4.1. Generate service
 ```bash
-php artisan make:controller Web/SocialAuthController
+php artisan make:service SocialAuthService
 ```
 
-#### 4.2. Implement controller logic
-
-**File**: `app/Http/Controllers/Web/SocialAuthController.php`
+**File**: `app/Services/SocialAuthService.php`
 
 ```php
 <?php
 
-namespace App\Http\Controllers\Web;
+namespace App\Services;
 
-use App\Http\Controllers\Controller;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\UserRole;
 use Exception;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Laravel\Socialite\Facades\Socialite;
 
-class SocialAuthController extends Controller
+class SocialAuthService
 {
-    /**
-     * Chuyển hướng đến provider để đăng nhập
-     */
-    public function redirect($provider)
-    {
-        // Validate provider
-        if (! in_array($provider, ['google', 'facebook', 'github'])) {
-            return redirect()->route('login')->withErrors([
-                'error' => 'Provider không hợp lệ.',
-            ]);
-        }
-
-        try {
-            return Socialite::driver($provider)->redirect();
-        } catch (Exception $e) {
-            return redirect()->route('login')->withErrors([
-                'error' => 'Không thể kết nối đến '.ucfirst($provider).'. Vui lòng thử lại sau.',
-            ]);
-        }
-    }
-
-    /**
-     * Xử lý callback từ provider sau khi đăng nhập
-     */
-    public function callback($provider)
-    {
-        // Validate provider
-        if (! in_array($provider, ['google', 'facebook', 'github'])) {
-            return redirect()->route('login')->withErrors([
-                'error' => 'Provider không hợp lệ.',
-            ]);
-        }
-
-        try {
-            // Lấy thông tin user từ provider
-            $socialUser = Socialite::driver($provider)->user();
-
-            // Tìm hoặc tạo user trong database
-            $user = $this->findOrCreateUser($socialUser, $provider);
-
-            // Đăng nhập user
-            Auth::login($user);
-
-            // Chuyển hướng dựa trên vai trò của user
-            if ($user->hasRole('admin') || $user->hasRole('manager')) {
-                return redirect()->route('dashboard')
-                    ->with('success', 'Đăng nhập thành công qua '.ucfirst($provider).'!');
-            } elseif ($user->hasRole('customer')) {
-                return redirect()->route('products.index')
-                    ->with('success', 'Đăng nhập thành công qua '.ucfirst($provider).'!');
-            } else {
-                return redirect()->route('home')
-                    ->with('success', 'Đăng nhập thành công qua '.ucfirst($provider).'!');
-            }
-        } catch (Exception $e) {
-            return redirect()->route('login')->withErrors([
-                'error' => 'Đăng nhập thất bại. Vui lòng thử lại. Lỗi: '.$e->getMessage(),
-            ]);
-        }
-    }
-
     /**
      * Tìm hoặc tạo user từ thông tin social
      */
-    private function findOrCreateUser($socialUser, $provider)
+    public function findOrCreateUser($socialUser, $provider)
     {
         // Tìm user theo provider và provider_id
         $user = User::where('provider', $provider)
             ->where('provider_id', $socialUser->getId())
             ->first();
 
-        // Nếu tìm thấy user, cập nhật avatar và trả về
         if ($user) {
+            // Cập nhật avatar nếu user đã tồn tại
             $user->update([
                 'avatar' => $socialUser->getAvatar(),
             ]);
@@ -243,11 +177,10 @@ class SocialAuthController extends Controller
             return $user;
         }
 
-        // Kiểm tra xem email đã tồn tại chưa (từ đăng ký thông thường)
+        // Tìm user theo email (liên kết account)
         $existingUser = User::where('email', $socialUser->getEmail())->first();
 
         if ($existingUser) {
-            // Cập nhật thông tin social cho user đã tồn tại
             $existingUser->update([
                 'provider' => $provider,
                 'provider_id' => $socialUser->getId(),
@@ -267,10 +200,10 @@ class SocialAuthController extends Controller
                 'provider' => $provider,
                 'provider_id' => $socialUser->getId(),
                 'avatar' => $socialUser->getAvatar(),
-                'password' => null, // Không cần password cho social login
+                'password' => null,
             ]);
 
-            // Tự động gán role customer cho user mới
+            // Gán role customer mặc định
             $customerRole = Role::where('role_name', 'customer')->first();
             if ($customerRole) {
                 UserRole::create([
@@ -288,17 +221,118 @@ class SocialAuthController extends Controller
             throw $e;
         }
     }
+
+    /**
+     * Kiểm tra provider hợp lệ
+     */
+    public function isValidProvider($provider)
+    {
+        return in_array($provider, ['google', 'facebook', 'github']);
+    }
+
+    /**
+     * Lấy redirect route dựa trên role của user
+     */
+    public function getRedirectRoute($user)
+    {
+        if ($user->hasRole('admin') || $user->hasRole('manager')) {
+            return 'dashboard';
+        } elseif ($user->hasRole('customer')) {
+            return 'products.index';
+        } else {
+            return 'home';
+        }
+    }
 }
 ```
 
-**Giải thích logic**:
+#### 4.2. Generate controller
+```bash
+php artisan make:controller Web/SocialAuthController
+```
 
-1. **redirect()**: Chuyển user đến trang đăng nhập của provider
-2. **callback()**: Nhận thông tin user từ provider sau khi xác thực
-3. **findOrCreateUser()**: 
-   - Tìm user theo provider + provider_id
-   - Nếu không có, kiểm tra email đã tồn tại chưa (liên kết account)
-   - Nếu hoàn toàn mới, tạo user mới và gán role customer
+**File**: `app/Http/Controllers/Web/SocialAuthController.php`
+
+```php
+<?php
+
+namespace App\Http\Controllers\Web;
+
+use App\Http\Controllers\Controller;
+use App\Services\SocialAuthService;
+use Exception;
+use Illuminate\Support\Facades\Auth;
+use Laravel\Socialite\Facades\Socialite;
+
+class SocialAuthController extends Controller
+{
+    protected $socialAuthService;
+
+    public function __construct(SocialAuthService $socialAuthService)
+    {
+        $this->socialAuthService = $socialAuthService;
+    }
+
+    public function redirect($provider)
+    {
+        if (!$this->socialAuthService->isValidProvider($provider)) {
+            return redirect()->route('login')->withErrors([
+                'error' => 'Provider không hợp lệ.',
+            ]);
+        }
+
+        try {
+            return Socialite::driver($provider)->redirect();
+        } catch (Exception $e) {
+            return redirect()->route('login')->withErrors([
+                'error' => 'Không thể kết nối đến '.ucfirst($provider).'. Vui lòng thử lại sau.',
+            ]);
+        }
+    }
+
+    public function callback($provider)
+    {
+        if (!$this->socialAuthService->isValidProvider($provider)) {
+            return redirect()->route('login')->withErrors([
+                'error' => 'Provider không hợp lệ.',
+            ]);
+        }
+
+        try {
+            $socialUser = Socialite::driver($provider)->user();
+            $user = $this->socialAuthService->findOrCreateUser($socialUser, $provider);
+
+            Auth::login($user);
+
+            $redirectRoute = $this->socialAuthService->getRedirectRoute($user);
+
+            return redirect()->route($redirectRoute)
+                ->with('success', 'Đăng nhập thành công qua '.ucfirst($provider).'!');
+        } catch (Exception $e) {
+            return redirect()->route('login')->withErrors([
+                'error' => 'Đăng nhập thất bại. Vui lòng thử lại. Lỗi: '.$e->getMessage(),
+            ]);
+        }
+    }
+}
+```
+
+**💡 Ưu điểm của cách tiếp cận với Service:**
+
+1. **SocialAuthService**:
+   - Tập trung business logic
+   - Dễ test và tái sử dụng
+   - Tách biệt khỏi HTTP concerns
+
+2. **SocialAuthController**:
+   - Chỉ xử lý HTTP request/response
+   - Gọn gàng, dễ đọc
+   - Tuân thủ Single Responsibility Principle
+
+3. **Logic tách biệt**:
+   - `findOrCreateUser()`: Xử lý user creation/linking
+   - `isValidProvider()`: Validation
+   - `getRedirectRoute()`: Routing logic
 
 ### Bước 5: Thêm Routes
 
@@ -871,9 +905,10 @@ php artisan config:clear
 ## Tổng kết Files đã tạo/sửa
 
 ### Created Files
-1. `app/Http/Controllers/Web/SocialAuthController.php`
-2. `database/migrations/2025_10_23_144525_add_social_login_fields_to_users_table.php`
-3. `docs/SOCIALITE_COMPLETE_GUIDE.md` (file này)
+1. `app/Services/SocialAuthService.php` ⭐ NEW
+2. `app/Http/Controllers/Web/SocialAuthController.php`
+3. `database/migrations/2025_10_23_144525_add_social_login_fields_to_users_table.php`
+4. `docs/SOCIALITE_COMPLETE_GUIDE.md` (file này)
 
 ### Modified Files
 1. `app/Models/User.php` - Thêm fillable fields
@@ -927,9 +962,26 @@ Facebook callback: /auth/facebook/callback
 
 ---
 
-**Tác giả**: Vinh Hoang
+## 📝 Changelog
+
+### Version 2.0 - 26/10/2025
+**Cập nhật - Refactor theo Service Pattern:**
+- ✅ Thêm **SocialAuthService** để tách business logic
+- ✅ Controllers gọn gàng hơn, chỉ xử lý HTTP
+- ✅ Cải thiện **code organization** và **testability**
+- ✅ Áp dụng **Dependency Injection** pattern
+- ✅ Tách biệt concerns: validation, user creation, routing
+- ✅ Cập nhật tài liệu theo chuẩn mới
+
+### Version 1.0 - 23/10/2025
+- Phiên bản ban đầu với logic trong Controllers
+
+---
+
+**Tác giả**: Hoàng Quang Vinh  
 **Ngày tạo**: 23/10/2025  
-**Version**: 1.0  
+**Cập nhật lần cuối**: 26/10/2025  
+**Version**: 2.0  
 **Status**: ✅ Hoàn thành
 
 **Hỗ trợ**: Xem thêm tại [Laravel Socialite Documentation](https://laravel.com/docs/socialite)

@@ -18,6 +18,8 @@
 - **Laravel Sanctum**: Xác thực dựa trên token
 - **RBAC**: Kiểm soát truy cập dựa trên vai trò
 - **Middleware**: Lọc yêu cầu & phân quyền
+- **Service Pattern**: Business logic tập trung trong `AuthService`
+- **Form Requests**: Validation tách biệt với `RegisterRequest`, `LoginRequest`
 
 ### Các vai trò (Roles)
 - **Admin**: Toàn quyền hệ thống
@@ -104,39 +106,63 @@ CREATE TABLE personal_access_tokens (
 }
 ```
 
-**Controller Code**:
+**Controller Code** (Sử dụng Service Pattern):
 ```php
 // app/Http/Controllers/Api/AuthController.php
-public function register(Request $request)
+public function register(RegisterRequest $request)
 {
-    // 1. Validate
-    $request->validate([
+    try {
+        // 1. Validation tự động qua RegisterRequest
+        // 2. Gọi AuthService để đăng ký user
+        $user = $this->authService->registerForApi($request->validated());
+        
+        // 3. Tạo API token
+        $token = $this->authService->createApiToken($user);
+        
+        // 4. Response
+        return response()->json([
+            'status' => true,
+            'message' => 'Registration successful',
+            'user' => $user,
+            'token' => $token,
+        ], 201);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Registration failed',
+            'error' => $e->getMessage(),
+        ], 500);
+    }
+}
+```
+
+**AuthService Code**:
+```php
+// app/Services/AuthService.php
+public function registerForApi($data)
+{
+    return User::create([
+        'name' => $data['name'],
+        'email' => $data['email'],
+        'password' => Hash::make($data['password']),
+        'phone' => $data['phone'] ?? null,
+        'address' => $data['address'] ?? null,
+    ]);
+}
+```
+
+**RegisterRequest Code**:
+```php
+// app/Http/Requests/RegisterRequest.php
+public function rules(): array
+{
+    return [
         'name' => 'required|string|max:255',
-        'email' => 'required|email|unique:users',
-        'password' => 'required|min:8|confirmed',
+        'email' => 'required|string|email|max:255|unique:users',
+        'password' => 'required|string|min:8|confirmed',
         'phone' => 'nullable|string|max:20',
         'address' => 'nullable|string|max:500',
-    ]);
-    
-    // 2. Create user
-    $user = User::create([
-        'name' => $request->name,
-        'email' => $request->email,
-        'password' => Hash::make($request->password),
-        'phone' => $request->phone,
-        'address' => $request->address,
-    ]);
-    
-    // 3. Create token
-    $token = $user->createToken('api-token')->plainTextToken;
-    
-    // 4. Response
-    return response()->json([
-        'status' => true,
-        'message' => 'Registration successful',
-        'user' => $user,
-        'token' => $token,
-    ], 201);
+    ];
 }
 ```
 
@@ -168,38 +194,66 @@ public function register(Request $request)
 }
 ```
 
-**Controller Code**:
+**Controller Code** (Sử dụng Service Pattern):
 ```php
-public function login(Request $request)
+public function login(LoginRequest $request)
 {
-    // 1. Validate
-    $request->validate([
-        'email' => 'required|email',
-        'password' => 'required',
-    ]);
-    
-    // 2. Find user
-    $user = User::where('email', $request->email)->first();
+    // 1. Validation tự động qua LoginRequest
+    // 2. Gọi AuthService để xác thực
+    $user = $this->authService->authenticate($request->email, $request->password);
     
     // 3. Check credentials
-    if (!$user || !Hash::check($request->password, $user->password)) {
+    if (!$user) {
         throw ValidationException::withMessages([
             'email' => ['The provided credentials are incorrect.'],
         ]);
     }
     
-    // 4. Delete old tokens
-    $user->tokens()->delete();
-    
-    // 5. Create new token
-    $token = $user->createToken('api-token')->plainTextToken;
+    // 4. Tạo API token (xóa token cũ tự động)
+    $token = $this->authService->createApiToken($user);
     
     return response()->json([
         'status' => true,
         'message' => 'Login successful',
         'user' => $user,
         'token' => $token,
-    ]);
+    ], 200);
+}
+```
+
+**AuthService Code**:
+```php
+// app/Services/AuthService.php
+public function authenticate($email, $password)
+{
+    $user = User::where('email', $email)->first();
+    
+    if (!$user || !Hash::check($password, $user->password)) {
+        return null;
+    }
+    
+    return $user;
+}
+
+public function createApiToken($user, $tokenName = 'api-token')
+{
+    // Xóa tất cả token cũ
+    $user->tokens()->delete();
+    
+    // Tạo token mới
+    return $user->createToken($tokenName)->plainTextToken;
+}
+```
+
+**LoginRequest Code**:
+```php
+// app/Http/Requests/LoginRequest.php
+public function rules(): array
+{
+    return [
+        'email' => 'required|email',
+        'password' => 'required',
+    ];
 }
 ```
 
@@ -224,17 +278,31 @@ public function login(Request $request)
 Authorization: Bearer {token}
 ```
 
-**Controller Code**:
+**Controller Code** (Sử dụng Service Pattern):
 ```php
 public function logout(Request $request)
 {
-    // Delete current token
-    $request->user()->currentAccessToken()->delete();
+    // Gọi AuthService để revoke token
+    $this->authService->revokeCurrentToken($request->user());
     
     return response()->json([
         'status' => true,
-        'message': 'Logout successful',
-    ]);
+        'message' => 'Logout successful',
+    ], 200);
+}
+```
+
+**AuthService Code**:
+```php
+// app/Services/AuthService.php
+public function revokeCurrentToken($user)
+{
+    if ($user->currentAccessToken()) {
+        $user->currentAccessToken()->delete();
+        return true;
+    }
+    
+    return false;
 }
 ```
 
@@ -719,6 +787,18 @@ public function test_customer_cannot_access_admin_route()
 
 ---
 
-**Cập nhật lần cuối**: 21/10/2025  
-**Phiên bản**: 3.0  
+**Cập nhật lần cuối**: 26/10/2025  
+**Phiên bản**: 4.0 - Service Pattern & Form Requests  
 **Tác giả**: Hoàng Quang Vinh
+
+---
+
+## 📝 Changelog
+
+### Version 4.0 (26/10/2025) - Service Pattern & Form Requests
+- ✅ Áp dụng **Service Pattern** với `AuthService`
+- ✅ Sử dụng **Form Requests** cho validation (`RegisterRequest`, `LoginRequest`)
+- ✅ Tách biệt business logic khỏi controllers
+- ✅ Cập nhật tất cả code examples để phản ánh kiến trúc mới
+- 📌 Controllers giờ chỉ xử lý HTTP requests và gọi Services
+- 📌 Validation logic được tập trung trong Form Request classes

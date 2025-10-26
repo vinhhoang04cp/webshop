@@ -92,6 +92,7 @@ WebShop là một **nền tảng thương mại điện tử hoàn chỉnh** đ�
 - ✅ Áp dụng mã giảm giá/coupon ✨
 - ✅ Tính toán thuế và phí vận chuyển
 - ✅ Thanh toán COD (Cash on Delivery)
+- ✅ **Thanh toán VNPay** (Cổng thanh toán trực tuyến) 💳
 - ✅ Xác nhận đơn hàng qua email
 
 ### 👥 Hệ thống phân quyền (RBAC)
@@ -134,17 +135,24 @@ WebShop là một **nền tảng thương mại điện tử hoàn chỉnh** đ�
 │  │ Web Controllers │ │ API Controllers │ │ Admin Controllers│ │
 │  │ • HomeController│ │ • AuthController│ │ • ProductCtrl   │ │
 │  │ • CartController│ │ • ProductCtrl   │ │ • CouponCtrl    │ │
-│  │ • CouponController│ │ • CouponCtrl  │ │ • OrderCtrl     │ │
+│  │ • PaymentCtrl   │ │ • CouponCtrl    │ │ • OrderCtrl     │ │
 │  └─────────────────┘ └─────────────────┘ └─────────────────┘ │
 └─────────────────────┬─────────────────────────────────────────┘
                       │
                       ▼
 ┌───────────────────────────────────────────────────────────────┐
-│                      BUSINESS LAYER                           │
+│                   BUSINESS LAYER (Services)                   │
+│  ┌─────────────────────────────────────────────────────────┐  │
+│  │ • AuthService          • CartService                    │  │
+│  │ • ProductService       • OrderService                   │  │
+│  │ • CouponService        • InventoryService               │  │
+│  │ • PaymentService       • SocialAuthService              │  │
+│  │ • ProfileService       • PasswordResetService           │  │
+│  └─────────────────────────────────────────────────────────┘  │
 │  ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐ │
-│  │   Services      │ │   Repositories  │ │   Middleware    │ │
-│  │ • AuthService   │ │ • ProductRepo   │ │ • AuthMiddleware│ │
-│  │ • CartService   │ │ • OrderRepo     │ │ • AdminMware    │ │
+│  │ Form Requests   │ │  Repositories   │ │   Middleware    │ │
+│  │ • RegisterReq   │ │ • ProductRepo   │ │ • AuthMiddleware│ │
+│  │ • CheckoutReq   │ │ • OrderRepo     │ │ • AdminMware    │ │
 │  └─────────────────┘ └─────────────────┘ └─────────────────┘ │
 └─────────────────────┬─────────────────────────────────────────┘
                       │
@@ -174,9 +182,11 @@ WebShop là một **nền tảng thương mại điện tử hoàn chỉnh** đ�
     ↓
 🎯 Định tuyến (web.php / api.php)
     ↓
+📋 Form Request (Validation)
+    ↓
 🎮 Controller (Web/API Controller)
     ↓
-💼 Tầng dịch vụ (Logic nghiệp vụ)
+💼 Service Layer (Business Logic) ⭐ MỚI
     ↓
 📊 Repository Pattern (Truy cập dữ liệu)
     ↓
@@ -259,6 +269,13 @@ webshop/
 │   │   ├── 📄 Order.php             # Đơn hàng
 │   │   ├── 📄 Coupon.php            # Mã giảm giá ✨
 │   │   └── 📄 Inventory.php         # Quản lý kho
+│   ├── 📁 Services/                 # Business Logic Layer ⭐
+│   │   ├── 📄 AuthService.php       # Xác thực người dùng
+│   │   ├── 📄 CartService.php       # Logic giỏ hàng
+│   │   ├── 📄 OrderService.php      # Logic đơn hàng
+│   │   ├── 📄 PaymentService.php    # VNPay integration
+│   │   ├── 📄 CouponService.php     # Logic mã giảm giá
+│   │   └── 📄 InventoryService.php  # Logic quản lý kho
 │   └── 📁 Providers/                # Service Providers
 ├── 📁 database/
 │   ├── 📁 migrations/               # Database migrations
@@ -451,11 +468,11 @@ Header: Authorization: Bearer {token}
 
 ```yaml
 Xác thực người dùng:
-  POST   /api/auth/register     # Đăng ký tài khoản mới
-  POST   /api/auth/login        # Đăng nhập và nhận token
-  POST   /api/auth/logout       # Đăng xuất và hủy token
+  POST   /api/auth/register     # Đăng ký tài khoản mới (AuthService)
+  POST   /api/auth/login        # Đăng nhập và nhận token (AuthService)
+  POST   /api/auth/logout       # Đăng xuất và hủy token (AuthService)
   GET    /api/auth/profile      # Thông tin người dùng hiện tại
-  PUT    /api/auth/profile      # Cập nhật thông tin cá nhân
+  PUT    /api/auth/profile      # Cập nhật thông tin cá nhân (ProfileService)
 
 Quản lý sản phẩm:
   GET    /api/products          # Danh sách sản phẩm (có phân trang)
@@ -481,9 +498,14 @@ Giỏ hàng:
 
 Đơn hàng:
   GET    /api/orders            # Danh sách đơn hàng của tôi
-  POST   /api/orders/checkout   # Thanh toán giỏ hàng
+  POST   /api/orders/checkout   # Thanh toán giỏ hàng (OrderService)
   GET    /api/orders/{id}       # Chi tiết đơn hàng
-  PUT    /api/orders/{id}/cancel # Hủy đơn hàng (nếu có thể)
+  PUT    /api/orders/{id}/cancel # Hủy đơn hàng (OrderService)
+
+Thanh toán VNPay 💳:
+  POST   /payment/vnpay/create  # Tạo URL thanh toán VNPay (PaymentService)
+  GET    /payment/vnpay/return  # Xử lý callback từ VNPay (PaymentService)
+  POST   /payment/vnpay/ipn     # Instant Payment Notification (PaymentService)
 
 Quản lý coupon (Quản lý+) ✨:
   GET    /api/coupons           # Danh sách coupon
@@ -1002,49 +1024,57 @@ php artisan backup:run
 
 ## 📝 CHANGELOG
 
-### Version 3.1 (23/10/2025)
-**UI Optimization & Component System**
+### Version 4.0 (26/10/2025)
+**Service Pattern & VNPay Payment Integration**
 
 #### ✨ New Features
-- ✅ **Blade Components System**: Tạo hệ thống components tái sử dụng
-  - `rating-stars.blade.php` - Hiển thị sao đánh giá
-  - `product-price.blade.php` - Hiển thị giá có giảm giá
-- ✅ **Shared JavaScript**: Tách logic JS dùng chung vào file riêng
-  - `cart.js` - Logic giỏ hàng dùng chung
-- ✅ **Code Optimization**: Giảm ~245 dòng code lặp lại
+- ✅ **Service Layer Pattern**: Tách biệt business logic vào các Service classes
+  - `AuthService` - Xác thực và quản lý người dùng
+  - `CartService` - Logic giỏ hàng
+  - `OrderService` - Logic đơn hàng và checkout
+  - `PaymentService` - Tích hợp VNPay payment gateway
+  - `CouponService` - Logic mã giảm giá
+  - `InventoryService` - Quản lý tồn kho
+  - `ProfileService`, `PasswordResetService`, `SocialAuthService`
+- ✅ **Form Requests**: Validation logic tách riêng
+  - `RegisterRequest`, `LoginRequest`, `CheckoutRequest`, `RatingRequest`, etc.
+- ✅ **VNPay Payment Gateway**: Thanh toán trực tuyến
+  - Tạo URL thanh toán
+  - Xử lý callback và IPN
+  - Transaction logging
 
-#### 🔧 Improvements
-- ⚡ Giảm 27-28% dung lượng các file view chính
-- 🧹 Loại bỏ comment thừa, giữ lại comment cần thiết
-- 📦 Component-based architecture cho frontend
-- 🔄 DRY principle được áp dụng triệt để
+#### 🔧 Architecture Improvements
+- 📦 **Separation of Concerns**: Controllers chỉ xử lý HTTP, Services xử lý business logic
+- 🧪 **Testability**: Services dễ dàng unit test
+- 🔄 **Reusability**: Business logic tái sử dụng được
+- 📚 **Maintainability**: Code dễ bảo trì và mở rộng
 
-#### 📚 Documentation
-- 📄 Cập nhật ARCHITECTURE.md với Frontend Components section
-- 📄 Thêm quy tắc Blade Components vào CODING_CONVENTIONS.md
-- 📄 Thêm quy tắc Shared JavaScript vào CODING_CONVENTIONS.md
-- 📄 Thêm UI Optimization Checklist
+#### 📊 Impact
+- **Services created**: 14 Service classes
+- **Form Requests created**: 19 validation classes
+- **Code organization**: Business logic tập trung, dễ quản lý
+- **Payment methods**: COD + VNPay
 
-#### 📊 Metrics
-- **Files optimized**: 3 major view files (home, products/index, products/show)
-- **Lines removed**: ~245 lines of duplicate code
-- **Components created**: 3 reusable components
-- **JS files created**: 1 shared JavaScript file
+---
+
+### Version 3.1 (23/10/2025)
+**UI Optimization & Component System**
+- ✅ Blade Components System
+- ✅ Shared JavaScript
+- ✅ Code Optimization (~245 dòng code)
 
 ---
 
 ### Version 3.0 (21/10/2025)
 **Coupon System & Enhancements**
-
-#### ✨ New Features
-- ✅ Hệ thống Coupon/Mã giảm giá hoàn chỉnh
+- ✅ Hệ thống Coupon/Mã giảm giá
 - ✅ Rating & Review system
 - ✅ Google OAuth authentication
 
 ---
 
-**Cập nhật lần cuối**: 23/10/2025  
-**Version**: 3.1  
+**Cập nhật lần cuối**: 26/10/2025  
+**Version**: 4.0 - Service Pattern & VNPay Integration  
 **Author**: Hoàng Quang Vinh
 
 *© 2025 WebShop E-commerce Platform. All rights reserved.*

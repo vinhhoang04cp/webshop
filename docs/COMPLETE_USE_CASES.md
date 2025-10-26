@@ -155,12 +155,16 @@ graph TB
 - **Main Flow**:
   1. Khách hàng truy cập trang đăng ký
   2. Nhập thông tin: tên, email, mật khẩu, số điện thoại, địa chỉ
-  3. Hệ thống validate thông tin
-  4. Hệ thống tạo tài khoản và gán role "customer"
-  5. Chuyển hướng đến trang dashboard
+  3. Hệ thống validate thông tin qua `RegisterRequest`
+  4. Gọi `AuthService@register()` để:
+     - Tạo tài khoản với password đã hash
+     - Tự động gán role "customer"
+  5. Chuyển hướng đến trang login với thông báo thành công
 - **Alternative Flow**: 
-  - Email đã tồn tại → Hiển thị lỗi
+  - Email đã tồn tại → Hiển thị lỗi validation
   - Thông tin không hợp lệ → Hiển thị thông báo lỗi
+- **Services**: `AuthService`
+- **Form Request**: `RegisterRequest`
 - **Controller**: `AuthController@register`
 
 #### UC02: Đăng nhập
@@ -170,10 +174,16 @@ graph TB
 - **Main Flow**:
   1. Khách hàng truy cập trang đăng nhập
   2. Nhập email và mật khẩu
-  3. Hệ thống xác thực thông tin
-  4. Chuyển hướng đến trang dashboard/home
+  3. Hệ thống validate qua `LoginRequest`
+  4. Gọi `AuthService@login()` để xác thực
+  5. Chuyển hướng theo role:
+     - Admin/Manager → Dashboard
+     - Customer → Products
+     - Khác → Home
 - **Alternative Flow**: 
   - Thông tin sai → Hiển thị lỗi đăng nhập
+- **Services**: `AuthService`
+- **Form Request**: `LoginRequest`
 - **Controller**: `AuthController@login`
 
 #### UC03: Đăng xuất
@@ -339,25 +349,30 @@ graph TB
   3. Cập nhật tổng tiền
 - **Controller**: `CustomerCartController@remove`
 
-#### UC12: Thanh toán đơn hàng (COD)
+#### UC12: Thanh toán đơn hàng (COD/VNPay)
 - **Actor**: Khách hàng đã đăng nhập
-- **Mô tả**: Khách hàng đặt hàng và thanh toán COD
+- **Mô tả**: Khách hàng đặt hàng và thanh toán COD hoặc VNPay
 - **Precondition**: Giỏ hàng có sản phẩm
 - **Main Flow**:
   1. Khách hàng nhập thông tin giao hàng (tên, SĐT, địa chỉ, ghi chú)
-  2. Khách hàng nhập mã coupon (tùy chọn)
-  3. Hệ thống validate thông tin và coupon
-  4. Kiểm tra tồn kho tất cả sản phẩm
-  5. Tính toán tổng tiền bao gồm giảm giá
-  6. Tạo đơn hàng với trạng thái "pending"
-  7. Trừ tồn kho ngay (giữ hàng)
-  8. Tăng used_count của coupon (nếu có)
-  9. Xóa giỏ hàng
-  10. Chuyển hướng đến trang chi tiết đơn hàng
+  2. Khách hàng chọn phương thức thanh toán (COD/VNPay)
+  3. Khách hàng nhập mã coupon (tùy chọn)
+  4. Hệ thống validate thông tin qua `CheckoutRequest`
+  5. Gọi `CartService@processCheckout()` để xử lý:
+     - Kiểm tra tồn kho tất cả sản phẩm
+     - Tính toán tổng tiền bao gồm giảm giá
+     - Tạo đơn hàng với trạng thái "pending"
+     - Trừ tồn kho ngay (giữ hàng) qua `InventoryService`
+     - Tăng used_count của coupon (nếu có)
+     - Xóa giỏ hàng
+  6. **Nếu COD**: Chuyển hướng đến trang giỏ hàng với thông báo thành công
+  7. **Nếu VNPay**: Chuyển hướng đến trang tạo thanh toán VNPay
 - **Alternative Flow**: 
   - Mã coupon không hợp lệ → Hiển thị lỗi, không áp dụng giảm giá
   - Không đủ tồn kho → Rollback, hiển thị lỗi
-  - Thông tin giao hàng không hợp lệ → Hiển thị lỗi
+  - Thông tin giao hàng không hợp lệ → Hiển thị lỗi validation
+- **Services**: `CartService`, `CouponService`, `InventoryService`
+- **Form Request**: `CheckoutRequest`
 - **Controller**: `CustomerCartController@checkout`
 
 #### UC13: Áp dụng mã giảm giá
@@ -412,10 +427,11 @@ graph TB
   3. Chọn số sao (1-5 sao)
   4. Viết nhận xét (tùy chọn, tối đa 1000 ký tự)
   5. Click "Gửi đánh giá"
-  6. Hệ thống kiểm tra khách hàng chưa đánh giá sản phẩm này trước đó
-  7. Lưu đánh giá vào database
-  8. Hiển thị thông báo thành công
-  9. Cập nhật danh sách đánh giá trên trang sản phẩm
+  6. Hệ thống validate qua `RatingRequest`
+  7. Kiểm tra khách hàng chưa đánh giá sản phẩm này trước đó
+  8. Lưu đánh giá vào database
+  9. Hiển thị thông báo thành công
+  10. Cập nhật danh sách đánh giá trên trang sản phẩm
 - **Alternative Flow**: 
   - Chưa đăng nhập → Chuyển hướng đến trang đăng nhập
   - Đã đánh giá trước đó → "Bạn đã đánh giá sản phẩm này rồi"
@@ -426,6 +442,7 @@ graph TB
   - Số sao từ 1-5 (bắt buộc)
   - Nhận xét không bắt buộc nhưng không quá 1000 ký tự
   - Đánh giá hiển thị kèm tên người dùng và thời gian
+- **Form Request**: `RatingRequest`
 - **Controller**: `CustomerProductController@addRating`
 
 ---
@@ -1042,9 +1059,18 @@ sequenceDiagram
 - Không cho phép đặt hàng khi không đủ tồn kho
 
 ### 5.2 Thanh toán
-- Hiện tại chỉ hỗ trợ COD (Cash on Delivery)
+- Hỗ trợ 2 phương thức:
+  - **COD (Cash on Delivery)**: Thanh toán khi nhận hàng
+  - **VNPay**: Thanh toán trực tuyến qua cổng VNPay
 - Đơn hàng được tạo với trạng thái "pending"
+- **Nếu COD**: `payment_status` = 'pending', chờ xác nhận khi giao hàng
+- **Nếu VNPay**: 
+  - Đơn hàng tạo trước, `payment_status` = 'pending'
+  - Chuyển đến trang thanh toán VNPay
+  - Sau khi thanh toán thành công: `payment_status` = 'paid', `order_status` = 'processing'
+  - Nếu thanh toán thất bại: có thể hủy đơn và hoàn kho
 - Khách hàng có thể áp dụng mã giảm giá trong quá trình thanh toán
+- Tồn kho được trừ ngay khi tạo đơn hàng (giữ hàng cho khách)
 
 ### 5.3 Coupon/Mã giảm giá
 - Mã coupon phải unique và được tự động chuyển thành chữ hoa
@@ -1513,6 +1539,18 @@ Tham khảo các tài liệu khác để hiểu rõ hơn:
 
 *Tài liệu này được tạo và cập nhật dựa trên phân tích toàn diện source code của hệ thống webshop Laravel, bao gồm controllers, models, routes, và migrations. Phiên bản hiện tại phản ánh đầy đủ tất cả chức năng đã được implement trong hệ thống.*
 
-**Ngày cập nhật**: 22/10/2025  
-**Phiên bản**: 2.0 - Full Documentation  
+**Ngày cập nhật**: 26/10/2025  
+**Phiên bản**: 3.0 - Service Pattern & Form Requests  
 **Trạng thái**: ✅ Complete & Up-to-date
+
+---
+
+## Changelog
+
+### Version 3.0 (26/10/2025) - Service Pattern & Form Requests
+- ✅ Cập nhật UC01, UC02: Thêm `AuthService` và Form Requests (`RegisterRequest`, `LoginRequest`)
+- ✅ Cập nhật UC12: Thêm hỗ trợ VNPay, sử dụng `CartService`, `CouponService`, `InventoryService` và `CheckoutRequest`
+- ✅ Cập nhật UC14: Thêm `RatingRequest` cho validation
+- ✅ Cập nhật quy tắc thanh toán: Bổ sung thông tin VNPay payment flow
+- 📌 Tất cả controllers hiện sử dụng Service Layer để xử lý business logic
+- 📌 Form Requests được sử dụng để validate input từ người dùng

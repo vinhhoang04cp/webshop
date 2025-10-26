@@ -385,6 +385,16 @@ git push origin feature-branch
 
 ---
 
-**Cập nhật lần cuối**: 21/10/2025  
-**Version**: 3.0  
+**Cập nhật lần cuối**: 26/10/2025  
+**Version**: 4.0 - Service Pattern & Payment Integration  
 **Author**: Hoàng Quang Vinh
+
+---
+
+## 📝 Changelog
+
+### Version 4.0 (26/10/2025)
+- ✅ Hệ thống áp dụng **Service Pattern** cho business logic
+- ✅ Tích hợp **VNPay Payment Gateway** 
+- ✅ Sử dụng **Form Requests** cho validation
+- 📌 Kiến trúc code được tổ chức tốt hơn với Services Layer

@@ -3,13 +3,15 @@
 ## MỤC LỤC
 1. [Quy tắc chung cho Controllers](#quy-tắc-chung-cho-controllers)
 2. [Quy tắc chung cho Models](#quy-tắc-chung-cho-models)
-3. [Quy tắc cho Blade Components](#quy-tắc-cho-blade-components)
-4. [Quy tắc cho JavaScript](#quy-tắc-cho-javascript)
-5. [Quy ước đặt tên](#quy-ước-đặt-tên)
-6. [Xử lý lỗi và Exception](#xử-lý-lỗi-và-exception)
-7. [Validation và Request Handling](#validation-và-request-handling)
-8. [Database Queries và Eloquent](#database-queries-và-eloquent)
-9. [Comment và Documentation](#comment-và-documentation)
+3. [Quy tắc chung cho Services](#quy-tắc-chung-cho-services)
+4. [Quy tắc cho Blade Components](#quy-tắc-cho-blade-components)
+5. [Quy tắc cho JavaScript](#quy-tắc-cho-javascript)
+6. [Quy ước đặt tên](#quy-ước-đặt-tên)
+7. [Xử lý lỗi và Exception](#xử-lý-lỗi-và-exception)
+8. [Validation và Request Handling](#validation-và-request-handling)
+9. [Database Queries và Eloquent](#database-queries-và-eloquent)
+10. [Payment Integration Patterns](#payment-integration-patterns)
+11. [Comment và Documentation](#comment-và-documentation)
 
 ---
 
@@ -768,6 +770,332 @@ public function totalItems()
 
 ---
 
+## QUY TẮC CHUNG CHO SERVICES
+
+### 1. KHI NÀO TẠO SERVICE
+
+**Quy tắc:**
+- Tạo Service khi logic nghiệp vụ phức tạp (>= 20 dòng code)
+- Tạo Service khi cần tái sử dụng logic ở nhiều Controllers
+- Tạo Service cho business logic không thuộc về Model
+- Tạo Service cho external integrations (Payment, Email, SMS)
+- **KHÔNG tạo Service cho CRUD đơn giản**
+
+**Ví dụ Services đã tạo:**
+```
+app/Services/
+├── CartService.php          # Logic giỏ hàng phức tạp
+├── OrderService.php         # Logic đơn hàng, trừ/hoàn kho
+├── PaymentService.php       # VNPay integration
+├── CouponService.php        # Logic áp dụng mã giảm giá
+├── InventoryService.php     # Quản lý tồn kho
+└── AuthService.php          # Logic authentication phức tạp
+```
+
+### 2. CẤU TRÚC SERVICE
+
+**Quy tắc:**
+- Service phải ở namespace `App\Services`
+- Tên class: `PascalCase` + `Service`
+- Methods public: business logic chính
+- Methods protected: helper methods
+- Inject dependencies qua constructor
+- Sử dụng Type Hints đầy đủ
+
+**Template chuẩn:**
+```php
+<?php
+
+namespace App\Services;
+
+use App\Models\Order;
+use App\Models\Inventory;
+use Illuminate\Support\Facades\DB;
+
+class OrderService
+{
+    /**
+     * Lấy danh sách đơn hàng cho admin với filter
+     * 
+     * @param array $filters
+     * @param int $perPage
+     * @return \Illuminate\Pagination\LengthAwarePaginator
+     */
+    public function getOrdersForAdmin(array $filters = [], int $perPage = 15)
+    {
+        $query = Order::with(['user', 'items.product']);
+
+        // Apply filters
+        if (!empty($filters['search'])) {
+            $searchTerm = $filters['search'];
+            $query->where('order_id', 'LIKE', "%{$searchTerm}%");
+        }
+
+        if (!empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        return $query->orderBy('order_date', 'desc')->paginate($perPage);
+    }
+
+    /**
+     * Cập nhật trạng thái đơn hàng với business logic
+     * 
+     * @param int $orderId
+     * @param string $newStatus
+     * @return Order
+     * @throws \Exception
+     */
+    public function updateOrderStatus($orderId, $newStatus)
+    {
+        $order = Order::findOrFail($orderId);
+        $oldStatus = $order->status;
+
+        // Validate transition
+        if (!$order->canTransitionTo($newStatus)) {
+            throw new \Exception("Không thể chuyển từ {$oldStatus} sang {$newStatus}");
+        }
+
+        DB::transaction(function () use ($order, $newStatus, $oldStatus) {
+            $order->update(['status' => $newStatus]);
+
+            // Business logic hooks
+            if ($newStatus === Order::STATUS_CANCELLED) {
+                $this->handleOrderCancelled($order);
+            }
+
+            if ($newStatus === Order::STATUS_DELIVERED) {
+                $this->handleOrderDelivered($order);
+            }
+        });
+
+        return $order->fresh();
+    }
+
+    /**
+     * Xử lý khi đơn hàng bị hủy - hoàn trả tồn kho
+     * 
+     * @param Order $order
+     * @return void
+     */
+    protected function handleOrderCancelled(Order $order)
+    {
+        foreach ($order->items as $item) {
+            if (!$item->product) continue;
+
+            $product = $item->product;
+            $quantity = $item->quantity;
+
+            // Hoàn lại stock trong products table
+            $product->increment('stock_quantity', $quantity);
+
+            // Hoàn lại stock trong inventories table
+            $inventory = Inventory::firstOrCreate(
+                ['product_id' => $product->product_id],
+                ['stock_in' => 0, 'stock_out' => 0, 'current_stock' => 0]
+            );
+
+            if ($inventory->stock_out >= $quantity) {
+                $inventory->decrement('stock_out', $quantity);
+            }
+            $inventory->increment('current_stock', $quantity);
+        }
+    }
+
+    /**
+     * Xử lý khi đơn hàng được giao
+     * 
+     * @param Order $order
+     * @return void
+     */
+    protected function handleOrderDelivered(Order $order)
+    {
+        // Log hoặc trigger events
+        \Log::info("Order #{$order->order_id} delivered successfully");
+    }
+}
+```
+
+### 3. SỬ DỤNG SERVICE TRONG CONTROLLER
+
+**Quy tắc:**
+- Inject Service qua constructor
+- Controller chỉ gọi methods từ Service
+- Controller xử lý HTTP response/redirect
+- KHÔNG viết business logic trong Controller
+
+**Ví dụ chuẩn:**
+```php
+<?php
+
+namespace App\Http\Controllers\Web;
+
+use App\Http\Controllers\Controller;
+use App\Services\OrderService;
+use Illuminate\Http\Request;
+
+class OrderController extends Controller
+{
+    protected $orderService;
+
+    /**
+     * Inject Service qua constructor
+     */
+    public function __construct(OrderService $orderService)
+    {
+        $this->orderService = $orderService;
+    }
+
+    /**
+     * Hiển thị danh sách đơn hàng
+     */
+    public function index(Request $request)
+    {
+        try {
+            $filters = [
+                'search' => $request->search,
+                'status' => $request->status,
+            ];
+
+            // Gọi Service để lấy dữ liệu
+            $orders = $this->orderService->getOrdersForAdmin($filters);
+
+            return view('dashboard.orders.index', compact('orders'));
+        } catch (\Exception $e) {
+            return view('dashboard.orders.index', [
+                'orders' => collect()->paginate(15),
+                'error' => 'Lỗi khi tải danh sách đơn hàng',
+            ]);
+        }
+    }
+
+    /**
+     * Cập nhật trạng thái đơn hàng
+     */
+    public function updateStatus(Request $request, $id)
+    {
+        $request->validate([
+            'status' => 'required|in:pending,processing,shipped,delivered,cancelled',
+        ]);
+
+        try {
+            // Gọi Service để xử lý business logic
+            $this->orderService->updateOrderStatus($id, $request->status);
+
+            return redirect()->route('dashboard.orders.index')
+                ->with('success', 'Cập nhật trạng thái thành công!');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', $e->getMessage());
+        }
+    }
+}
+```
+
+### 4. SERVICE VỚI TRANSACTIONS
+
+**Quy tắc:**
+- Business logic phức tạp phải wrap trong DB::transaction
+- Transaction nên ở trong Service, không phải Controller
+- Sử dụng `try-catch` bên ngoài transaction
+- Throw exception để rollback
+
+**Ví dụ từ CartService:**
+```php
+public function processCheckout(array $data)
+{
+    $cart = Auth::user()->cart;
+
+    if (!$cart || $cart->items()->count() == 0) {
+        throw new \Exception('Giỏ hàng trống!');
+    }
+
+    DB::beginTransaction();
+    try {
+        // 1. Validate stock
+        $this->validateStock($cart);
+
+        // 2. Tính tổng tiền và áp dụng coupon
+        $totalAmount = $cart->totalPrice();
+        $coupon = null;
+        $discountAmount = 0;
+
+        if (!empty($data['coupon_code'])) {
+            $result = $this->applyCoupon($data['coupon_code'], $totalAmount);
+            $coupon = $result['coupon'];
+            $discountAmount = $result['discount'];
+            $totalAmount = $result['total'];
+        }
+
+        // 3. Tạo đơn hàng
+        $order = $this->createOrder($data, $totalAmount);
+
+        // 4. Tăng used_count của coupon
+        if ($coupon) {
+            $coupon->increment('used_count');
+        }
+
+        // 5. Tạo order items và trừ kho
+        $this->createOrderItems($cart, $order);
+
+        // 6. Xóa giỏ hàng
+        $cart->items()->delete();
+
+        DB::commit();
+
+        return [
+            'success' => true,
+            'order' => $order,
+            'discount_amount' => $discountAmount,
+            'payment_method' => $data['payment_method'] ?? 'cod',
+        ];
+    } catch (\Exception $e) {
+        DB::rollBack();
+        throw $e;
+    }
+}
+```
+
+### 5. SERVICE BEST PRACTICES
+
+**✅ NÊN:**
+- Một Service cho một domain logic (Order, Cart, Payment)
+- Methods ngắn gọn, rõ ràng (< 50 dòng)
+- Type hints cho parameters và return types
+- PHPDoc cho mỗi public method
+- Tách helper methods thành protected
+- Sử dụng Model methods khi có thể
+
+**❌ KHÔNG NÊN:**
+- Một Service xử lý nhiều domains
+- Business logic trong Controller
+- Service gọi Service khác quá nhiều (max 2-3 levels)
+- Logic quá đơn giản đưa vào Service
+- Duplicate code giữa các Services
+
+**Ví dụ tốt - Service focused:**
+```php
+// ✅ TỐT
+class CartService
+{
+    public function processCheckout(array $data) { }
+    public function addToCart($productId, $quantity) { }
+    public function updateCartItem($cartItemId, $quantity) { }
+    public function removeFromCart($cartItemId) { }
+}
+
+// ❌ XẤU - Service quá rộng
+class ShopService
+{
+    public function processCheckout() { }
+    public function addProduct() { }
+    public function updateUser() { }
+    public function sendEmail() { }  // Sai domain!
+}
+```
+
+---
+
 ## QUY TẮC CHO BLADE COMPONENTS
 
 ### 1. KHI NÀO TẠO COMPONENT
@@ -1517,6 +1845,349 @@ public function createOrder(Request $request)
 
 ---
 
+## PAYMENT INTEGRATION PATTERNS
+
+### 1. VNPAY INTEGRATION PATTERN
+
+**Quy tắc:**
+- Payment logic PHẢI ở trong Service, không phải Controller
+- Luôn validate callback signature
+- Sử dụng Transaction cho payment processing
+- Log tất cả payment activities
+- Handle cả success và failure cases
+
+**Cấu trúc:**
+```
+app/
+├── Services/
+│   └── PaymentService.php       # VNPay integration logic
+├── Http/Controllers/Web/
+│   ├── PaymentController.php    # Handle requests/responses
+│   └── CustomerCartController.php  # Initiate checkout
+└── config/
+    └── services.php              # VNPay config
+```
+
+### 2. PAYMENT SERVICE TEMPLATE
+
+```php
+<?php
+
+namespace App\Services;
+
+use App\Models\Order;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+
+class PaymentService
+{
+    /**
+     * Tạo URL thanh toán VNPay
+     * 
+     * @param int $orderId
+     * @param string $ipAddress
+     * @return array
+     */
+    public function createVNPayPaymentUrl($orderId, $ipAddress)
+    {
+        $order = Order::where('order_id', $orderId)->firstOrFail();
+
+        // VNPay configuration
+        $vnp_TmnCode = config('services.vnpay.tmn_code');
+        $vnp_HashSecret = config('services.vnpay.hash_secret');
+        $vnp_Url = config('services.vnpay.url');
+        $vnp_Returnurl = config('services.vnpay.return_url');
+
+        // Transaction details
+        $vnp_TxnRef = $order->order_id . '_' . time();
+        $vnp_OrderInfo = 'Thanh toán đơn hàng #' . $order->order_id;
+        $vnp_Amount = $order->total_amount * 100; // VNPay tính bằng đồng
+
+        $inputData = [
+            'vnp_Version' => '2.1.0',
+            'vnp_TmnCode' => $vnp_TmnCode,
+            'vnp_Amount' => $vnp_Amount,
+            'vnp_Command' => 'pay',
+            'vnp_CreateDate' => date('YmdHis'),
+            'vnp_CurrCode' => 'VND',
+            'vnp_IpAddr' => $ipAddress,
+            'vnp_Locale' => 'vn',
+            'vnp_OrderInfo' => $vnp_OrderInfo,
+            'vnp_OrderType' => 'billpayment',
+            'vnp_ReturnUrl' => $vnp_Returnurl,
+            'vnp_TxnRef' => $vnp_TxnRef,
+        ];
+
+        // Sort and create hash
+        ksort($inputData);
+        $hashdata = '';
+        $query = '';
+        $i = 0;
+
+        foreach ($inputData as $key => $value) {
+            if ($i == 1) {
+                $hashdata .= '&' . urlencode($key) . '=' . urlencode($value);
+            } else {
+                $hashdata .= urlencode($key) . '=' . urlencode($value);
+                $i = 1;
+            }
+            $query .= urlencode($key) . '=' . urlencode($value) . '&';
+        }
+
+        $vnp_Url = $vnp_Url . '?' . $query;
+        $vnpSecureHash = hash_hmac('sha512', $hashdata, $vnp_HashSecret);
+        $vnp_Url .= 'vnp_SecureHash=' . $vnpSecureHash;
+
+        Log::info('VNPay Payment URL created', [
+            'order_id' => $order->order_id,
+            'txn_ref' => $vnp_TxnRef,
+        ]);
+
+        return [
+            'url' => $vnp_Url,
+            'txn_ref' => $vnp_TxnRef,
+            'order_id' => $order->order_id,
+        ];
+    }
+
+    /**
+     * Validate callback từ VNPay
+     * 
+     * @param array $inputData
+     * @return bool
+     */
+    public function validateVNPayCallback($inputData)
+    {
+        $vnp_HashSecret = config('services.vnpay.hash_secret');
+        $vnp_SecureHash = $inputData['vnp_SecureHash'] ?? '';
+
+        // Remove hash from input
+        unset($inputData['vnp_SecureHash']);
+        unset($inputData['vnp_SecureHashType']);
+
+        ksort($inputData);
+        $hashData = '';
+        $i = 0;
+
+        foreach ($inputData as $key => $value) {
+            if ($i == 1) {
+                $hashData .= '&' . urlencode($key) . '=' . urlencode($value);
+            } else {
+                $hashData .= urlencode($key) . '=' . urlencode($value);
+                $i = 1;
+            }
+        }
+
+        $secureHash = hash_hmac('sha512', $hashData, $vnp_HashSecret);
+
+        if ($secureHash != $vnp_SecureHash) {
+            Log::error('VNPay: Invalid signature', [
+                'expected' => $secureHash,
+                'received' => $vnp_SecureHash,
+            ]);
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Xử lý kết quả thanh toán VNPay
+     * 
+     * @param array $inputData
+     * @param int $userId
+     * @return array
+     */
+    public function processVNPayReturn($inputData, $userId)
+    {
+        $responseCode = $inputData['vnp_ResponseCode'];
+        $txnRef = $inputData['vnp_TxnRef'];
+        
+        // Parse order_id từ txnRef
+        $orderId = explode('_', $txnRef)[0];
+        $order = Order::where('order_id', $orderId)->first();
+
+        if (!$order) {
+            return [
+                'success' => false,
+                'order_id' => null,
+                'message' => 'Không tìm thấy đơn hàng',
+            ];
+        }
+
+        if ($responseCode === '00') {
+            // Thanh toán thành công
+            DB::transaction(function() use ($order, $inputData) {
+                $order->update([
+                    'payment_status' => 'paid',
+                    'transaction_id' => $inputData['vnp_TransactionNo'] ?? null,
+                    'paid_at' => now(),
+                ]);
+            });
+
+            Log::info('VNPay payment success', [
+                'order_id' => $order->order_id,
+                'transaction_id' => $inputData['vnp_TransactionNo'] ?? null,
+            ]);
+
+            return [
+                'success' => true,
+                'order_id' => $order->order_id,
+                'message' => 'Thanh toán thành công!',
+            ];
+        } else {
+            // Thanh toán thất bại
+            Log::warning('VNPay payment failed', [
+                'order_id' => $order->order_id,
+                'response_code' => $responseCode,
+            ]);
+
+            return [
+                'success' => false,
+                'order_id' => $order->order_id,
+                'message' => 'Thanh toán thất bại. Mã lỗi: ' . $responseCode,
+            ];
+        }
+    }
+}
+```
+
+### 3. PAYMENT CONTROLLER PATTERN
+
+```php
+<?php
+
+namespace App\Http\Controllers\Web;
+
+use App\Http\Controllers\Controller;
+use App\Models\Order;
+use App\Services\PaymentService;
+use Illuminate\Http\Request;
+
+class PaymentController extends Controller
+{
+    protected $paymentService;
+
+    public function __construct(PaymentService $paymentService)
+    {
+        $this->paymentService = $paymentService;
+    }
+
+    /**
+     * Tạo URL thanh toán VNPay
+     */
+    public function createPayment(Request $request)
+    {
+        // Lấy order_id từ session
+        $orderId = $request->order_id ?? session('pending_payment_order_id');
+
+        if (!$orderId) {
+            return redirect()->route('cart.index')
+                ->with('error', 'Không tìm thấy đơn hàng');
+        }
+
+        session()->forget('pending_payment_order_id');
+
+        $order = Order::where('order_id', $orderId)->firstOrFail();
+
+        // Verify ownership
+        if ($order->user_id !== auth()->id()) {
+            return redirect()->route('cart.index')
+                ->with('error', 'Đơn hàng không hợp lệ');
+        }
+
+        // Create payment URL
+        $paymentData = $this->paymentService->createVNPayPaymentUrl(
+            $orderId, 
+            $request->ip()
+        );
+
+        // Save to session
+        session([
+            'vnpay_txnref' => $paymentData['txn_ref'],
+            'order_id' => $paymentData['order_id'],
+        ]);
+
+        return redirect($paymentData['url']);
+    }
+
+    /**
+     * Xử lý callback từ VNPay
+     */
+    public function vnpayReturn(Request $request)
+    {
+        $inputData = $request->all();
+
+        // Validate signature
+        if (!$this->paymentService->validateVNPayCallback($inputData)) {
+            return redirect()->route('cart.index')
+                ->with('error', 'Giao dịch không hợp lệ');
+        }
+
+        try {
+            $result = $this->paymentService->processVNPayReturn(
+                $inputData, 
+                auth()->id()
+            );
+
+            if ($result['success']) {
+                return redirect()->route('payment.success', [
+                    'order_id' => $result['order_id']
+                ])->with('success', $result['message']);
+            } else {
+                return redirect()->route('payment.failed', [
+                    'order_id' => $result['order_id']
+                ])->with('error', $result['message']);
+            }
+        } catch (\Exception $e) {
+            return redirect()->route('cart.index')
+                ->with('error', 'Có lỗi xảy ra khi xử lý thanh toán');
+        }
+    }
+}
+```
+
+### 4. PAYMENT BEST PRACTICES
+
+**✅ NÊN:**
+- Validate callback signature từ payment gateway
+- Log tất cả payment transactions
+- Sử dụng Transaction cho payment processing
+- Handle timeout và network errors
+- Có fallback pages (success/failed)
+- Store transaction_id từ gateway
+- Kiểm tra ownership trước khi process
+
+**❌ KHÔNG NÊN:**
+- Trust user input mà không validate
+- Expose sensitive config (hash secret, API keys)
+- Skip logging payment activities
+- Process payment without authentication
+- Hardcode payment URLs
+- Ignore payment status codes
+
+### 5. PAYMENT CONFIGURATION
+
+```php
+// config/services.php
+return [
+    'vnpay' => [
+        'tmn_code' => env('VNPAY_TMN_CODE'),
+        'hash_secret' => env('VNPAY_HASH_SECRET'),
+        'url' => env('VNPAY_URL', 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html'),
+        'return_url' => env('VNPAY_RETURN_URL', 'http://localhost:8000/payment/vnpay/return'),
+    ],
+];
+
+// .env
+VNPAY_TMN_CODE=your_terminal_code
+VNPAY_HASH_SECRET=your_hash_secret
+VNPAY_URL=https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
+VNPAY_RETURN_URL=http://localhost:8000/payment/vnpay/return
+```
+
+---
+
 ## COMMENT VÀ DOCUMENTATION
 
 ### 1. PHPDOC COMMENTS
@@ -1652,7 +2323,8 @@ public function login(Request $request)
 - [ ] Import đầy đủ các class cần thiết
 - [ ] Các method có PHPDoc comment
 - [ ] Sử dụng `try-catch` cho code có thể gây lỗi
-- [ ] Validate dữ liệu đầu vào
+- [ ] Validate dữ liệu đầu vào (hoặc dùng Form Request)
+- [ ] **Inject và sử dụng Services cho business logic**
 - [ ] Sử dụng Eloquent thay vì raw SQL
 - [ ] Eager loading relationships với `with()`
 - [ ] Sử dụng pagination cho danh sách
@@ -1671,6 +2343,18 @@ public function login(Request $request)
 - [ ] Thêm constants cho fixed values
 - [ ] Thêm helper methods cho business logic
 - [ ] Method names rõ ràng, dễ hiểu
+
+### ✅ SERVICE CHECKLIST
+
+- [ ] Service tập trung vào một domain logic
+- [ ] Inject dependencies qua constructor
+- [ ] Public methods có PHPDoc đầy đủ
+- [ ] Type hints cho parameters và return types
+- [ ] Business logic phức tạp wrap trong Transaction
+- [ ] Throw exceptions cho error handling
+- [ ] Protected methods cho helper logic
+- [ ] Log các operations quan trọng (payment, order, etc.)
+- [ ] Method names rõ ràng, mô tả hành động
 
 ### ✅ SECURITY CHECKLIST
 
@@ -1761,15 +2445,18 @@ Tài liệu này tổng hợp các quy tắc chung khi code trong dự án Larav
 7. **DRY Principle** - Không lặp lại code
 
 **Nhớ:**
-- Luôn validate input
+- Luôn validate input (Form Request cho validation phức tạp)
 - Luôn sử dụng try-catch
+- **Luôn sử dụng Services cho business logic phức tạp**
 - Luôn eager loading relationships
 - Luôn sử dụng pagination
 - Luôn comment code phức tạp
 - Luôn follow naming conventions
+- **Luôn sử dụng Transaction cho operations phức tạp**
 - **Tạo components cho code lặp lại >= 3 lần**
 - **Tạo shared JS cho functions dùng chung**
 - **Loại bỏ comment thừa, chỉ giữ comment cần thiết**
+- **Log các operations quan trọng (payment, order status changes)**
 
 ---
 
@@ -1800,10 +2487,40 @@ Tài liệu này tổng hợp các quy tắc chung khi code trong dự án Larav
 
 ---
 
-**Tài liệu được tạo dựa trên phân tích code thực tế của dự án webshop**
-**Version: 3.1 - Date: 2025-10-23**
-**Cập nhật mới nhất**: 
+## 📝 CHANGELOG
+
+### Version 4.0 - 26/10/2025
+**Cập nhật lớn:**
+- ✅ **Thêm section Services Layer hoàn chỉnh**
+  - Quy tắc tạo và sử dụng Services
+  - Template chuẩn cho OrderService, CartService
+  - Service với Transactions pattern
+  - Service Best Practices
+  
+- ✅ **Thêm Payment Integration Patterns**
+  - VNPay integration template
+  - Payment Service pattern
+  - Payment Controller pattern
+  - Security và Best Practices cho payment
+  
+- ✅ **Cập nhật Checklists**
+  - Thêm Service Checklist
+  - Cập nhật Controller Checklist với Services
+  - Thêm Payment-specific checks
+  
+- ✅ **Cập nhật Business Logic**
+  - Transaction handling với auto-restore inventory
+  - Coupon integration trong checkout
+  - Inventory tracking với 2 tables
+
+### Version 3.1 - 23/10/2025
 - Thêm quy tắc cho Blade Components
 - Thêm quy tắc cho Shared JavaScript
 - Thêm nguyên tắc tối ưu hóa code (DRY, Comments, File Size)
 - Thêm UI Optimization Checklist
+
+---
+
+**Tài liệu được tạo dựa trên phân tích code thực tế của dự án webshop**  
+**Version: 4.0 - Date: 26/10/2025**  
+**Author**: Hoàng Quang Vinh

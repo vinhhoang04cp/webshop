@@ -56,23 +56,27 @@
 ┌─────────────────────────────────────────────────────────────────┐
 │  ⚠️ BƯỚC 4: THANH TOÁN (THỜI ĐIỂM QUAN TRỌNG) ⚠️                │
 │                                                                  │
-│  POST /api/orders (CustomerOrderController@checkout)            │
+│  POST /cart/checkout (CustomerCartController@checkout)          │
 │                                                                  │
 │  ┌────────────────────────────────────────┐                     │
 │  │ TRỪ KHO NGAY LẬP TỨC                   │                     │
 │  │                                        │                     │
 │  │ DB::transaction(function() {           │                     │
+│  │   // Tạo đơn hàng với status=pending   │                     │
+│  │   Order::create([...]);                │                     │
+│  │                                        │                     │
 │  │   foreach ($cartItems as $item) {      │                     │
-│  │     // Trừ kho NGAY BÂY GIỜ            │                     │
+│  │     // Tạo order items                 │                     │
+│  │     OrderItem::create([...]);          │                     │
+│  │                                        │                     │
+│  │     // TRỪ KHO NGAY BÂY GIỜ            │                     │
 │  │     $product->decrement('stock',       │                     │
 │  │                        $item->qty);    │                     │
 │  │                                        │                     │
-│  │     // Tạo order items                 │                     │
-│  │     OrderItem::create([...]);          │                     │
+│  │     // Cập nhật inventory              │                     │
+│  │     Inventory::increment('stock_out')  │                     │
+│  │     Inventory::decrement('current')    │                     │
 │  │   }                                    │                     │
-│  │                                        │                     │
-│  │   // Tạo đơn hàng với status=pending   │                     │
-│  │   Order::create([...]);                │                     │
 │  │                                        │                     │
 │  │   // Xóa giỏ hàng                      │                     │
 │  │   CartItem::where(...)->delete();      │                     │
@@ -80,15 +84,33 @@
 │  └────────────────────────────────────────┘                     │
 │                                                                  │
 │  ⚠️ Kho bị TRỪ ngay lập tức (ngay cả khi status=pending)        │
-│  ⚠️ KHÔNG hoàn kho khi hủy đơn!                                 │
+│  ✅ HOÀN KHO tự động khi hủy đơn!                               │
 └────────────────────────────┬────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  BƯỚC 4.1: XỬ LÝ THANH TOÁN (Nếu chọn VNPay)                   │
+│                                                                  │
+│  - Nếu payment_method = 'vnpay':                                │
+│    └─> Lưu order_id vào session                                │
+│        └─> Redirect đến PaymentController                       │
+│            └─> Tạo URL thanh toán VNPay                         │
+│                └─> Redirect khách hàng đến VNPay               │
+│                    └─> Khách hàng thanh toán                   │
+│                        └─> VNPay callback về /payment/return   │
+│                            └─> Cập nhật payment_status         │
+│                                                                  │
+│  - Nếu payment_method = 'cod':                                  │
+│    └─> Hoàn tất đơn hàng, chờ xác nhận                          │
+└─────────────────────────────────────────────────────────────────┘
                              │
                              ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │  BƯỚC 5: Quản Lý Trạng Thái Đơn Hàng                           │
 │                                                                  │
 │  pending → processing → shipped → delivered                     │
-│  Bất kỳ trạng thái → cancelled (⚠️ KHÔNG hoàn kho!)             │
+│  pending/processing/shipped → cancelled (✅ TỰ ĐỘNG hoàn kho!)  │
+│  delivered/cancelled → không thể chuyển (trạng thái cuối)      │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -252,141 +274,175 @@ public function index(Request $request)
 
 #### 4️⃣ **THANH TOÁN - THỜI ĐIỂM QUAN TRỌNG** ⚠️
 
-**Endpoint**: `POST /api/orders`
+**Endpoint**: `POST /cart/checkout`
 
-**Controller**: `CustomerOrderController@checkout`
+**Controller**: `CustomerCartController@checkout`
 
 ```php
-public function checkout(Request $request)
+public function checkout(CheckoutRequest $request)
 {
-    $validated = $request->validate([
-        'shipping_address' => 'required|string|max:500',
-        'payment_method' => 'required|in:COD,Bank Transfer',
-        'note' => 'nullable|string|max:1000',
-    ]);
+    // Validated data:
+    // - shipping_name, shipping_phone, shipping_address
+    // - payment_method: 'cod' hoặc 'vnpay'
+    // - coupon_code (optional)
+    // - note (optional)
+    $validated = $request->validated();
     
-    // 1. Lấy giỏ hàng với items
-    $cart = Cart::with('items.product')
-                ->where('user_id', $request->user()->id)
-                ->first();
+    // Gọi CartService để xử lý checkout
+    $result = $this->cartService->processCheckout($validated);
     
-    if (!$cart || $cart->items->isEmpty()) {
-        return response()->json([
-            'status' => false,
-            'message' => 'Giỏ hàng trống',
-        ], 400);
-    }
-    
-    // 2. Tính tổng tiền
-    $totalAmount = 0;
-    foreach ($cart->items as $item) {
-        $totalAmount += $item->product->price * $item->quantity;
-    }
-    
-    // 3. GIAO DỊCH CƠ SỞ DỮ LIỆU - PHẦN QUAN TRỌNG
-    DB::transaction(function () use ($cart, $validated, $totalAmount, $request) {
+    // Trong CartService::processCheckout():
+    DB::transaction(function () use ($cart, $data) {
         
-        // 3.1. Tạo đơn hàng
+        // 1. Validate stock
+        foreach ($cart->items as $item) {
+            if ($item->product->stock_quantity < $item->quantity) {
+                throw new \Exception("Sản phẩm không đủ hàng");
+            }
+        }
+        
+        // 2. Tính tổng tiền
+        $totalAmount = $cart->totalPrice();
+        
+        // 3. Áp dụng coupon (nếu có)
+        $discountAmount = 0;
+        $coupon = null;
+        if (!empty($data['coupon_code'])) {
+            $coupon = Coupon::where('code', $data['coupon_code'])->first();
+            $validation = $coupon->isValid($totalAmount);
+            if ($validation['valid']) {
+                $discountAmount = $coupon->calculateDiscount($totalAmount);
+                $totalAmount = $totalAmount - $discountAmount;
+                $coupon->increment('used_count');
+            }
+        }
+        
+        // 4. Tạo đơn hàng
         $order = Order::create([
-            'user_id' => $request->user()->id,
-            'order_number' => 'ORD-' . date('Ymd') . '-' . str_pad(Order::count() + 1, 4, '0', STR_PAD_LEFT),
+            'user_id' => Auth::id(),
             'total_amount' => $totalAmount,
-            'status' => 'pending', // Trạng thái ban đầu
-            'shipping_address' => $validated['shipping_address'],
-            'payment_method' => $validated['payment_method'],
-            'note' => $validated['note'] ?? null,
+            'status' => 'pending',
+            'shipping_name' => $data['shipping_name'],
+            'shipping_phone' => $data['shipping_phone'],
+            'shipping_address' => $data['shipping_address'],
+            'note' => $data['note'] ?? null,
+            'payment_method' => $data['payment_method'],
+            'payment_status' => 'pending',
+            'order_date' => now(),
         ]);
         
-        // 3.2. Tạo order items + TRỪ KHO NGAY LẬP TỨC
+        // 5. Tạo order items + TRỪ KHO + CẬP NHẬT INVENTORY
         foreach ($cart->items as $cartItem) {
             $product = $cartItem->product;
             
-            // ⚠️ QUAN TRỌNG: Kiểm tra kho lại lần nữa (bảo vệ race condition)
-            if ($product->stock_quantity < $cartItem->quantity) {
-                throw new \Exception("Sản phẩm {$product->name} đã hết hàng");
-            }
-            
-            // ⚠️ TRỪ KHO NGAY BÂY GIỜ (ngay cả khi status=pending)
-            $product->decrement('stock_quantity', $cartItem->quantity);
-            
-            // Tạo order item
+            // Tạo order item (lock giá)
             OrderItem::create([
-                'order_id' => $order->id,
-                'product_id' => $product->id,
+                'order_id' => $order->order_id,
+                'product_id' => $product->product_id,
                 'quantity' => $cartItem->quantity,
                 'price' => $product->price,
             ]);
+            
+            // ⚠️ TRỪ KHO trong products table
+            $product->decrement('stock_quantity', $cartItem->quantity);
+            
+            // ⚠️ CẬP NHẬT INVENTORY table
+            $inventory = Inventory::firstOrCreate(
+                ['product_id' => $product->product_id],
+                ['stock_in' => 0, 'stock_out' => 0, 'current_stock' => 0]
+            );
+            $inventory->increment('stock_out', $cartItem->quantity);
+            $inventory->decrement('current_stock', $cartItem->quantity);
         }
         
-        // 3.3. Xóa giỏ hàng
-        CartItem::where('cart_id', $cart->id)->delete();
+        // 6. Xóa giỏ hàng
+        $cart->items()->delete();
     });
     
-    return response()->json([
-        'status' => true,
-        'message' => 'Đặt hàng thành công',
-        'order' => new OrderResource($order),
-    ], 201);
+    // 7. Xử lý theo phương thức thanh toán
+    if ($result['payment_method'] === 'vnpay') {
+        // Lưu order_id vào session và redirect đến trang thanh toán VNPay
+        session(['pending_payment_order_id' => $result['order']->order_id]);
+        return redirect()->route('payment.create.get');
+    }
+    
+    // COD: Hoàn tất
+    return redirect()->route('cart.index')
+        ->with('success', 'Đặt hàng thành công!');
 }
 ```
 
 **⚠️ QUY TẮC NGHIỆP VỤ QUAN TRỌNG**:
 
 1. **Kho được trừ NGAY LẬP TỨC** khi tạo đơn hàng (ngay cả khi `status=pending`)
-2. **Transaction đảm bảo tính nguyên tử** - hoặc tất cả thành công hoặc tất cả thất bại
-3. **Bảo vệ race condition** - kiểm tra lại kho bên trong transaction
-4. **Giỏ hàng được xóa** sau khi thanh toán thành công
-5. **KHÔNG tự động hoàn kho** nếu đơn hàng bị hủy
+2. **Cập nhật song song** - Cả `products.stock_quantity` VÀ `inventories.current_stock` đều được cập nhật
+3. **Transaction đảm bảo tính nguyên tử** - hoặc tất cả thành công hoặc tất cả thất bại
+4. **Bảo vệ race condition** - kiểm tra lại kho bên trong transaction
+5. **Giỏ hàng được xóa** sau khi thanh toán thành công
+6. **✅ TỰ ĐỘNG hoàn kho** khi đơn hàng bị hủy (thông qua OrderService::handleOrderCancelled)
+7. **Coupon được áp dụng** trong quá trình checkout và tăng `used_count`
 
 ---
 
 #### 5️⃣ Quản Lý Trạng Thái Đơn Hàng
 
-**Endpoint**: `PUT /api/orders/{id}/status`
+**Endpoint**: `POST /dashboard/orders/{id}/update-status`
 
-**Controller**: `DashboardOrderController@updateStatus`
+**Controller**: `OrderController@updateStatus` (Web Dashboard)
 
 ```php
 public function updateStatus(Request $request, $id)
 {
-    $order = Order::findOrFail($id);
+    // Sử dụng OrderService
+    $order = $this->orderService->updateOrderStatus($id, $request->status);
     
-    $validated = $request->validate([
-        'status' => 'required|in:pending,processing,shipped,delivered,cancelled',
-    ]);
-    
-    // Kiểm tra chuyển đổi trạng thái hợp lệ
-    $allowedTransitions = [
-        'pending' => ['processing', 'cancelled'],
-        'processing' => ['shipped', 'cancelled'],
-        'shipped' => ['delivered', 'cancelled'],
-        'delivered' => [],
-        'cancelled' => [],
-    ];
-    
-    $currentStatus = $order->status;
-    $newStatus = $validated['status'];
-    
-    if (!in_array($newStatus, $allowedTransitions[$currentStatus])) {
-        return response()->json([
-            'status' => false,
-            'message' => "Không thể chuyển từ {$currentStatus} sang {$newStatus}",
-        ], 400);
+    // Trong OrderService::updateOrderStatus():
+    DB::transaction(function () use ($order, $newStatus, $oldStatus) {
+        
+        // Kiểm tra chuyển đổi hợp lệ
+        if (!$order->canTransitionTo($newStatus)) {
+            throw new \Exception("Không thể chuyển đổi trạng thái");
+        }
+        
+        // Cập nhật trạng thái
+        $order->update(['status' => $newStatus]);
+        
+        // ⚠️ XỬ LÝ KHI ĐƠN HÀNG BỊ HỦY
+        if ($newStatus === Order::STATUS_CANCELLED && $oldStatus !== Order::STATUS_CANCELLED) {
+            $this->handleOrderCancelled($order);
+        }
+        
+        // Xử lý khi đơn hàng được giao
+        if ($newStatus === Order::STATUS_DELIVERED && $oldStatus !== Order::STATUS_DELIVERED) {
+            $this->handleOrderDelivered($order);
+        }
+    });
+}
+
+// ✅ HOÀN KHO TỰ ĐỘNG
+protected function handleOrderCancelled(Order $order)
+{
+    foreach ($order->items as $item) {
+        $product = $item->product;
+        $quantity = $item->quantity;
+        
+        // Tăng lại stock_quantity trong products
+        $product->increment('stock_quantity', $quantity);
+        
+        // Cập nhật inventory
+        $inventory = Inventory::firstOrCreate(
+            ['product_id' => $product->product_id],
+            ['stock_in' => 0, 'stock_out' => 0, 'current_stock' => 0]
+        );
+        
+        // Giảm stock_out (vì hàng không xuất nữa)
+        if ($inventory->stock_out >= $quantity) {
+            $inventory->decrement('stock_out', $quantity);
+        }
+        
+        // Tăng current_stock (hàng quay lại kho)
+        $inventory->increment('current_stock', $quantity);
     }
-    
-    // ⚠️ QUAN TRỌNG: KHÔNG hoàn kho khi hủy đơn
-    if ($newStatus === 'cancelled') {
-        // Kho đã bị trừ trong quá trình thanh toán
-        // Admin phải điều chỉnh kho thủ công nếu cần
-    }
-    
-    $order->update(['status' => $newStatus]);
-    
-    return response()->json([
-        'status' => true,
-        'message' => 'Cập nhật trạng thái đơn hàng thành công',
-        'order' => new OrderResource($order),
-    ]);
 }
 ```
 
@@ -400,14 +456,16 @@ public function updateStatus(Request $request, $id)
 |---------|--------------|---------|
 | **Thêm vào giỏ** | ❌ KHÔNG trừ | Chỉ kiểm tra |
 | **Cập nhật giỏ** | ❌ KHÔNG trừ | Chỉ kiểm tra |
-| **Thanh toán** | ✅ **TRỪ NGAY LẬP TỨC** | Ngay cả khi status=pending |
-| **Hủy đơn hàng** | ❌ KHÔNG hoàn kho | Admin phải điều chỉnh thủ công |
-| **Xóa đơn hàng** | ❌ KHÔNG hoàn kho | Admin phải điều chỉnh thủ công |
+| **Thanh toán** | ✅ **TRỪ NGAY LẬP TỨC** | Cập nhật cả `products.stock_quantity` & `inventories` |
+| **Hủy đơn hàng** | ✅ **TỰ ĐỘNG hoàn kho** | Hệ thống tự động hoàn lại qua OrderService |
+| **Xóa đơn hàng** | ❌ KHÔNG hoàn kho | Chỉ cho phép xóa đơn đã delivered hoặc cancelled |
 
-**⚠️ TẠI SAO thiết kế như vậy?**
-- Ngăn ngừa bán quá số lượng (kho được cam kết khi đặt hàng)
-- Đơn giản hóa logic giao dịch
-- Chấp nhận trade-off: Quản lý kho thủ công cho việc hủy đơn
+**⚠️ THIẾT KẾ HIỆN TẠI:**
+- ✅ **Hoàn kho tự động** khi hủy đơn hàng - tránh tình trạng kho bị "đóng băng"
+- ✅ **Cập nhật đồng bộ** cả 2 bảng: `products.stock_quantity` và `inventories.current_stock`
+- ✅ **Transaction-safe** - đảm bảo tính nhất quán dữ liệu
+- ✅ **Ngăn chặn overselling** - kho được cam kết ngay khi đặt hàng
+- ✅ **Theo dõi chính xác** - Inventory tracking với stock_in, stock_out, current_stock
 
 ---
 
@@ -431,23 +489,27 @@ if ($order->user_id !== $user->id && !$user->isAdmin()) {
 
 ```mermaid
 stateDiagram-v2
-    [*] --> pending: Thanh toán
+    [*] --> pending: Thanh toán (TRỪ KHO)
     pending --> processing: Admin xác nhận
-    pending --> cancelled: Khách hàng/Admin hủy
+    pending --> cancelled: Khách hàng/Admin hủy (HOÀN KHO)
     processing --> shipped: Admin giao hàng
-    processing --> cancelled: Admin hủy
+    processing --> cancelled: Admin hủy (HOÀN KHO)
     shipped --> delivered: Admin xác nhận đã giao
-    shipped --> cancelled: Admin hủy (hiếm)
-    delivered --> [*]
-    cancelled --> [*]
+    delivered --> [*]: Hoàn tất
+    cancelled --> [*]: Đã hủy (kho đã hoàn)
 ```
 
-**Chuyển Đổi Được Phép**:
+**Chuyển Đổi Được Phép** (theo Order::STATUS_TRANSITIONS):
 - `pending` → `processing`, `cancelled`
-- `processing` → `shipped`, `cancelled`
-- `shipped` → `delivered`, `cancelled`
-- `delivered` → (trạng thái cuối)
-- `cancelled` → (trạng thái cuối)
+- `processing` → `shipped`, `cancelled`  
+- `shipped` → `delivered` (⚠️ KHÔNG cho phép hủy từ shipped)
+- `delivered` → (trạng thái cuối - không thể chuyển)
+- `cancelled` → (trạng thái cuối - không thể chuyển)
+
+**⚠️ LƯU Ý QUAN TRỌNG:**
+- Khi chuyển sang `cancelled`: Hệ thống **TỰ ĐỘNG hoàn kho** qua `OrderService::handleOrderCancelled()`
+- Đơn hàng `shipped` KHÔNG thể hủy (phải chờ giao hoặc xử lý đặc biệt)
+- Đơn hàng `delivered` và `cancelled` là trạng thái cuối, không thể chuyển đổi
 
 ---
 
@@ -466,6 +528,138 @@ OrderItem::create([
 - Bảo vệ khách hàng khỏi tăng giá sau khi đặt hàng
 - Bảo vệ doanh nghiệp khỏi giảm giá sau khi đặt hàng
 - Độ chính xác lịch sử cho báo cáo
+
+---
+
+## 💳 Luồng Thanh Toán VNPay
+
+### Tổng Quan
+
+Hệ thống hỗ trợ 2 phương thức thanh toán:
+1. **COD (Cash On Delivery)** - Thanh toán khi nhận hàng
+2. **VNPay** - Thanh toán trực tuyến qua cổng thanh toán VNPay
+
+### Luồng Thanh Toán VNPay Chi Tiết
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│  1. KHÁCH HÀNG CHỌN THANH TOÁN VNPAY                         │
+│                                                               │
+│  POST /cart/checkout (payment_method = 'vnpay')              │
+│  └─> CartService::processCheckout()                          │
+│      ├─> Tạo Order (status=pending, payment_status=pending) │
+│      ├─> Tạo OrderItems                                      │
+│      ├─> TRỪ KHO ngay lập tức                                │
+│      ├─> Xóa giỏ hàng                                        │
+│      └─> Lưu order_id vào session                            │
+└───────────────────────┬──────────────────────────────────────┘
+                        │
+                        ▼
+┌──────────────────────────────────────────────────────────────┐
+│  2. TẠO URL THANH TOÁN VNPAY                                 │
+│                                                               │
+│  GET /payment/create                                         │
+│  └─> PaymentController::createPayment()                      │
+│      └─> PaymentService::createVNPayPaymentUrl()             │
+│          ├─> Lấy order từ session                            │
+│          ├─> Tạo vnp_TxnRef = {order_id}_{timestamp}        │
+│          ├─> Tạo chuỗi hash với vnp_HashSecret              │
+│          ├─> Build URL VNPay với các tham số                 │
+│          └─> Redirect khách hàng đến VNPay                   │
+└───────────────────────┬──────────────────────────────────────┘
+                        │
+                        ▼
+┌──────────────────────────────────────────────────────────────┐
+│  3. KHÁCH HÀNG THANH TOÁN TRÊN VNPAY                         │
+│                                                               │
+│  - Khách hàng nhập thông tin thẻ/tài khoản                   │
+│  - VNPay xử lý thanh toán                                    │
+│  - VNPay trả kết quả về                                      │
+└───────────────────────┬──────────────────────────────────────┘
+                        │
+                        ▼
+┌──────────────────────────────────────────────────────────────┐
+│  4. XỬ LÝ CALLBACK TỪ VNPAY                                  │
+│                                                               │
+│  GET /payment/vnpay/return                                   │
+│  └─> PaymentController::vnpayReturn()                        │
+│      ├─> PaymentService::validateVNPayCallback()             │
+│      │   └─> Kiểm tra chữ ký vnp_SecureHash                  │
+│      │                                                        │
+│      └─> PaymentService::processVNPayReturn()                │
+│          ├─> Parse vnp_TxnRef để lấy order_id               │
+│          ├─> Kiểm tra vnp_ResponseCode                       │
+│          │                                                    │
+│          ├─> Nếu thành công (00):                            │
+│          │   ├─> Cập nhật order.payment_status = 'paid'     │
+│          │   ├─> Cập nhật order.transaction_id              │
+│          │   ├─> Cập nhật order.paid_at = now()             │
+│          │   └─> Redirect đến trang success                  │
+│          │                                                    │
+│          └─> Nếu thất bại:                                   │
+│              ├─> Giữ nguyên payment_status = 'pending'       │
+│              ├─> KHÔNG hoàn kho (đơn hàng vẫn tồn tại)      │
+│              └─> Redirect đến trang failed                   │
+└──────────────────────────────────────────────────────────────┘
+```
+
+### Các Trường Hợp Đặc Biệt
+
+**1. Thanh toán thất bại:**
+- Đơn hàng vẫn tồn tại với `payment_status=pending`
+- Kho ĐÃ BỊ TRỪ (không hoàn lại)
+- Khách hàng có thể:
+  - Thanh toán lại (nếu có tính năng)
+  - Liên hệ admin để chuyển sang COD
+  - Hủy đơn (kho sẽ được hoàn lại)
+
+**2. Khách hàng không quay lại sau khi thanh toán:**
+- VNPay có IPN (Instant Payment Notification) callback
+- IPN sẽ cập nhật trạng thái đơn hàng ngay cả khi khách không quay lại
+
+**3. Payment Status vs Order Status:**
+- `payment_status`: pending, paid, failed, refunded
+- `order_status`: pending, processing, shipped, delivered, cancelled
+- Một đơn hàng có thể có `payment_status=pending` và `order_status=cancelled`
+
+### Code Mẫu - Xử Lý Callback
+
+```php
+// PaymentService::processVNPayReturn()
+public function processVNPayReturn($inputData, $userId)
+{
+    $responseCode = $inputData['vnp_ResponseCode'];
+    $txnRef = $inputData['vnp_TxnRef'];
+    
+    // Parse order_id từ txnRef (format: {order_id}_{timestamp})
+    $orderId = explode('_', $txnRef)[0];
+    $order = Order::where('order_id', $orderId)->first();
+    
+    if ($responseCode === '00') {
+        // Thanh toán thành công
+        DB::transaction(function() use ($order, $inputData) {
+            $order->update([
+                'payment_status' => 'paid',
+                'transaction_id' => $inputData['vnp_TransactionNo'],
+                'paid_at' => now(),
+            ]);
+        });
+        
+        return [
+            'success' => true,
+            'order_id' => $order->order_id,
+            'message' => 'Thanh toán thành công!',
+        ];
+    } else {
+        // Thanh toán thất bại
+        return [
+            'success' => false,
+            'order_id' => $order->order_id,
+            'message' => 'Thanh toán thất bại. Mã lỗi: ' . $responseCode,
+        ];
+    }
+}
+```
 
 ---
 
@@ -689,48 +883,100 @@ Kết quả: Không áp dụng được (chưa đạt 500.000 VND)
 
 ## 📊 Quản Lý Kho Hàng
 
+### Hệ Thống Inventory Tracking
+
+Hệ thống sử dụng **2 bảng song song** để quản lý kho:
+
+1. **`products.stock_quantity`**: 
+   - Số lượng tồn kho hiện tại của sản phẩm
+   - Dùng để kiểm tra khi khách hàng đặt hàng
+   - Được cập nhật trực tiếp khi checkout/cancel
+
+2. **`inventories` table**:
+   - Theo dõi chi tiết luồng nhập/xuất kho
+   - Các trường quan trọng:
+     - `stock_in`: Tổng số lượng nhập kho
+     - `stock_out`: Tổng số lượng xuất kho (bán)
+     - `current_stock`: Tồn kho hiện tại (= stock_in - stock_out)
+
+### Đồng Bộ Dữ Liệu
+
+```php
+// Khi checkout (CartService::createOrderItems)
+$product->decrement('stock_quantity', $quantity);
+
+$inventory = Inventory::firstOrCreate(['product_id' => $product->product_id]);
+$inventory->increment('stock_out', $quantity);
+$inventory->decrement('current_stock', $quantity);
+
+// Khi cancel (OrderService::handleOrderCancelled)
+$product->increment('stock_quantity', $quantity);
+
+$inventory->decrement('stock_out', $quantity);
+$inventory->increment('current_stock', $quantity);
+```
+
 ### Trạng Thái Kho
 
 ```php
-// Product Model
-class Product extends Model
+// InventoryService
+public function getLowStockInventories(int $threshold = 10)
 {
-    // Có sẵn để mua
-    public function isInStock(): bool
-    {
-        return $this->stock_quantity > 0;
-    }
-    
-    // Cảnh báo kho thấp
-    public function isLowStock(int $threshold = 10): bool
-    {
-        return $this->stock_quantity <= $threshold;
-    }
+    return Inventory::with('product')
+        ->where('current_stock', '<', $threshold)
+        ->where('current_stock', '>', 0)
+        ->get();
+}
+
+public function getOutOfStockInventories()
+{
+    return Inventory::with('product')
+        ->where('current_stock', '=', 0)
+        ->get();
 }
 ```
 
 ### Loại Điều Chỉnh Kho
 
-| Loại | Mô Tả | Ví Dụ |
-|------|-------|-------|
-| **restock** | Thêm kho mới | Nhận hàng: +100 |
-| **damage** | Loại bỏ hàng hư | Hàng bị hỏng: -5 |
-| **adjustment** | Điều chỉnh thủ công | Kiểm kê phát hiện sai sót: +10 |
-| **return** | Khách hàng trả hàng | Trả về kho: +2 |
+| Loại | Code | Mô Tả | Tác Động |
+|------|------|-------|----------|
+| **Nhập kho** | `in` | Nhập hàng mới | `stock_in` ↑, `current_stock` ↑ |
+| **Xuất kho** | `out` | Xuất hàng thủ công | `stock_out` ↑, `current_stock` ↓ |
+| **Điều chỉnh** | `adjust` | Điều chỉnh số liệu | Cập nhật trực tiếp các giá trị |
 
-### Endpoint Điều Chỉnh
+### Endpoint Quản Lý Kho
 
+**1. Xem danh sách inventory:**
 ```http
-POST /api/inventory/adjust
-Authorization: Bearer {admin/manager-token}
+GET /dashboard/inventory
+```
 
+**2. Điều chỉnh tồn kho:**
+```php
+// InventoryService::adjustStock()
+public function adjustStock($inventoryId, $adjustmentType, $quantity)
 {
-  "product_id": 5,
-  "quantity": 100,
-  "type": "restock",
-  "note": "Lô hàng mới từ nhà cung cấp"
+    $inventory = Inventory::findOrFail($inventoryId);
+    
+    if ($adjustmentType === 'in') {
+        $inventory->stock_in += $quantity;
+        $inventory->current_stock += $quantity;
+    } else {
+        if ($inventory->current_stock < $quantity) {
+            throw new \Exception('Số lượng xuất kho vượt quá tồn kho!');
+        }
+        $inventory->stock_out += $quantity;
+        $inventory->current_stock -= $quantity;
+    }
+    
+    $inventory->save();
 }
 ```
+
+**3. Cảnh báo kho thấp:**
+- Ngưỡng mặc định: `current_stock < 10`
+- Dashboard hiển thị danh sách sản phẩm cần nhập thêm
+- Có thể filter theo: low stock, out of stock, available
 
 ---
 
@@ -770,6 +1016,23 @@ $transitions = [
 
 ---
 
-**Cập nhật lần cuối**: 21/10/2025  
-**Version**: 3.0  
+## 📝 Changelog
+
+### Version 4.0 - 26/10/2025
+- ✅ Cập nhật chính sách **TỰ ĐỘNG hoàn kho** khi hủy đơn hàng
+- ✅ Thêm luồng thanh toán **VNPay** chi tiết
+- ✅ Bổ sung hệ thống **Inventory tracking** với 2 bảng song song
+- ✅ Cập nhật luồng checkout với **Coupon integration**
+- ✅ Sửa endpoint từ API sang Web routes (dashboard)
+- ✅ Cập nhật sơ đồ trạng thái đơn hàng
+- ✅ Làm rõ các trường payment_status vs order_status
+- ✅ Thêm các trường hợp đặc biệt khi thanh toán VNPay thất bại
+
+### Version 3.0 - 21/10/2025
+- Phiên bản ban đầu với nghiệp vụ cơ bản
+
+---
+
+**Cập nhật lần cuối**: 26/10/2025  
+**Version**: 4.0  
 **Author**: Hoàng Quang Vinh

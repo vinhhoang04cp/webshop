@@ -1,20 +1,150 @@
 # TÀI LIỆU CHI TIẾT VỀ CÁC WEB CONTROLLER
 
+> **📌 Lưu ý quan trọng**: Từ phiên bản 2.0, tất cả controllers đã được refactor để sử dụng **Service Pattern** và **Form Requests** nhằm tách biệt business logic khỏi presentation layer, cải thiện khả năng test và bảo trì code.
+
 ## Mục lục
-1. [AuthController](#authcontroller)
-2. [HomeController](#homecontroller)
-3. [CustomerProductController](#customerproductcontroller)
-4. [CustomerCartController](#customercartcontroller)
-5. [OrderController](#ordercontroller)
-6. [ProfileController](#profilecontroller)
-7. [CategoryController](#categorycontroller)
-8. [ProductController](#productcontroller)
-9. [InventoryController](#inventorycontroller)
-10. [CouponController](#couponcontroller)
-11. [UserManagementController](#usermanagementcontroller)
-12. [ReportController](#reportcontroller)
-13. [SocialAuthController](#socialauthcontroller)
-14. [PasswordResetController](#passwordresetcontroller)
+1. [Service Pattern Overview](#service-pattern-overview) ⭐ **Mới**
+2. [Form Requests Overview](#form-requests-overview) ⭐ **Mới**
+3. [AuthController](#authcontroller)
+4. [HomeController](#homecontroller)
+5. [CustomerProductController](#customerproductcontroller)
+6. [CustomerCartController](#customercartcontroller)
+7. [OrderController](#ordercontroller)
+8. [ProfileController](#profilecontroller)
+9. [CategoryController](#categorycontroller)
+10. [ProductController](#productcontroller)
+11. [InventoryController](#inventorycontroller)
+12. [CouponController](#couponcontroller)
+13. [UserManagementController](#usermanagementcontroller)
+14. [ReportController](#reportcontroller)
+15. [SocialAuthController](#socialauthcontroller)
+16. [PasswordResetController](#passwordresetcontroller)
+17. [PaymentController](#paymentcontroller) ⭐ **Mới**
+
+---
+
+## Service Pattern Overview
+
+### Mục đích
+Service classes chứa toàn bộ business logic của ứng dụng, giúp:
+- **Tách biệt concerns**: Controllers chỉ xử lý HTTP, Services xử lý business logic
+- **Tái sử dụng code**: Một Service có thể được dùng trong nhiều Controllers
+- **Dễ test**: Business logic có thể test độc lập với HTTP layer
+- **Quản lý transactions**: Tập trung logic transaction phức tạp
+
+### Các Services trong hệ thống
+
+| Service | Mô tả | Chức năng chính |
+|---------|-------|----------------|
+| `AuthService` | Xác thực người dùng | Login, Register, Logout |
+| `CartService` | Quản lý giỏ hàng | Add, Update, Remove, Checkout |
+| `OrderService` | Quản lý đơn hàng | Create, Update status, Cancel, Restore inventory |
+| `ProductService` | Quản lý sản phẩm | CRUD products, Stock management |
+| `CategoryService` | Quản lý danh mục | CRUD categories |
+| `CouponService` | Quản lý mã giảm giá | Validate, Calculate discount |
+| `InventoryService` | Quản lý tồn kho | Stock in/out, Adjust stock |
+| `PaymentService` | Xử lý thanh toán | VNPay URL generation, Callback validation |
+| `SocialAuthService` | Xác thực social | Google, Facebook, GitHub login |
+| `PasswordResetService` | Đặt lại mật khẩu | Send reset link, Reset password |
+| `ProfileService` | Quản lý hồ sơ | Update profile, Change password |
+| `ReportService` | Báo cáo thống kê | Revenue, Products, Customers reports |
+| `UserManagementService` | Quản lý người dùng | CRUD users, Assign roles |
+| `HomeService` | Trang chủ | Featured products, Categories |
+
+### Cấu trúc Service chuẩn
+
+```php
+namespace App\Services;
+
+use Illuminate\Support\Facades\DB;
+
+class ExampleService
+{
+    /**
+     * Public method - Entry point được gọi từ Controller
+     */
+    public function doSomething($data)
+    {
+        DB::beginTransaction();
+        try {
+            // Business logic
+            $result = $this->processData($data);
+            
+            DB::commit();
+            return $result;
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+    
+    /**
+     * Protected method - Internal helper
+     */
+    protected function processData($data)
+    {
+        // Implementation
+    }
+}
+```
+
+---
+
+## Form Requests Overview
+
+### Mục đích
+Form Request classes xử lý validation logic, giúp:
+- **Tách validation khỏi Controllers**: Controllers gọn gàng hơn
+- **Tái sử dụng validation rules**: Dùng chung cho Web và API
+- **Custom error messages**: Tin nhắn lỗi tiếng Việt
+- **Authorization logic**: Kiểm tra quyền truy cập
+
+### Các Form Requests trong hệ thống
+
+| Form Request | Mô tả | Validation chính |
+|--------------|-------|-----------------|
+| `RegisterRequest` | Đăng ký tài khoản | email unique, password confirmed |
+| `LoginRequest` | Đăng nhập | email, password required |
+| `CheckoutRequest` | Thanh toán | shipping info, payment_method |
+| `CartRequest` | Giỏ hàng | quantity min:1 |
+| `ProductRequest` | Sản phẩm | name, price, category_id |
+| `CategoryRequest` | Danh mục | name unique |
+| `CouponRequest` | Mã giảm giá | code unique, discount_type, dates |
+| `OrderRequest` | Đơn hàng | items array, total_amount |
+| `RatingRequest` | Đánh giá | rating 1-5, review max:1000 |
+| `ProfileUpdateRequest` | Cập nhật hồ sơ | name, phone, avatar |
+| `ChangePasswordRequest` | Đổi mật khẩu | current_password, new_password confirmed |
+| `PasswordResetRequest` | Reset mật khẩu | email, password, token |
+
+### Cấu trúc Form Request chuẩn
+
+```php
+namespace App\Http\Requests;
+
+use Illuminate\Foundation\Http\FormRequest;
+
+class ExampleRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return true; // hoặc kiểm tra quyền
+    }
+
+    public function rules(): array
+    {
+        return [
+            'field' => 'required|string|max:255',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'field.required' => 'Vui lòng nhập trường này',
+        ];
+    }
+}
+```
 
 ---
 
@@ -328,6 +458,16 @@ Controller xử lý hiển thị và tìm kiếm sản phẩm cho khách hàng, 
 ### Mục đích
 Controller xử lý giỏ hàng của khách hàng: thêm, sửa, xóa sản phẩm và thanh toán.
 
+### Dependencies
+```php
+protected $cartService;
+
+public function __construct(CartService $cartService)
+{
+    $this->cartService = $cartService;
+}
+```
+
 ### Các phương thức
 
 #### `index()`
@@ -337,66 +477,55 @@ Controller xử lý giỏ hàng của khách hàng: thêm, sửa, xóa sản ph�
 1. **Kiểm tra đăng nhập:**
    - Chưa đăng nhập → redirect về login
 
-2. **Lấy giỏ hàng:**
-   - Lấy cart của user hiện tại
-   - Nếu chưa có → tạo mới với user_id
+2. **Gọi CartService:**
+   - `$cart = $this->cartService->getOrCreateCart()`
+   - `$cartItems = $this->cartService->getCartItems($cart)`
 
-3. **Load cart items:**
-   - Eager load: product.category
-   - Sử dụng try-catch để xử lý lỗi
-   - Fallback về collection rỗng nếu lỗi
-
-4. **Tính tổng:**
+3. **Tính tổng:**
    - `$cartCount`: Tổng quantity của items
+
+**Services:** `CartService`
 
 **Return:** `View`
 
 ---
 
-#### `add(Request $request, $productId)`
+#### `add(CartRequest $request, $productId)`
 **Chức năng:** Thêm sản phẩm vào giỏ hàng
 
 **Parameters:**
-- `$request`: Chứa quantity (mặc định 1)
+- `$request`: `CartRequest` - validate quantity
 - `$productId`: ID của sản phẩm cần thêm
 
 **Hoạt động:**
 1. **Kiểm tra đăng nhập**
+2. **Validation tự động qua CartRequest**
+3. **Gọi CartService:**
+   - `$this->cartService->addToCart($productId, $quantity)`
+   - Service xử lý transaction và logic thêm vào giỏ
 
-2. **Validate:**
-   - `quantity`: sometimes, integer, min 1
-
-3. **Sử dụng transaction:**
-   - Tìm product theo ID
-   - Lấy hoặc tạo cart cho user
-   - Kiểm tra sản phẩm đã có trong giỏ chưa:
-     - Có → tăng quantity
-     - Chưa → tạo CartItem mới với price hiện tại
-   - Commit hoặc rollback
+**Services:** `CartService`
+**Form Request:** `CartRequest`
 
 **Return:** `RedirectResponse`
 
 ---
 
-#### `update(Request $request, $cartItemId)`
+#### `update(CartRequest $request, $cartItemId)`
 **Chức năng:** Cập nhật số lượng sản phẩm trong giỏ
 
 **Parameters:**
-- `$request`: Chứa quantity mới
+- `$request`: `CartRequest` - validate quantity
 - `$cartItemId`: ID của cart item
 
 **Hoạt động:**
-1. **Validate:**
-   - `quantity`: required, integer, min 1
+1. **Validation tự động qua CartRequest**
+2. **Gọi CartService:**
+   - `$this->cartService->updateCartItem($cartItemId, $quantity)`
+   - Service kiểm tra quyền và cập nhật
 
-2. **Kiểm tra quyền:**
-   - Tìm cart item
-   - Kiểm tra cart.user_id == Auth::id()
-   - Không khớp → trả về lỗi
-
-3. **Cập nhật:**
-   - Cập nhật quantity mới
-   - Lưu vào database
+**Services:** `CartService`
+**Form Request:** `CartRequest`
 
 **Return:** `RedirectResponse`
 
@@ -409,14 +538,11 @@ Controller xử lý giỏ hàng của khách hàng: thêm, sửa, xóa sản ph�
 - `$cartItemId`: ID của cart item cần xóa
 
 **Hoạt động:**
-1. **Kiểm tra quyền:**
-   - Tìm cart item
-   - Verify user_id
+1. **Gọi CartService:**
+   - `$this->cartService->removeFromCart($cartItemId)`
+   - Service kiểm tra quyền, sử dụng transaction và xóa
 
-2. **Xóa:**
-   - Sử dụng transaction
-   - Gọi `$cartItem->delete()`
-   - Commit
+**Services:** `CartService`
 
 **Return:** `RedirectResponse`
 
@@ -426,76 +552,46 @@ Controller xử lý giỏ hàng của khách hàng: thêm, sửa, xóa sản ph�
 **Chức năng:** Xóa toàn bộ giỏ hàng
 
 **Hoạt động:**
-1. Lấy cart của user
-2. Xóa tất cả items: `$cart->items()->delete()`
-3. Redirect về trang trước
+1. **Gọi CartService:**
+   - `$this->cartService->clearCart()`
+
+**Services:** `CartService`
 
 **Return:** `RedirectResponse`
 
 ---
 
-#### `checkout(Request $request)`
-**Chức năng:** Xử lý thanh toán và đặt hàng (COD)
+#### `checkout(CheckoutRequest $request)`
+**Chức năng:** Xử lý thanh toán và đặt hàng (COD/VNPay)
 
 **Parameters:**
-- `$request`: Chứa thông tin giao hàng và mã giảm giá
+- `$request`: `CheckoutRequest` - validate thông tin giao hàng, payment_method, coupon
 
 **Hoạt động:**
-1. **Validate thông tin giao hàng:**
-   - `shipping_name`: required, max 255
-   - `shipping_phone`: required, max 20
-   - `shipping_address`: required, max 1000
-   - `note`: nullable, max 500
-   - `coupon_code`: nullable, max 50
+1. **Validation tự động qua CheckoutRequest:**
+   - shipping_name, shipping_phone, shipping_address
+   - payment_method: 'cod' hoặc 'vnpay'
+   - coupon_code (optional)
 
-2. **Kiểm tra giỏ hàng:**
-   - Lấy cart của user
-   - Kiểm tra có items không
+2. **Gọi CartService:**
+   - `$result = $this->cartService->processCheckout($request->validated())`
+   - Service xử lý:
+     - Kiểm tra tồn kho
+     - Validate và áp dụng coupon
+     - Tạo đơn hàng
+     - Trừ tồn kho qua InventoryService
+     - Xóa giỏ hàng
 
-3. **Database Transaction:**
-   
-   a. **Kiểm tra tồn kho:**
-      - Duyệt qua từng cart item
-      - Verify product tồn tại
-      - Kiểm tra stock_quantity đủ không
-      - Throw exception nếu không đủ
+3. **Xử lý redirect theo payment_method:**
+   - **COD**: Redirect về cart.index với thông báo thành công
+   - **VNPay**: Lưu order_id vào session, redirect đến payment.create
 
-   b. **Xử lý coupon (nếu có):**
-      - Tìm coupon theo code
-      - Validate coupon: `$coupon->isValid($totalAmount)`
-      - Tính discount: `$coupon->calculateDiscount($totalAmount)`
-      - Trừ discount vào total_amount
-
-   c. **Tạo đơn hàng:**
-      - Tạo Order mới với:
-        - user_id, total_amount, status = 'pending'
-        - shipping_name, shipping_phone, shipping_address, note
-        - order_date = now()
-      - Lưu vào database
-
-   d. **Tăng used_count của coupon (nếu có)**
-
-   e. **Tạo order items và TRỪ TỒN KHO:**
-      - Duyệt qua từng cart item:
-        - Tạo OrderItem với order_id, product_id, quantity, price
-        - TRỪ stock_quantity: `$product->decrement('stock_quantity', $quantity)`
-        - Cập nhật Inventory:
-          - Tăng stock_out
-          - Giảm current_stock
-
-   f. **Xóa cart items:**
-      - `$cart->items()->delete()`
-
-4. **Commit transaction**
-
-5. **Redirect với thông báo:**
-   - Thông báo thành công
-   - Hiển thị số tiền tiết kiệm (nếu dùng coupon)
-   - Thông báo sẽ liên hệ qua SĐT
+**Services:** `CartService`, `CouponService`, `InventoryService`
+**Form Request:** `CheckoutRequest`
 
 **Lưu ý quan trọng:**
 - Hệ thống TRỪ TỒN KHO NGAY khi khách đặt hàng (giữ hàng cho khách)
-- Nếu hủy đơn → cần hoàn trả tồn kho
+- Nếu hủy đơn → OrderService sẽ hoàn trả tồn kho
 
 **Return:** `RedirectResponse`
 
@@ -506,6 +602,16 @@ Controller xử lý giỏ hàng của khách hàng: thêm, sửa, xóa sản ph�
 ### Mục đích
 Controller quản lý đơn hàng cho admin: xem, sửa trạng thái, xóa đơn hàng.
 
+### Dependencies
+```php
+protected $orderService;
+
+public function __construct(OrderService $orderService)
+{
+    $this->orderService = $orderService;
+}
+```
+
 ### Các phương thức
 
 #### `index(Request $request)`
@@ -515,23 +621,18 @@ Controller quản lý đơn hàng cho admin: xem, sửa trạng thái, xóa đơ
 - `$request`: Chứa search và status filter
 
 **Hoạt động:**
-1. **Query orders:**
-   - Eager load: user, items.product
+1. **Gọi OrderService:**
+   - `$orders = $this->orderService->getOrdersForAdmin($filters, $perPage)`
+   - Service xử lý query, filter và phân trang
 
-2. **Tìm kiếm:**
-   - Theo order_id (LIKE)
-   - Hoặc theo thông tin user (name, email) với `whereHas`
-
-3. **Lọc theo trạng thái:**
-   - pending, processing, shipped, delivered, cancelled
-
-4. **Sắp xếp:** order_date desc (mới nhất trước)
-
-5. **Phân trang:** 15 đơn/trang
+2. **Lấy statuses:**
+   - `$statuses = $this->orderService->getAllStatuses()`
 
 **Dữ liệu trả về:**
-- `orders`: Danh sách đơn hàng
+- `orders`: Danh sách đơn hàng đã phân trang
 - `statuses`: Danh sách trạng thái (key-value)
+
+**Services:** `OrderService`
 
 **Return:** `View`
 
@@ -562,38 +663,28 @@ Controller quản lý đơn hàng cho admin: xem, sửa trạng thái, xóa đơ
 
 ---
 
-#### `update(Request $request, $id)`
+#### `update(OrderRequest $request, $id)`
 **Chức năng:** Cập nhật trạng thái đơn hàng
 
 **Parameters:**
-- `$request`: Chứa status mới
+- `$request`: `OrderRequest` - validate status
 - `$id`: ID của order
 
 **Hoạt động:**
-1. **Validate:**
-   - `status`: required, in:pending,processing,shipped,delivered,cancelled
+1. **Validation tự động qua OrderRequest:**
+   - status: required, in:pending,processing,shipped,delivered,cancelled
 
-2. **Kiểm tra chuyển đổi:**
-   - Gọi `$order->canTransitionTo($newStatus)`
-   - Nếu không thể → trả về lỗi
+2. **Gọi OrderService:**
+   - `$order = $this->orderService->updateOrderStatus($id, $newStatus)`
+   - Service xử lý:
+     - Kiểm tra canTransitionTo()
+     - Sử dụng transaction
+     - Cập nhật trạng thái
+     - Nếu delivered: Log (tồn kho đã trừ khi checkout)
+     - Nếu cancelled: Hoàn trả tồn kho qua InventoryService
 
-3. **Sử dụng transaction:**
-   
-   a. **Cập nhật trạng thái:**
-      - `$order->update(['status' => $newStatus])`
-
-   b. **Nếu chuyển sang 'delivered':**
-      - Gọi `updateInventoryOnDelivered($order)`
-      - (Chỉ log, không trừ tồn kho vì đã trừ khi đặt hàng)
-
-   c. **Nếu chuyển sang 'cancelled':**
-      - Gọi `restoreInventoryOnCancelled($order)`
-      - Hoàn trả tồn kho:
-        - Tăng stock_quantity
-        - Giảm stock_out
-        - Tăng current_stock
-
-4. **Commit và redirect**
+**Services:** `OrderService`, `InventoryService`
+**Form Request:** `OrderRequest`
 
 **Return:** `RedirectResponse`
 
@@ -606,55 +697,13 @@ Controller quản lý đơn hàng cho admin: xem, sửa trạng thái, xóa đơ
 - `$id`: ID của order
 
 **Hoạt động:**
-1. Tìm order
-2. **Kiểm tra điều kiện:**
-   - Chỉ cho phép xóa đơn đã hủy hoặc đã giao
-   - Nếu không → trả về lỗi
-3. Xóa order
-4. Redirect về danh sách
+1. **Gọi OrderService:**
+   - `$this->orderService->deleteOrder($id)`
+   - Service kiểm tra điều kiện và xóa
+
+**Services:** `OrderService`
 
 **Return:** `RedirectResponse`
-
----
-
-#### `getAvailableStatuses($currentStatus)` (private)
-**Chức năng:** Lấy danh sách trạng thái có thể chuyển đổi
-
-**Parameters:**
-- `$currentStatus`: Trạng thái hiện tại
-
-**Hoạt động:**
-- Lấy từ `Order::STATUS_TRANSITIONS[$currentStatus]`
-- Map với label tiếng Việt
-- Trả về mảng [status => label]
-
-**Return:** `array`
-
----
-
-#### `getStatusLabel($status)` (private)
-**Chức năng:** Chuyển mã trạng thái sang tên tiếng Việt
-
-**Return:** `string`
-
----
-
-#### `updateInventoryOnDelivered(Order $order)` (private)
-**Chức năng:** Xử lý khi đơn hàng được giao (chỉ log)
-
-**Lưu ý:** Không trừ tồn kho vì đã trừ khi đặt hàng
-
----
-
-#### `restoreInventoryOnCancelled(Order $order)` (private)
-**Chức năng:** Hoàn trả tồn kho khi hủy đơn
-
-**Hoạt động:**
-1. Lấy tất cả order items
-2. Duyệt từng item:
-   - Tăng product.stock_quantity
-   - Giảm inventory.stock_out
-   - Tăng inventory.current_stock
 
 ---
 
@@ -1809,24 +1858,199 @@ Controller xử lý quên mật khẩu và đặt lại mật khẩu qua email.
 
 ---
 
+## PaymentController
+
+### Mục đích
+Controller xử lý thanh toán VNPay: tạo payment URL, xử lý callback và IPN từ VNPay.
+
+### Dependencies
+```php
+protected $paymentService;
+
+public function __construct(PaymentService $paymentService)
+{
+    $this->paymentService = $paymentService;
+}
+```
+
+### Các phương thức
+
+#### `createPayment(Request $request)`
+**Chức năng:** Tạo URL thanh toán VNPay và chuyển hướng
+
+**Parameters:**
+- `$request`: Chứa order_id hoặc lấy từ session
+
+**Hoạt động:**
+1. **Lấy order_id:**
+   - Từ request hoặc session `pending_payment_order_id`
+   
+2. **Kiểm tra quyền:**
+   - Verify order thuộc về user hiện tại
+
+3. **Gọi PaymentService:**
+   - `$paymentData = $this->paymentService->createVNPayPaymentUrl($orderId, $request->ip())`
+   - Service tạo URL với các tham số VNPay và secure hash
+
+4. **Lưu session:**
+   - Lưu `vnpay_txnref` và `order_id` để tracking
+
+5. **Redirect:**
+   - Chuyển hướng đến URL VNPay
+
+**Services:** `PaymentService`
+
+**Return:** `RedirectResponse`
+
+---
+
+#### `vnpayReturn(Request $request)`
+**Chức năng:** Xử lý callback từ VNPay sau khi user thanh toán
+
+**Parameters:**
+- `$request`: Chứa tất cả tham số từ VNPay callback
+
+**Hoạt động:**
+1. **Validate chữ ký:**
+   - `$this->paymentService->validateVNPayCallback($inputData)`
+   - Nếu không hợp lệ → redirect với lỗi
+
+2. **Xử lý kết quả:**
+   - `$result = $this->paymentService->processVNPayReturn($inputData, auth()->id())`
+   - Service xử lý:
+     - Kiểm tra transaction code
+     - Cập nhật order: payment_status, transaction_id, paid_at
+     - Nếu thành công: order_status = 'processing'
+     - Nếu thất bại: có thể hủy đơn
+
+3. **Redirect theo kết quả:**
+   - Thành công → `payment.success` với thông báo
+   - Thất bại → `payment.failed` với lỗi
+
+**Services:** `PaymentService`, `OrderService`
+
+**Return:** `RedirectResponse`
+
+---
+
+#### `vnpayIPN(Request $request)`
+**Chức năng:** IPN (Instant Payment Notification) - VNPay gọi để xác nhận giao dịch
+
+**Parameters:**
+- `$request`: Chứa tất cả tham số từ VNPay IPN
+
+**Hoạt động:**
+1. **Validate chữ ký:**
+   - `$this->paymentService->validateVNPayCallback($inputData)`
+
+2. **Xử lý IPN:**
+   - `$returnData = $this->paymentService->processVNPayIPN($inputData)`
+   - Service xử lý và log transaction
+
+3. **Trả về JSON response:**
+   - Success: `{RspCode: '00', Message: 'Confirm Success'}`
+   - Failed: `{RspCode: '97/99', Message: 'Error description'}`
+
+**Services:** `PaymentService`
+
+**Return:** `JsonResponse`
+
+**Lưu ý:**
+- IPN được gọi từ VNPay server, không qua user
+- Phải trả về JSON response theo format VNPay
+- Dùng để đảm bảo transaction được xác nhận chắc chắn
+
+---
+
+#### `success(Request $request)`
+**Chức năng:** Hiển thị trang thanh toán thành công
+
+**Parameters:**
+- `$request`: Chứa order_id
+
+**Hoạt động:**
+1. Tìm order với eager load items.product
+2. Trả về view `payment.success` với order details
+
+**Return:** `View`
+
+---
+
+#### `failed(Request $request)`
+**Chức năng:** Hiển thị trang thanh toán thất bại
+
+**Parameters:**
+- `$request`: Chứa order_id
+
+**Hoạt động:**
+1. Tìm order
+2. Trả về view `payment.failed` với order
+
+**Return:** `View`
+
+---
+
 ## KẾT LUẬN
 
-Tài liệu này cung cấp mô tả chi tiết về 14 controller trong thư mục Web, bao gồm:
+Tài liệu này cung cấp mô tả chi tiết về 15 controller trong thư mục Web, bao gồm:
 
 - **Xác thực:** AuthController, SocialAuthController, PasswordResetController
 - **Quản lý người dùng:** ProfileController, UserManagementController
 - **Quản lý sản phẩm:** ProductController, CategoryController, InventoryController
 - **Bán hàng:** CustomerProductController, CustomerCartController, OrderController
+- **Thanh toán:** PaymentController ⭐ **Mới**
 - **Marketing:** CouponController
 - **Báo cáo:** ReportController
 - **Giao diện:** HomeController
 
-Mỗi controller đều được thiết kế với:
-- Validation đầy đủ
-- Error handling
-- Transaction cho các thao tác quan trọng
-- Eager loading để tối ưu performance
-- Flash messages để thông báo cho người dùng
+### Kiến trúc mới (Version 2.0)
 
-Hệ thống quản lý tồn kho tự động, đảm bảo tính toàn vẹn dữ liệu qua database transactions, và hỗ trợ nhiều tính năng nâng cao như mã giảm giá, đánh giá sản phẩm, và báo cáo thống kê.
+Từ version 2.0, tất cả controllers đã được refactor theo pattern:
+
+1. **Service Layer Pattern:**
+   - Controllers chỉ xử lý HTTP request/response
+   - Business logic được tách ra Services
+   - Dễ dàng test và maintain
+
+2. **Form Requests:**
+   - Validation logic tách khỏi Controllers
+   - Tái sử dụng cho Web và API
+   - Custom error messages tiếng Việt
+
+3. **Dependency Injection:**
+   - Services được inject qua constructor
+   - Tuân thủ SOLID principles
+   - Dễ dàng mock để test
+
+4. **Transaction Management:**
+   - Tất cả operations phức tạp sử dụng DB transactions
+   - Đảm bảo data consistency
+   - Tập trung trong Services
+
+5. **Error Handling:**
+   - Try-catch blocks trong Services
+   - Controllers xử lý exceptions và trả về user-friendly messages
+   - Logging đầy đủ
+
+Hệ thống quản lý tồn kho tự động, đảm bảo tính toàn vẹn dữ liệu qua database transactions, và hỗ trợ nhiều tính năng nâng cao như mã giảm giá, đánh giá sản phẩm, thanh toán VNPay, và báo cáo thống kê.
+
+---
+
+**Cập nhật lần cuối**: 26/10/2025  
+**Version**: 2.0 - Service Pattern & Form Requests  
+**Author**: Hoàng Quang Vinh
+
+---
+
+## Changelog
+
+### Version 2.0 (26/10/2025) - Service Pattern & Form Requests
+- ✅ Refactor tất cả controllers để sử dụng Service Layer
+- ✅ Thêm Form Requests cho validation
+- ✅ Thêm PaymentController cho VNPay integration
+- ✅ Cập nhật CustomerCartController: hỗ trợ COD và VNPay
+- ✅ Cập nhật OrderController: sử dụng OrderService
+- ✅ Dependency Injection cho tất cả Services
+- 📌 Business logic tách biệt khỏi presentation layer
+- 📌 Cải thiện testability và maintainability
 

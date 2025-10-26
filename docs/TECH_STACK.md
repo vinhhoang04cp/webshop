@@ -35,10 +35,11 @@
 |---------|---------|---------|
 | **laravel/framework** | ^12.0 | Main framework |
 | **laravel/sanctum** | ^4.0.14 | API authentication |
+| **laravel/socialite** | ^5.23 | Social authentication (Google, Facebook, GitHub) |
 | **laravel/sail** | ^2.0 | Docker development environment |
 | **laravel/tinker** | ^2.10 | REPL for Laravel |
 | **doctrine/dbal** | ^4.0 | Database abstraction layer |
-| **guzzlehttp/guzzle** | ^7.9 | HTTP client |
+| **guzzlehttp/guzzle** | ^7.9 | HTTP client (VNPay integration) |
 | **intervention/image** | ^3.0 | Image manipulation |
 
 ### Development Dependencies
@@ -299,8 +300,67 @@ npm run dev
 
 ---
 
-**Cập nhật lần cuối**: 21/10/2025  
-**Version**: 3.1 (Coupon System Added)  
+**Cập nhật lần cuối**: 26/10/2025  
+**Version**: 4.0 - Service Pattern & Payment Integration  
 **Author**: Hoàng Quang Vinh
+
+---
+
+## 📝 Changelog
+
+### Version 4.0 (26/10/2025)
+- ✅ **Service Pattern**: Thêm thông tin về Services Layer
+- ✅ **Payment Integration**: Laravel Socialite cho social auth, Guzzle cho VNPay
+- ✅ **Form Requests**: 19 validation classes
+- 📌 Kiến trúc tổ chức tốt hơn với Service Layer và Form Requests
+
+---
+
+## 🏗️ Architecture Patterns
+
+### Service Layer Pattern
+Hệ thống sử dụng **Service Pattern** để tổ chức business logic:
+
+```
+Controllers → Services → Models → Database
+```
+
+**Services có sẵn:**
+- `AuthService` - Authentication & user management
+- `CartService` - Shopping cart logic
+- `OrderService` - Order processing & checkout
+- `PaymentService` - VNPay payment gateway integration
+- `CouponService` - Coupon validation & application
+- `InventoryService` - Stock management
+- `ProfileService` - User profile management
+- `PasswordResetService` - Password reset flow
+- `SocialAuthService` - Social login (Google, Facebook, GitHub)
+
+### Form Request Validation
+Laravel Form Requests cho input validation:
+- `RegisterRequest`, `LoginRequest`
+- `CheckoutRequest`, `RatingRequest`
+- `ProfileUpdateRequest`, `ChangePasswordRequest`
+- Và 13 Request classes khác
+
+---
+
+## 🔌 Third-party Integrations
+
+### Payment Gateway
+- **VNPay**: Vietnamese payment gateway
+  - Implemented via `PaymentService`
+  - Uses Guzzle HTTP client for API calls
+  - Supports: QR Code, ATM cards, Credit cards
+
+### Social Authentication
+- **Laravel Socialite**: OAuth authentication
+  - Google OAuth 2.0
+  - Facebook Login
+  - GitHub OAuth
+  - Implemented via `SocialAuthService`
+
+---
+
 - **Authorization**: Role-Based Access Control (RBAC)
 

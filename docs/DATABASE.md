@@ -289,6 +289,10 @@ DB_PASSWORD=password
 | `order_date` | DATETIME | Ngày đặt hàng | NOT NULL |
 | `total_amount` | DECIMAL(12,2) | Tổng tiền đơn hàng | NOT NULL |
 | `status` | ENUM | Trạng thái đơn hàng | DEFAULT 'pending' |
+| `payment_status` | ENUM | Trạng thái thanh toán | DEFAULT 'pending' |
+| `payment_method` | VARCHAR(50) | Phương thức thanh toán (cod/vnpay) | NULLABLE |
+| `transaction_id` | VARCHAR(255) | Mã giao dịch từ VNPay | NULLABLE |
+| `paid_at` | DATETIME | Thời điểm thanh toán thành công | NULLABLE |
 | `created_at` | TIMESTAMP | Thời điểm tạo | NULLABLE |
 | `updated_at` | TIMESTAMP | Thời điểm cập nhật | NULLABLE |
 
@@ -298,6 +302,12 @@ DB_PASSWORD=password
 - `shipped` - Đã giao vận chuyển
 - `delivered` - Đã giao hàng
 - `cancelled` - Đã hủy
+
+**Giá trị ENUM cho payment_status** ✨ *Mới*:
+- `pending` - Chờ thanh toán
+- `paid` - Đã thanh toán
+- `failed` - Thanh toán thất bại
+- `refunded` - Đã hoàn tiền
 
 **Index**: 
 - PRIMARY KEY: `order_id`
@@ -606,6 +616,19 @@ php artisan db:seed --class=ProductSeeder
 
 ---
 
-**Cập nhật lần cuối**: 21/10/2025  
-**Version**: 3.0  
+**Cập nhật lần cuối**: 26/10/2025  
+**Version**: 4.0 - Payment Integration  
 **Author**: Hoàng Quang Vinh
+
+---
+
+## Changelog
+
+### Version 4.0 (26/10/2025) - Payment Integration
+- ✅ Thêm các trường payment vào bảng `orders`:
+  - `payment_status`: Trạng thái thanh toán (pending, paid, failed, refunded)
+  - `payment_method`: Phương thức thanh toán (cod, vnpay)
+  - `transaction_id`: Mã giao dịch từ VNPay
+  - `paid_at`: Thời điểm thanh toán thành công
+- 📌 Hỗ trợ thanh toán VNPay ngoài COD
+- 📌 Phân biệt rõ `order_status` (trạng thái đơn hàng) và `payment_status` (trạng thái thanh toán)

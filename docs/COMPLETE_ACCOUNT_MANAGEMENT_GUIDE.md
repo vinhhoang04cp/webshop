@@ -54,155 +54,174 @@ Dự án WebShop đã được tích hợp 2 tính năng quan trọng:
 
 ## 🔨 Hướng dẫn tạo từng bước
 
-### 📦 Bước 1: Tạo Controller cho Password Reset
+### 📦 Bước 1: Tạo Service và Form Requests
+
+#### 1.1. Tạo Service cho Password Reset
 
 ```bash
-php artisan make:controller Web/PasswordResetController
+php artisan make:service PasswordResetService
 ```
 
-**File tạo:** `app/Http/Controllers/Web/PasswordResetController.php`
-
-**Code đầy đủ:**
+**File tạo:** `app/Services/PasswordResetService.php`
 
 ```php
 <?php
 
-namespace App\Http\Controllers\Web;
+namespace App\Services;
 
-use App\Http\Controllers\Controller;
 use App\Models\User;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
-class PasswordResetController extends Controller
+class PasswordResetService
 {
     /**
-     * Hiển thị form yêu cầu reset password
+     * Gửi link reset password qua email
      */
-    public function showForgotForm()
+    public function sendResetLink($email)
     {
-        return view('auth.forgot-password');
-    }
-
-    /**
-     * Xử lý yêu cầu gửi email reset password
-     */
-    public function sendResetLink(Request $request)
-    {
-        // Validate email
-        $request->validate([
-            'email' => 'required|email|exists:users,email',
-        ], [
-            'email.required' => 'Vui lòng nhập email.',
-            'email.email' => 'Email không đúng định dạng.',
-            'email.exists' => 'Email không tồn tại trong hệ thống.',
-        ]);
-
-        // Tạo token ngẫu nhiên
         $token = Str::random(64);
 
-        // Lưu token vào database
         DB::table('password_reset_tokens')->updateOrInsert(
-            ['email' => $request->email],
+            ['email' => $email],
             [
                 'token' => Hash::make($token),
-                'created_at' => now()
+                'created_at' => now(),
             ]
         );
 
-        // Tạo link reset password
-        $resetLink = route('password.reset', ['token' => $token, 'email' => $request->email]);
+        $resetLink = route('password.reset', ['token' => $token, 'email' => $email]);
 
-        // Gửi email
-        try {
-            Mail::send('emails.reset-password', ['resetLink' => $resetLink], function ($message) use ($request) {
-                $message->to($request->email);
-                $message->subject('Yêu cầu đặt lại mật khẩu');
-            });
+        Mail::send('emails.reset-password', ['resetLink' => $resetLink], function ($message) use ($email) {
+            $message->to($email);
+            $message->subject('Yêu cầu đặt lại mật khẩu');
+        });
 
-            return back()->with('success', 'Link đặt lại mật khẩu đã được gửi đến email của bạn!');
-        } catch (\Exception $e) {
-            return back()->withErrors(['email' => 'Không thể gửi email. Vui lòng thử lại sau.']);
+        return true;
+    }
+
+    /**
+     * Xác thực và reset password
+     */
+    public function resetPassword($email, $token, $newPassword)
+    {
+        $passwordReset = DB::table('password_reset_tokens')
+            ->where('email', $email)
+            ->first();
+
+        if (!$passwordReset) {
+            throw new \Exception('Token không hợp lệ.');
         }
+
+        if (!Hash::check($token, $passwordReset->token)) {
+            throw new \Exception('Token không hợp lệ.');
+        }
+
+        $created = \Carbon\Carbon::parse($passwordReset->created_at);
+        if ($created->addHours(24)->isPast()) {
+            throw new \Exception('Token đã hết hạn. Vui lòng yêu cầu lại.');
+        }
+
+        $user = User::where('email', $email)->first();
+        $user->password = Hash::make($newPassword);
+        $user->save();
+
+        DB::table('password_reset_tokens')->where('email', $email)->delete();
+
+        return true;
+    }
+}
+```
+
+#### 1.2. Tạo Form Requests
+
+```bash
+php artisan make:request PasswordResetLinkRequest
+php artisan make:request PasswordResetRequest
+```
+
+**File:** `app/Http/Requests/PasswordResetLinkRequest.php`
+
+```php
+<?php
+
+namespace App\Http\Requests;
+
+use Illuminate\Foundation\Http\FormRequest;
+
+class PasswordResetLinkRequest extends FormRequest
+{
+    public function authorize()
+    {
+        return true;
     }
 
-    /**
-     * Hiển thị form reset password
-     */
-    public function showResetForm(Request $request, $token)
+    public function rules()
     {
-        return view('auth.reset-password', [
-            'token' => $token,
-            'email' => $request->email
-        ]);
+        return [
+            'email' => 'required|email|exists:users,email',
+        ];
     }
 
-    /**
-     * Xử lý đặt lại mật khẩu
-     */
-    public function resetPassword(Request $request)
+    public function messages()
     {
-        // Validate dữ liệu
-        $request->validate([
+        return [
+            'email.required' => 'Vui lòng nhập email.',
+            'email.email' => 'Email không đúng định dạng.',
+            'email.exists' => 'Email không tồn tại trong hệ thống.',
+        ];
+    }
+}
+```
+
+**File:** `app/Http/Requests/PasswordResetRequest.php`
+
+```php
+<?php
+
+namespace App\Http\Requests;
+
+use Illuminate\Foundation\Http\FormRequest;
+
+class PasswordResetRequest extends FormRequest
+{
+    public function authorize()
+    {
+        return true;
+    }
+
+    public function rules()
+    {
+        return [
             'email' => 'required|email|exists:users,email',
             'password' => 'required|min:8|confirmed',
-            'token' => 'required'
-        ], [
+            'token' => 'required',
+        ];
+    }
+
+    public function messages()
+    {
+        return [
             'email.required' => 'Vui lòng nhập email.',
             'email.email' => 'Email không đúng định dạng.',
             'email.exists' => 'Email không tồn tại trong hệ thống.',
             'password.required' => 'Vui lòng nhập mật khẩu mới.',
             'password.min' => 'Mật khẩu phải có ít nhất 8 ký tự.',
             'password.confirmed' => 'Mật khẩu xác nhận không khớp.',
-        ]);
-
-        // Kiểm tra token
-        $passwordReset = DB::table('password_reset_tokens')
-            ->where('email', $request->email)
-            ->first();
-
-        if (!$passwordReset) {
-            return back()->withErrors(['email' => 'Token không hợp lệ.']);
-        }
-
-        // Kiểm tra token có khớp không
-        if (!Hash::check($request->token, $passwordReset->token)) {
-            return back()->withErrors(['email' => 'Token không hợp lệ.']);
-        }
-
-        // Kiểm tra token có hết hạn chưa (24 giờ)
-        $created = \Carbon\Carbon::parse($passwordReset->created_at);
-        if ($created->addHours(24)->isPast()) {
-            return back()->withErrors(['email' => 'Token đã hết hạn. Vui lòng yêu cầu lại.']);
-        }
-
-        // Cập nhật mật khẩu mới
-        $user = User::where('email', $request->email)->first();
-        $user->password = Hash::make($request->password);
-        $user->save();
-
-        // Xóa token đã sử dụng
-        DB::table('password_reset_tokens')->where('email', $request->email)->delete();
-
-        return redirect()->route('login')->with('success', 'Mật khẩu đã được đặt lại thành công. Vui lòng đăng nhập.');
+        ];
     }
 }
 ```
 
----
-
-### 📦 Bước 2: Tạo Controller cho Profile Management
+#### 1.3. Tạo Controller
 
 ```bash
-php artisan make:controller Web/ProfileController
+php artisan make:controller Web/PasswordResetController
 ```
 
-**File tạo:** `app/Http/Controllers/Web/ProfileController.php`
-
-**Code đầy đủ:**
+**File:** `app/Http/Controllers/Web/PasswordResetController.php`
 
 ```php
 <?php
@@ -210,35 +229,166 @@ php artisan make:controller Web/ProfileController
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\PasswordResetLinkRequest;
+use App\Http\Requests\PasswordResetRequest;
+use App\Services\PasswordResetService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+
+class PasswordResetController extends Controller
+{
+    protected $passwordResetService;
+
+    public function __construct(PasswordResetService $passwordResetService)
+    {
+        $this->passwordResetService = $passwordResetService;
+    }
+
+    public function showForgotForm()
+    {
+        return view('auth.forgot-password');
+    }
+
+    public function sendResetLink(PasswordResetLinkRequest $request)
+    {
+        try {
+            $this->passwordResetService->sendResetLink($request->email);
+            return back()->with('success', 'Link đặt lại mật khẩu đã được gửi đến email của bạn!');
+        } catch (\Exception $e) {
+            return back()->withErrors(['email' => 'Không thể gửi email. Vui lòng thử lại sau.']);
+        }
+    }
+
+    public function showResetForm(Request $request, $token)
+    {
+        return view('auth.reset-password', [
+            'token' => $token,
+            'email' => $request->email,
+        ]);
+    }
+
+    public function resetPassword(PasswordResetRequest $request)
+    {
+        try {
+            $this->passwordResetService->resetPassword(
+                $request->email,
+                $request->token,
+                $request->password
+            );
+
+            return redirect()->route('login')->with('success', 'Mật khẩu đã được đặt lại thành công. Vui lòng đăng nhập.');
+        } catch (\Exception $e) {
+            return back()->withErrors(['email' => $e->getMessage()]);
+        }
+    }
+}
+```
+
+**💡 Ưu điểm của cách tiếp cận này:**
+- ✅ **Separation of Concerns**: Business logic ở Service, validation ở Form Request
+- ✅ **Reusability**: Service có thể tái sử dụng ở nhiều nơi
+- ✅ **Testability**: Dễ dàng test từng component
+- ✅ **Maintainability**: Code sạch, dễ maintain
+
+---
+
+### 📦 Bước 2: Tạo Service và Form Requests cho Profile Management
+
+#### 2.1. Tạo ProfileService
+
+```bash
+php artisan make:service ProfileService
+```
+
+**File:** `app/Services/ProfileService.php`
+
+```php
+<?php
+
+namespace App\Services;
+
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 
-class ProfileController extends Controller
+class ProfileService
 {
     /**
-     * Hiển thị trang quản lý profile
+     * Cập nhật thông tin profile
      */
-    public function index()
+    public function updateProfile($user, $data, $avatarFile = null)
     {
-        $user = Auth::user();
-        return view('profile.index', compact('user'));
+        $user->name = $data['name'];
+        $user->phone = $data['phone'];
+        $user->address = $data['address'];
+
+        if ($avatarFile) {
+            // Xóa avatar cũ nếu có
+            if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
+                Storage::disk('public')->delete($user->avatar);
+            }
+
+            // Lưu avatar mới
+            $avatarPath = $avatarFile->store('avatars', 'public');
+            $user->avatar = $avatarPath;
+        }
+
+        $user->save();
+
+        return $user;
     }
 
     /**
-     * Cập nhật thông tin cá nhân
+     * Đổi mật khẩu
      */
-    public function updateProfile(Request $request)
+    public function changePassword($user, $currentPassword, $newPassword)
     {
-        $user = Auth::user();
+        if (!Hash::check($currentPassword, $user->password)) {
+            throw new \Exception('Mật khẩu hiện tại không đúng.');
+        }
 
-        $request->validate([
+        $user->password = Hash::make($newPassword);
+        $user->save();
+
+        return $user;
+    }
+}
+```
+
+#### 2.2. Tạo Form Requests
+
+```bash
+php artisan make:request ProfileUpdateRequest
+php artisan make:request ChangePasswordRequest
+```
+
+**File:** `app/Http/Requests/ProfileUpdateRequest.php`
+
+```php
+<?php
+
+namespace App\Http\Requests;
+
+use Illuminate\Foundation\Http\FormRequest;
+
+class ProfileUpdateRequest extends FormRequest
+{
+    public function authorize()
+    {
+        return true;
+    }
+
+    public function rules()
+    {
+        return [
             'name' => 'required|string|max:255',
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string|max:500',
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-        ], [
+        ];
+    }
+
+    public function messages()
+    {
+        return [
             'name.required' => 'Vui lòng nhập họ tên.',
             'name.max' => 'Họ tên không được vượt quá 255 ký tự.',
             'phone.max' => 'Số điện thoại không được vượt quá 20 ký tự.',
@@ -246,56 +396,106 @@ class ProfileController extends Controller
             'avatar.image' => 'File phải là hình ảnh.',
             'avatar.mimes' => 'Hình ảnh phải có định dạng: jpeg, png, jpg, gif.',
             'avatar.max' => 'Kích thước hình ảnh không được vượt quá 2MB.',
-        ]);
+        ];
+    }
+}
+```
 
-        $user->name = $request->name;
-        $user->phone = $request->phone;
-        $user->address = $request->address;
+**File:** `app/Http/Requests/ChangePasswordRequest.php`
 
-        // Xử lý upload avatar
-        if ($request->hasFile('avatar')) {
-            // Xóa avatar cũ nếu có
-            if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
-                Storage::disk('public')->delete($user->avatar);
-            }
+```php
+<?php
 
-            // Lưu avatar mới
-            $avatarPath = $request->file('avatar')->store('avatars', 'public');
-            $user->avatar = $avatarPath;
-        }
+namespace App\Http\Requests;
 
-        $user->save();
+use Illuminate\Foundation\Http\FormRequest;
 
-        return back()->with('success', 'Cập nhật thông tin thành công!');
+class ChangePasswordRequest extends FormRequest
+{
+    public function authorize()
+    {
+        return true;
     }
 
-    /**
-     * Đổi mật khẩu
-     */
-    public function changePassword(Request $request)
+    public function rules()
     {
-        $user = Auth::user();
-
-        $request->validate([
+        return [
             'current_password' => 'required',
             'new_password' => 'required|min:8|confirmed',
-        ], [
+        ];
+    }
+
+    public function messages()
+    {
+        return [
             'current_password.required' => 'Vui lòng nhập mật khẩu hiện tại.',
             'new_password.required' => 'Vui lòng nhập mật khẩu mới.',
             'new_password.min' => 'Mật khẩu mới phải có ít nhất 8 ký tự.',
             'new_password.confirmed' => 'Mật khẩu xác nhận không khớp.',
-        ]);
+        ];
+    }
+}
+```
 
-        // Kiểm tra mật khẩu hiện tại
-        if (!Hash::check($request->current_password, $user->password)) {
-            return back()->withErrors(['current_password' => 'Mật khẩu hiện tại không đúng.']);
+#### 2.3. Tạo ProfileController
+
+```bash
+php artisan make:controller Web/ProfileController
+```
+
+**File:** `app/Http/Controllers/Web/ProfileController.php`
+
+```php
+<?php
+
+namespace App\Http\Controllers\Web;
+
+use App\Http\Controllers\Controller;
+use App\Http\Requests\ChangePasswordRequest;
+use App\Http\Requests\ProfileUpdateRequest;
+use App\Services\ProfileService;
+use Illuminate\Support\Facades\Auth;
+
+class ProfileController extends Controller
+{
+    protected $profileService;
+
+    public function __construct(ProfileService $profileService)
+    {
+        $this->profileService = $profileService;
+    }
+
+    public function index()
+    {
+        $user = Auth::user();
+        return view('profile.index', compact('user'));
+    }
+
+    public function updateProfile(ProfileUpdateRequest $request)
+    {
+        $user = Auth::user();
+        $avatarFile = $request->hasFile('avatar') ? $request->file('avatar') : null;
+
+        $this->profileService->updateProfile($user, $request->validated(), $avatarFile);
+
+        return back()->with('success', 'Cập nhật thông tin thành công!');
+    }
+
+    public function changePassword(ChangePasswordRequest $request)
+    {
+        $user = Auth::user();
+
+        try {
+            $this->profileService->changePassword(
+                $user,
+                $request->current_password,
+                $request->new_password
+            );
+
+            return back()->with('success', 'Đổi mật khẩu thành công!');
+        } catch (\Exception $e) {
+            return back()->withErrors(['current_password' => $e->getMessage()]);
         }
-
-        // Cập nhật mật khẩu mới
-        $user->password = Hash::make($request->new_password);
-        $user->save();
-
-        return back()->with('success', 'Đổi mật khẩu thành công!');
     }
 }
 ```
@@ -1077,6 +1277,16 @@ Trang chủ > Quản lý tài khoản
 ### Files đã tạo/sửa:
 
 ```
+Services:
+✨ app/Services/PasswordResetService.php
+✨ app/Services/ProfileService.php
+
+Form Requests:
+✨ app/Http/Requests/PasswordResetLinkRequest.php
+✨ app/Http/Requests/PasswordResetRequest.php
+✨ app/Http/Requests/ProfileUpdateRequest.php
+✨ app/Http/Requests/ChangePasswordRequest.php
+
 Controllers:
 ✨ app/Http/Controllers/Web/PasswordResetController.php
 ✨ app/Http/Controllers/Web/ProfileController.php
@@ -1148,3 +1358,25 @@ Tất cả tính năng đã sẵn sàng:
 **🎉 Hoàn thành 100%!**
 
 Chúc bạn triển khai thành công! 🚀
+
+---
+
+## 📝 Changelog
+
+### Version 2.0 - 26/10/2025
+**Cập nhật lớn - Refactor theo Service Pattern:**
+- ✅ Thêm **PasswordResetService** và **ProfileService** 
+- ✅ Tách validation ra **Form Requests** riêng
+- ✅ Controllers chỉ xử lý HTTP, business logic ở Services
+- ✅ Cải thiện **code organization** và **testability**
+- ✅ Áp dụng **Dependency Injection** pattern
+- ✅ Cập nhật tài liệu theo chuẩn mới
+
+### Version 1.0 - 23/10/2025
+- Phiên bản ban đầu với logic trong Controllers
+
+---
+
+**Tác giả**: Hoàng Quang Vinh  
+**Cập nhật lần cuối**: 26/10/2025  
+**Version**: 2.0
