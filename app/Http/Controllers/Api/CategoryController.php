@@ -6,48 +6,38 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\CategoryRequest;
 use App\Http\Resources\CategoryCollection;
 use App\Http\Resources\CategoryResource;
-use App\Models\Category;
+use App\Services\CategoryService;
 use Illuminate\Http\Request;
 
 class CategoryController extends Controller
 {
+    protected $categoryService;
+
+    public function __construct(CategoryService $categoryService)
+    {
+        $this->categoryService = $categoryService;
+    }
+
     /**
      * Display a listing of the categories.
-     *
-     * @return \Illuminate\Http\Resources\Json\ResourceCollection // Tra ve ve CategoryCollection
      */
-    public function index(Request $request) // (Request $request) la tham so truyen vao lay du lieu tu request
+    public function index(Request $request)
     {
-        $query = Category::query(); // $query la bien de thuc hien query den Bang Category thong qua model
-        if ($request->has('name')) { // neu request truyen len co name
-            $query->where('name', 'LIKE', '%'.$request->get('name').'%'); // => query den name
-        }
+        $filters = $request->only(['name', 'description']);
+        $categories = $this->categoryService->getCategories($filters);
 
-        if ($request->has('description')) { // neu request truyen len co description
-            $query->where('description', 'LIKE', '%'.$request->get('description').'%'); // => query den description
-        }
-        // Neu du lieu lon, khuyen nghi paginate
-        $categories = $query->paginate(15); // Phan trang, moi trang
-
-        return new CategoryCollection($categories); // tra ve CategoryCollection
+        return new CategoryCollection($categories);
     }
 
     /**
      * Store a newly created category in storage.
-     *
-     * @return \Illuminate\Http\JsonResponse
      */
-    public function store(CategoryRequest $request) // tham so truyen vao la CategoryRequest de validate , duoc validate truoc khi vao controller
+    public function store(CategoryRequest $request)
     {
-        $category = Category::create([ // $bien category de tao moi 1 category
-            'name' => $request->name,  // lay tu request, tao name
-            'description' => $request->description, // lay tu request, tao description
-        ]);
+        $category = $this->categoryService->createCategoryWithFresh($request->validated());
 
-        $category = $category->fresh();  // Tai lai doi tuong category de lay thong tin moi nhat
-
-        return (new CategoryResource($category)) // tra ve CategoryResource
-            ->additional([ // them cac thong tin khac vao json tra ve
+        return (new CategoryResource($category))
+            ->additional([
                 'status' => true,
                 'message' => 'Category created successfully',
             ])
@@ -57,22 +47,19 @@ class CategoryController extends Controller
 
     /**
      * Display the specified category.
-     *
-     * @param  int  $id  //tham so truyen vao la id cua category can lay
-     * @return \Illuminate\Http\JsonResponse // tra ve dang json
      */
     public function show($id)
     {
-        $category = Category::find($id); // $bien category de tim kiem category theo id
+        $category = $this->categoryService->findCategory($id);
 
-        if (! $category) { // neu khong tim thay category
+        if (! $category) {
             return response()->json([
                 'status' => false,
                 'message' => 'Category not found',
             ], 404);
         }
 
-        return (new CategoryResource($category)) // tra ve CategoryResource
+        return (new CategoryResource($category))
             ->additional([
                 'status' => true,
                 'message' => 'Category retrieved successfully',
@@ -83,13 +70,10 @@ class CategoryController extends Controller
 
     /**
      * Update the specified category in storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
      */
     public function update(CategoryRequest $request, $id)
     {
-        $category = Category::find($id); // Tim category can cap nhat theo id, $category la bien chua category can tim
+        $category = $this->categoryService->findCategory($id);
 
         if (! $category) {
             return response()->json([
@@ -98,12 +82,7 @@ class CategoryController extends Controller
             ], 404);
         }
 
-        $category->update([
-            'name' => $request->name,
-            'description' => $request->description,
-        ]);
-
-        $category = $category->fresh();
+        $category = $this->categoryService->updateCategoryWithFresh($id, $request->validated());
 
         return (new CategoryResource($category))
             ->additional([
@@ -114,31 +93,28 @@ class CategoryController extends Controller
 
     /**
      * Remove the specified category from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
      */
     public function destroy($id)
     {
-        $category = Category::find($id); // Tim category can xoa theo id, $category la bien chua category can tim
+        $category = $this->categoryService->findCategory($id);
 
-        if (! $category) { // neu khong tim thay category
+        if (! $category) {
             return response()->json([
                 'status' => false,
                 'message' => 'Category not found',
             ], 404);
         }
 
-        if ($category->products->count() > 0) { // neu category con san pham lien quan
+        if (! $this->categoryService->canDeleteCategory($category)) {
             return response()->json([
                 'status' => false,
                 'message' => 'Cannot delete category with associated products',
             ], 400);
         }
 
-        $category->delete(); // Xoa category
+        $this->categoryService->deleteCategory($id);
 
-        return response()->json([ // tra ve json thong bao
+        return response()->json([
             'status' => true,
             'message' => 'Category deleted successfully',
         ]);

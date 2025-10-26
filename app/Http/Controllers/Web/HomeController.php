@@ -3,35 +3,24 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
-use App\Models\Category;
-use App\Models\Product;
+use App\Services\HomeService;
 use Illuminate\Support\Facades\Auth;
 
 class HomeController extends Controller
 {
+    protected $homeService;
+
+    public function __construct(HomeService $homeService)
+    {
+        $this->homeService = $homeService;
+    }
+
     public function index()
     {
-        $categories = Category::withCount('products')
-            ->orderBy('name')
-            ->get();
-
-        $featuredProducts = Product::with('category')
-            ->inRandomOrder()
-            ->take(8)
-            ->get();
-
-        $newProducts = Product::with('category')
-            ->latest('created_at')
-            ->take(8)
-            ->get();
-
-        $cartCount = 0;
-        if (Auth::check()) {
-            $cart = Auth::user()->cart;
-            if ($cart) {
-                $cartCount = $cart->items()->sum('quantity');
-            }
-        }
+        $categories = $this->homeService->getCategories();
+        $featuredProducts = $this->homeService->getFeaturedProducts(8);
+        $newProducts = $this->homeService->getNewProducts(8);
+        $cartCount = $this->homeService->getCartCount(Auth::user());
 
         return view('home', compact('categories', 'featuredProducts', 'newProducts', 'cartCount'));
     }

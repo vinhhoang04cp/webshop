@@ -4,27 +4,28 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CategoryRequest;
-use App\Models\Category;
+use App\Services\CategoryService;
 use Illuminate\Http\Request;
 
 class CategoryController extends Controller
 {
+    protected $categoryService;
+
+    public function __construct(CategoryService $categoryService)
+    {
+        $this->categoryService = $categoryService;
+    }
+
     public function index(Request $request)
     {
         try {
-            $query = Category::query();
+            $filters = $request->only(['search']);
+            $result = $this->categoryService->getCategoriesForAdmin($filters, 10);
 
-            if ($request->has('search') && $request->search) {
-                $searchTerm = $request->search;
-                $query->where('name', 'LIKE', "%{$searchTerm}%");
-            }
-
-            $perPage = 10;
-            $categories = $query->paginate($perPage);
-            $allCategories = Category::all();
-
-            return view('dashboard.categories.index', compact('categories', 'allCategories'));
-
+            return view('dashboard.categories.index', [
+                'categories' => $result['paginated'],
+                'allCategories' => $result['all'],
+            ]);
         } catch (\Exception $e) {
             return view('dashboard.categories.index', [
                 'categories' => collect()->paginate(10),
@@ -42,14 +43,10 @@ class CategoryController extends Controller
     public function store(CategoryRequest $request)
     {
         try {
-            Category::create([
-                'name' => $request->name,
-                'description' => $request->description,
-            ]);
+            $this->categoryService->createCategory($request->validated());
 
             return redirect()->route('dashboard.categories.index')
                 ->with('success', 'Danh mục đã được tạo thành công!');
-
         } catch (\Exception $e) {
             return redirect()->route('dashboard.categories.index')
                 ->with('error', 'Lỗi khi tạo danh mục: '.$e->getMessage());
@@ -59,7 +56,7 @@ class CategoryController extends Controller
     public function show($id)
     {
         try {
-            $category = Category::with('products')->findOrFail($id);
+            $category = $this->categoryService->getCategoryWithProducts($id);
 
             return view('dashboard.categories.show', compact('category'));
         } catch (\Exception $e) {
@@ -71,7 +68,7 @@ class CategoryController extends Controller
     public function edit($id)
     {
         try {
-            $category = Category::findOrFail($id);
+            $category = $this->categoryService->getCategoryById($id);
 
             return view('dashboard.categories.edit', compact('category'));
         } catch (\Exception $e) {
@@ -83,15 +80,10 @@ class CategoryController extends Controller
     public function update(CategoryRequest $request, $id)
     {
         try {
-            $category = Category::findOrFail($id);
-            $category->update([
-                'name' => $request->name,
-                'description' => $request->description,
-            ]);
+            $this->categoryService->updateCategory($id, $request->validated());
 
             return redirect()->route('dashboard.categories.index')
                 ->with('success', 'Danh mục đã được cập nhật thành công!');
-
         } catch (\Exception $e) {
             return redirect()->route('dashboard.categories.index')
                 ->with('error', 'Lỗi khi cập nhật danh mục: '.$e->getMessage());
@@ -101,12 +93,10 @@ class CategoryController extends Controller
     public function destroy($id)
     {
         try {
-            $category = Category::findOrFail($id);
-            $category->delete();
+            $this->categoryService->deleteCategory($id);
 
             return redirect()->route('dashboard.categories.index')
                 ->with('success', 'Danh mục đã được xóa thành công!');
-
         } catch (\Exception $e) {
             return redirect()->route('dashboard.categories.index')
                 ->with('error', 'Lỗi khi xóa danh mục: '.$e->getMessage());

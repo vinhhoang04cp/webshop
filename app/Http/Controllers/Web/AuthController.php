@@ -5,17 +5,18 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
-use App\Models\Order;
-use App\Models\Product;
-use App\Models\Role;
-use App\Models\User;
-use App\Models\UserRole;
+use App\Services\AuthService;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
+    protected $authService;
+
+    public function __construct(AuthService $authService)
+    {
+        $this->authService = $authService;
+    }
+
     public function showLogin()
     {
         if (Auth::check()) {
@@ -36,9 +37,9 @@ class AuthController extends Controller
 
     public function login(LoginRequest $request)
     {
-        $user = User::where('email', $request->email)->first();
+        $user = $this->authService->authenticate($request->email, $request->password);
 
-        if (! $user || ! Hash::check($request->password, $user->password)) {
+        if (! $user) {
             return back()->withErrors([
                 'email' => 'Thông tin đăng nhập không chính xác.',
             ])->withInput();
@@ -46,43 +47,20 @@ class AuthController extends Controller
 
         Auth::login($user);
 
-        if ($user->hasRole('admin') || $user->hasRole('manager')) {
-            return redirect()->route('dashboard')->with('success', 'Đăng nhập thành công!');
-        } elseif ($user->hasRole('customer')) {
-            return redirect()->route('products.index')->with('success', 'Đăng nhập thành công!');
-        } else {
-            return redirect()->route('home')->with('success', 'Đăng nhập thành công!');
-        }
+        $redirectRoute = $this->authService->getRedirectRoute($user);
+
+        return redirect()->route($redirectRoute)->with('success', 'Đăng nhập thành công!');
     }
 
     public function register(RegisterRequest $request)
     {
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'phone' => $request->phone,
-            'address' => $request->address,
-        ]);
-
         try {
-            DB::beginTransaction();
+            $this->authService->register($request->validated());
 
-            $customerRole = Role::where('role_name', 'customer')->first();
-            if ($customerRole) {
-                UserRole::create([
-                    'user_id' => $user->id,
-                    'role_id' => $customerRole->role_id,
-                    'assigned_at' => now(),
-                ]);
-            }
-
-            DB::commit();
+            return redirect()->route('login')->with('success', 'Đăng ký thành công! Vui lòng đăng nhập để tiếp tục.');
         } catch (\Exception $e) {
-            DB::rollBack();
+            return back()->with('error', 'Có lỗi xảy ra: '.$e->getMessage());
         }
-
-        return redirect()->route('login')->with('success', 'Đăng ký thành công! Vui lòng đăng nhập để tiếp tục.');
     }
 
     public function logout()
@@ -97,7 +75,7 @@ class AuthController extends Controller
         /** @var \App\Models\User $user */
         $user = Auth::user();
 
-        if (! $user->hasRole('admin') && ! $user->hasRole('manager')) {
+        if (! $this->authService->canAccessDashboard($user)) {
             Auth::logout();
 
             return redirect()->route('login')->withErrors([
@@ -105,36 +83,18 @@ class AuthController extends Controller
             ]);
         }
 
-        try {
-            $productsCount = Product::count();
-            $ordersCount = Order::count();
-            $usersCount = User::count();
-            $totalRevenue = Order::where('status', '!=', 'cancelled')->sum('total_amount');
+        $dashboardData = $this->authService->getDashboardData();
 
-            $recentOrders = Order::with('user')
-                ->orderBy('order_date', 'desc')
-                ->limit(5)
-                ->get()
-                ->toArray();
-
-            return view('dashboard.index', compact(
-                'user',
-                'productsCount',
-                'ordersCount',
-                'usersCount',
-                'totalRevenue',
-                'recentOrders'
-            ));
-        } catch (\Exception $e) {
-            return view('dashboard.index', [
-                'user' => $user,
-                'productsCount' => 0,
-                'ordersCount' => 0,
-                'usersCount' => 0,
-                'totalRevenue' => 0,
-                'recentOrders' => [],
-                'error' => 'Không thể tải dữ liệu dashboard: '.$e->getMessage(),
-            ]);
-        }
+        return view('dashboard.index', array_merge(
+            ['user' => $user],
+            [
+                'productsCount' => $dashboardData['products_count'],
+                'ordersCount' => $dashboardData['orders_count'],
+                'usersCount' => $dashboardData['users_count'],
+                'totalRevenue' => $dashboardData['total_revenue'],
+                'recentOrders' => $dashboardData['recent_orders'],
+            ],
+            isset($dashboardData['error']) ? ['error' => $dashboardData['error']] : []
+        ));
     }
 }

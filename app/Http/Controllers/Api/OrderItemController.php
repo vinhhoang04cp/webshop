@@ -3,40 +3,28 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\OrderItemRequest;
 use App\Http\Resources\OrderItemCollection;
 use App\Http\Resources\OrderItemResource;
-use App\Models\OrderItem;
+use App\Services\OrderService;
 use Illuminate\Http\Request;
 
 class OrderItemController extends Controller
 {
+    protected $orderService;
+
+    public function __construct(OrderService $orderService)
+    {
+        $this->orderService = $orderService;
+    }
+
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
     {
-        $query = OrderItem::query();
-
-        if ($request->has('order_id')) {
-            $query->where('order_id', $request->get('order_id'));
-        }
-        if ($request->has('product_id')) {
-            $query->where('product_id', $request->get('product_id'));
-        }
-        if ($request->has('min_price')) {
-            $query->where('price', '>=', $request->get('min_price'));
-        }
-        if ($request->has('max_price')) {
-            $query->where('price', '<=', $request->get('max_price'));
-        }
-        if ($request->has('min_quantity')) {
-            $query->where('quantity', '>=', $request->get('min_quantity'));
-        }
-        if ($request->has('max_quantity')) {
-            $query->where('quantity', '<=', $request->get('max_quantity'));
-        }
-
-        $orderItems = $query->paginate(10); // Paginate results, 10 per page
+        $filters = $request->only(['order_id', 'product_id', 'min_price', 'max_price', 'min_quantity', 'max_quantity']);
+        $orderItems = $this->orderService->getOrderItems($filters, 10);
 
         return new OrderItemCollection($orderItems);
     }
@@ -44,11 +32,9 @@ class OrderItemController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(OrderItemRequest $request)
     {
-        $orderItem = OrderItem::create($request->all());
-        OrderItem::reorderIds();
-        $orderItem->fresh();
+        $orderItem = $this->orderService->createOrderItem($request->validated());
 
         return (new OrderItemResource($orderItem))
             ->response()
@@ -60,7 +46,14 @@ class OrderItemController extends Controller
      */
     public function show($id)
     {
-        $orderItem = OrderItem::findOrFail($id);
+        $orderItem = $this->orderService->findOrderItem($id);
+
+        if (!$orderItem) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Order item not found',
+            ], 404);
+        }
 
         return new OrderItemResource($orderItem);
     }
@@ -68,12 +61,18 @@ class OrderItemController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(OrderItemRequest $request, string $id)
     {
-        $orderItem = OrderItem::findOrFail($id);
-        $orderItem->update($request->all());
-        OrderItem::reorderIds();
-        $orderItem->fresh();
+        $orderItem = $this->orderService->findOrderItem($id);
+
+        if (!$orderItem) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Order item not found',
+            ], 404);
+        }
+
+        $orderItem = $this->orderService->updateOrderItem($id, $request->validated());
 
         return (new OrderItemResource($orderItem))
             ->additional([
@@ -89,9 +88,16 @@ class OrderItemController extends Controller
      */
     public function destroy($id)
     {
-        $orderItem = OrderItem::findOrFail($id);
-        $orderItem->delete();
-        OrderItem::reorderIds();
+        $orderItem = $this->orderService->findOrderItem($id);
+
+        if (!$orderItem) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Order item not found',
+            ], 404);
+        }
+
+        $this->orderService->deleteOrderItem($id);
 
         return response()->json([
             'status' => true,

@@ -3,27 +3,26 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Coupon;
+use App\Http\Requests\CouponRequest;
+use App\Services\CouponService;
 use Illuminate\Http\Request;
 
 class CouponController extends Controller
 {
+    protected $couponService;
+
+    public function __construct(CouponService $couponService)
+    {
+        $this->couponService = $couponService;
+    }
+
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
     {
-        $query = Coupon::query();
-
-        if ($request->has('code')) {
-            $query->where('code', 'LIKE', '%'.$request->get('code').'%');
-        }
-
-        if ($request->has('description')) {
-            $query->where('description', 'LIKE', '%'.$request->get('description').'%');
-        }
-
-        $coupons = $query->paginate(15);
+        $filters = $request->only(['code', 'description']);
+        $coupons = $this->couponService->getCoupons($filters);
 
         return response()->json([
             'status' => true,
@@ -34,27 +33,13 @@ class CouponController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(CouponRequest $request)
     {
-        //
-        $coupon = Coupon::create([
-            'code' => $request->code,
-            'name' => $request->name,
-            'discount_type' => $request->discount_type,
-            'discount_value' => $request->discount_value,
-            'min_order_amount' => $request->min_order_amount,
-            'max_discount_amount' => $request->max_discount_amount,
-            'usage_limit' => $request->usage_limit,
-            'product_id' => $request->product_id,
-            'start_date' => $request->start_date,
-            'end_date' => $request->end_date,
-            'is_active' => $request->is_active,
-        ]);
-
-        $coupon = $coupon->fresh();
+        $coupon = $this->couponService->createCouponFull($request->validated());
 
         return response()->json([
             'status' => true,
+            'message' => 'Coupon created successfully',
             'data' => $coupon,
         ], 201);
     }
@@ -64,15 +49,43 @@ class CouponController extends Controller
      */
     public function show(string $id)
     {
-        //
+        $coupon = $this->couponService->findCoupon($id);
+
+        if (! $coupon) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Coupon not found',
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Coupon retrieved successfully',
+            'data' => $coupon,
+        ], 200);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(CouponRequest $request, string $id)
     {
-        //
+        $coupon = $this->couponService->findCoupon($id);
+
+        if (! $coupon) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Coupon not found',
+            ], 404);
+        }
+
+        $coupon = $this->couponService->updateCouponFull($id, $request->validated());
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Coupon updated successfully',
+            'data' => $coupon,
+        ], 200);
     }
 
     /**
@@ -80,6 +93,20 @@ class CouponController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        $coupon = $this->couponService->findCoupon($id);
+
+        if (! $coupon) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Coupon not found',
+            ], 404);
+        }
+
+        $this->couponService->deleteCoupon($id);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Coupon deleted successfully',
+        ], 200);
     }
 }

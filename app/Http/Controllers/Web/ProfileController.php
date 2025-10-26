@@ -5,12 +5,18 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ChangePasswordRequest;
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Services\ProfileService;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
 
 class ProfileController extends Controller
 {
+    protected $profileService;
+
+    public function __construct(ProfileService $profileService)
+    {
+        $this->profileService = $profileService;
+    }
+
     public function index()
     {
         $user = Auth::user();
@@ -21,21 +27,9 @@ class ProfileController extends Controller
     public function updateProfile(ProfileUpdateRequest $request)
     {
         $user = Auth::user();
+        $avatarFile = $request->hasFile('avatar') ? $request->file('avatar') : null;
 
-        $user->name = $request->name;
-        $user->phone = $request->phone;
-        $user->address = $request->address;
-
-        if ($request->hasFile('avatar')) {
-            if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
-                Storage::disk('public')->delete($user->avatar);
-            }
-
-            $avatarPath = $request->file('avatar')->store('avatars', 'public');
-            $user->avatar = $avatarPath;
-        }
-
-        $user->save();
+        $this->profileService->updateProfile($user, $request->validated(), $avatarFile);
 
         return back()->with('success', 'Cập nhật thông tin thành công!');
     }
@@ -44,13 +38,16 @@ class ProfileController extends Controller
     {
         $user = Auth::user();
 
-        if (! Hash::check($request->current_password, $user->password)) {
-            return back()->withErrors(['current_password' => 'Mật khẩu hiện tại không đúng.']);
+        try {
+            $this->profileService->changePassword(
+                $user,
+                $request->current_password,
+                $request->new_password
+            );
+
+            return back()->with('success', 'Đổi mật khẩu thành công!');
+        } catch (\Exception $e) {
+            return back()->withErrors(['current_password' => $e->getMessage()]);
         }
-
-        $user->password = Hash::make($request->new_password);
-        $user->save();
-
-        return back()->with('success', 'Đổi mật khẩu thành công!');
     }
 }

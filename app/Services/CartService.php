@@ -307,4 +307,240 @@ class CartService
 
         return ['success' => true];
     }
+
+    /**
+     * Get carts with filters (for API)
+     */
+    public function getCarts($userId = null, $isAdmin = false, $filters = [])
+    {
+        $query = Cart::with('items.product');
+
+        if (! $isAdmin) {
+            $query->where('user_id', $userId);
+        } elseif (isset($filters['user_id'])) {
+            $query->where('user_id', $filters['user_id']);
+        }
+
+        if (isset($filters['product_id'])) {
+            $query->where('product_id', $filters['product_id']);
+        }
+
+        return $query->paginate(10);
+    }
+
+    /**
+     * Calculate cart totals
+     */
+    public function calculateCartTotals($cart)
+    {
+        $totalAmount = 0;
+        $totalItems = 0;
+
+        foreach ($cart->items as $cartItem) {
+            $totalAmount += $cartItem->product->price * $cartItem->quantity;
+            $totalItems += $cartItem->quantity;
+        }
+
+        return [
+            'amount' => $totalAmount,
+            'items' => $totalItems,
+        ];
+    }
+
+    /**
+     * Find or create cart for user
+     */
+    public function findOrCreateCartForUser($cartId = null, $userId)
+    {
+        if ($cartId) {
+            $cart = Cart::where('cart_id', $cartId)
+                ->where('user_id', $userId)
+                ->first();
+
+            if (! $cart) {
+                throw new \Exception("Cart with ID {$cartId} not found or does not belong to user");
+            }
+        } else {
+            $cart = Cart::where('user_id', $userId)->first();
+        }
+
+        if (! $cart) {
+            $cart = Cart::create(['user_id' => $userId]);
+        }
+
+        return $cart;
+    }
+
+    /**
+     * Add multiple items to cart
+     */
+    public function addItemsToCart($cart, array $items)
+    {
+        foreach ($items as $item) {
+            $this->addSingleItemToCart($cart, $item);
+        }
+
+        return $cart->fresh(['items.product']);
+    }
+
+    /**
+     * Add single item to cart
+     */
+    protected function addSingleItemToCart($cart, array $item)
+    {
+        $product = Product::findOrFail($item['product_id']);
+        $cartItem = $cart->items()->where('product_id', $item['product_id'])->first();
+
+        if ($cartItem) {
+            $cartItem->quantity += $item['quantity'];
+            $cartItem->save();
+        } else {
+            $cart->items()->create([
+                'product_id' => $item['product_id'],
+                'quantity' => $item['quantity'],
+                'price' => $product->price,
+            ]);
+        }
+    }
+
+    /**
+     * Update multiple items in cart
+     */
+    public function updateCartItems($cart, array $items)
+    {
+        foreach ($items as $item) {
+            $this->updateSingleCartItem($cart, $item);
+        }
+
+        return $cart->fresh(['items.product']);
+    }
+
+    /**
+     * Update single cart item
+     */
+    protected function updateSingleCartItem($cart, array $item)
+    {
+        $product = Product::findOrFail($item['product_id']);
+        $cartItem = $cart->items()->where('product_id', $item['product_id'])->first();
+
+        if ($cartItem) {
+            $cartItem->quantity = $item['quantity'];
+            $cartItem->save();
+        } else {
+            $cart->items()->create([
+                'product_id' => $item['product_id'],
+                'quantity' => $item['quantity'],
+                'price' => $product->price,
+            ]);
+        }
+    }
+
+    /**
+     * Get cart by ID
+     */
+    public function getCartById($cartId)
+    {
+        return Cart::with('items.product')->findOrFail($cartId);
+    }
+
+    /**
+     * Check if user owns cart
+     */
+    public function userOwnsCart($cart, $userId)
+    {
+        return $cart->user_id === $userId;
+    }
+
+    /**
+     * Delete cart
+     */
+    public function deleteCart($cart)
+    {
+        $cart->delete();
+
+        try {
+            Cart::reOrderIds();
+        } catch (\Exception $e) {
+            \Log::warning('Failed to reorder Cart IDs after delete: '.$e->getMessage());
+        }
+
+        return ['success' => true];
+    }
+
+    /**
+     * Prepare items data from validated request
+     */
+    public function prepareItemsData(array $cartData)
+    {
+        if (isset($cartData['items']) && is_array($cartData['items'])) {
+            return $cartData['items'];
+        }
+
+        if (isset($cartData['product_id']) && isset($cartData['quantity'])) {
+            return [[
+                'product_id' => $cartData['product_id'],
+                'quantity' => $cartData['quantity'],
+            ]];
+        }
+
+        return [];
+    }
+
+    /**
+     * Get cart items with filters (for API)
+     */
+    public function getCartItemsWithFilters(array $filters = [])
+    {
+        $query = CartItem::query();
+
+        if (isset($filters['cart_id'])) {
+            $query->where('cart_id', $filters['cart_id']);
+        }
+
+        if (isset($filters['product_id'])) {
+            $query->where('product_id', $filters['product_id']);
+        }
+
+        return $query->get();
+    }
+
+    /**
+     * Create cart item
+     */
+    public function createCartItem(array $data)
+    {
+        $cartItem = CartItem::create($data);
+        
+        return $cartItem->fresh();
+    }
+
+    /**
+     * Get cart item by ID
+     */
+    public function getCartItemById($id)
+    {
+        return CartItem::findOrFail($id);
+    }
+
+    /**
+     * Update cart item by ID
+     */
+    public function updateCartItemById($id, array $data)
+    {
+        $cartItem = CartItem::findOrFail($id);
+        $cartItem->update($data);
+        
+        return $cartItem->fresh();
+    }
+
+    /**
+     * Delete cart item by ID
+     */
+    public function deleteCartItem($id)
+    {
+        $cartItem = CartItem::findOrFail($id);
+        $cartItem->delete();
+
+        return ['success' => true];
+    }
 }

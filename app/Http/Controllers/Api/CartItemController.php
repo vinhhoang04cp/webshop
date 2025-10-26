@@ -3,29 +3,30 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\CartItemRequest;
 use App\Http\Resources\CartItemCollection;
 use App\Http\Resources\CartItemResource;
-use App\Models\CartItem;
+use App\Services\CartService;
 use Illuminate\Http\Request;
 
 class CartItemController extends Controller
 {
+    protected $cartService;
+
+    public function __construct(CartService $cartService)
+    {
+        $this->cartService = $cartService;
+    }
+
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
     {
-        //
-        $query = CartItem::query();
-        // Loc theo cart_id neu co
-        if ($request->has('cart_id')) {
-            $query->where('cart_id', $request->input('cart_id'));
-        }
-        if ($request->has('product_id')) {
-            $query->where('product_id', $request->input('product_id'));
-        }
+        $filters = $request->only(['cart_id', 'product_id']);
+        $cartItems = $this->cartService->getCartItemsWithFilters($filters);
 
-        return (new CartItemCollection($query->get()))
+        return (new CartItemCollection($cartItems))
             ->response()
             ->setStatusCode(200);
     }
@@ -33,12 +34,9 @@ class CartItemController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(CartItemRequest $request)
     {
-        //
-        $cartItem = CartItem::create($request->all());
-        // Không cần gọi CartItem::reorderIds() nữa vì phương thức này không an toàn
-        $cartItem->fresh();
+        $cartItem = $this->cartService->createCartItem($request->validated());
 
         return (new CartItemResource($cartItem))
             ->response()
@@ -50,8 +48,7 @@ class CartItemController extends Controller
      */
     public function show($id)
     {
-        //
-        $cartItem = CartItem::findOrFail($id);
+        $cartItem = $this->cartService->getCartItemById($id);
 
         return (new CartItemResource($cartItem))
             ->response()
@@ -61,13 +58,9 @@ class CartItemController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, $id)
+    public function update(CartItemRequest $request, $id)
     {
-        //
-        $cartItem = CartItem::findOrFail($id);
-        $cartItem->update($request->all());
-        // Không cần gọi CartItem::reorderIds() nữa vì phương thức này không an toàn
-        $cartItem->fresh();
+        $cartItem = $this->cartService->updateCartItemById($id, $request->validated());
 
         return (new CartItemResource($cartItem))
             ->additional([
@@ -83,10 +76,7 @@ class CartItemController extends Controller
      */
     public function destroy(string $id)
     {
-        //
-        $cartItem = CartItem::findOrFail($id);
-        $cartItem->delete();
-        // Không cần gọi CartItem::reorderIds() nữa vì phương thức này không an toàn
+        $this->cartService->deleteCartItem($id);
 
         return response()->json([
             'status' => true,

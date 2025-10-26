@@ -5,66 +5,37 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\InventoryAdjustmentRequest;
 use App\Http\Requests\InventoryRequest;
-use App\Models\Inventory;
-use App\Models\Product;
+use App\Services\InventoryService;
 use Illuminate\Http\Request;
 
 class InventoryController extends Controller
 {
-    public function index(Request $request) // Request $request chua cac tham so truyen vao de search, filter, sort
+    protected $inventoryService;
+
+    public function __construct(InventoryService $inventoryService)
+    {
+        $this->inventoryService = $inventoryService;
+    }
+
+    public function index(Request $request)
     {
         try {
-            // Query inventory with product relationship
-            $query = Inventory::with('product.category'); // su dung eloquent de lay du lieu tu bang inventories voi quan he voi bang products va categories
-            // ('product.category' la quan he giua inventory va product, category la quan he giua product va category)
+            $filters = $request->only(['search', 'stock_status', 'sort_by', 'sort_order']);
+            $inventories = $this->inventoryService->getInventoriesForAdmin($filters, 15);
 
-            // Search by product name
-            if ($request->has('search') && $request->search) { // neu request co tham so search va search khac rong
-                $searchTerm = $request->search; // searchTerm la bien chua lay gia tri search tu request
-                $query->whereHas('product', function ($q) use ($searchTerm) {  // ham callback de loc theo quan he product
-                    // function ($q) use ($searchTerm) { ... } la ham callback, $q la query builder cua product, use ($searchTerm) de su dung bien searchTerm ben ngoai ham
-                    $q->where('name', 'like', '%'.$searchTerm.'%'); // tim kiem theo ten san pham
-                });
-            }
-
-            // Filter by stock status
-            if ($request->has('stock_status') && $request->stock_status !== '') { // neu request co tham so stock_status va khac rong
-                $status = $request->stock_status; // lay gia tri stock_status tu request
-                if ($status === 'low') { // neu status la 'low'. 'low' co nghia la ton kho thap
-                    // Low stock: current_stock < 10
-                    $query->where('current_stock', '<', 10); // loc nhung ban ghi co current_stock nho hon 10
-                } elseif ($status === 'out') { // neu status la 'out'. 'out' co nghia la het hang
-                    // Out of stock: current_stock = 0
-                    $query->where('current_stock', '=', 0); // loc nhung ban ghi co current_stock bang 0
-                } elseif ($status === 'available') { // neu status la 'available'. 'available' co nghia la con hang
-                    // Available: current_stock >= 10 // loc nhung ban ghi co current_stock lon hon hoac bang 10
-                    $query->where('current_stock', '>=', 10);
-                }
-            }
-
-            // Sort by
-            $sortBy = $request->get('sort_by', 'updated_at');
-            $sortOrder = $request->get('sort_order', 'desc');
-            $query->orderBy($sortBy, $sortOrder);
-
-            // Pagination
-            $perPage = 15; // so ban ghi tren mot trang
-            $inventories = $query->paginate($perPage); // phuong thuc paginate de phan trang
-
-            return view('dashboard.inventory.index', [ // tra ve view voi du lieu
-                'paginatedInventory' => $inventories->items(), // lay danh sach ban ghi tren trang hien tai
-                'pagination' => $inventories, // lay thong tin phan trang
-                'search' => $request->search,  // lay gia tri search tu request de hien thi lai tren form
-                'stock_status' => $request->stock_status, // lay gia tri stock_status tu request de hien thi lai tren form
-                'sort_by' => $sortBy, // lay gia tri sort_by tu request de hien thi lai tren form
-                'sort_order' => $sortOrder, // lay gia tri sort_order tu request de hien thi lai tren form
+            return view('dashboard.inventory.index', [
+                'paginatedInventory' => $inventories->items(),
+                'pagination' => $inventories,
+                'search' => $request->search,
+                'stock_status' => $request->stock_status,
+                'sort_by' => $filters['sort_by'] ?? 'updated_at',
+                'sort_order' => $filters['sort_order'] ?? 'desc',
             ]);
-
-        } catch (\Exception $e) { // neu co loi xay ra
-            return view('dashboard.inventory.index', [ // tra ve view voi thong bao loi
-                'paginatedInventory' => [], // danh sach rong
-                'pagination' => null, // thong tin phan trang null
-                'error' => 'Lỗi khi tải danh sách tồn kho: '.$e->getMessage(), // hien thi thong bao loi
+        } catch (\Exception $e) {
+            return view('dashboard.inventory.index', [
+                'paginatedInventory' => [],
+                'pagination' => null,
+                'error' => 'Lỗi khi tải danh sách tồn kho: '.$e->getMessage(),
             ]);
         }
     }
@@ -72,8 +43,7 @@ class InventoryController extends Controller
     public function show($id)
     {
         try {
-            $inventory = Inventory::with('product.category')->findOrFail($id);
-            // tim kiem inventory theo id voi quan he product va category, neu khong tim thay thi throw exception su dung eloquent
+            $inventory = $this->inventoryService->getInventoryDetail($id);
 
             return view('dashboard.inventory.show', compact('inventory'));
         } catch (\Exception $e) {
@@ -85,65 +55,45 @@ class InventoryController extends Controller
     public function edit($id)
     {
         try {
-            $inventory = Inventory::with('product')->findOrFail($id);
-            // tim kiem inventory theo id voi quan he product, neu khong tim thay thi throw exception su dung eloquent
+            $inventory = $this->inventoryService->getInventoryWithProduct($id);
 
-            return view('dashboard.inventory.edit', compact('inventory')); // tra ve view voi du lieu inventory
-        } catch (\Exception $e) { // neu co loi xay ra
-            return redirect()->route('dashboard.inventory.index') // chuyen huong ve trang danh sach inventory
-                ->with('error', 'Không thể tải form chỉnh sửa: '.$e->getMessage()); // hien thi thong bao loi
+            return view('dashboard.inventory.edit', compact('inventory'));
+        } catch (\Exception $e) {
+            return redirect()->route('dashboard.inventory.index')
+                ->with('error', 'Không thể tải form chỉnh sửa: '.$e->getMessage());
         }
     }
 
     public function update(InventoryRequest $request, $id)
     {
         try {
-            $inventory = Inventory::findOrFail($id);
+            $this->inventoryService->updateInventory($id, $request->validated());
 
-            $inventory->update([ // cap nhat du lieu inventory
-                'stock_in' => $request->stock_in, // cap nhat stock_in tu request
-                'stock_out' => $request->stock_out, // cap nhat stock_out tu request
-                'current_stock' => $request->current_stock, // cap nhat current_stock tu request
-            ]);
-
-            return redirect()->route('dashboard.inventory.show', $id) // chuyen huong ve trang chi tiet inventory
-                ->with('success', 'Cập nhật tồn kho thành công!'); // hien thi thong bao thanh cong
-
-        } catch (\Exception $e) { // neu co loi xay ra
-            return back() // tro ve trang truoc do
-                ->with('error', 'Lỗi khi cập nhật tồn kho: '.$e->getMessage()) // hien thi thong bao loi
-                ->withInput(); // giu lai du lieu da nhap tren form
+            return redirect()->route('dashboard.inventory.show', $id)
+                ->with('success', 'Cập nhật tồn kho thành công!');
+        } catch (\Exception $e) {
+            return back()
+                ->with('error', 'Lỗi khi cập nhật tồn kho: '.$e->getMessage())
+                ->withInput();
         }
     }
 
     public function adjustStock(InventoryAdjustmentRequest $request, $id)
     {
         try {
-            $inventory = Inventory::findOrFail($id);
-
-            if ($request->adjustment_type === 'in') { // neu adjustment_type la 'in' (nhap kho)
-                // Stock in - nhập kho
-                $inventory->stock_in += $request->quantity; // cong so luong nhap kho vao stock_in
-                $inventory->current_stock += $request->quantity; // cong so luong nhap kho vao current_stock
-            } else {
-                // Stock out - xuất kho
-                if ($inventory->current_stock < $request->quantity) { // neu current_stock nho hon so luong xuat kho
-                    return back()->with('error', 'Số lượng xuất kho vượt quá tồn kho hiện tại!'); // hien thi thong bao loi
-                }
-                $inventory->stock_out += $request->quantity; // cong so luong xuat kho vao stock_out
-                $inventory->current_stock -= $request->quantity; // tru so luong xuat kho vao current_stock
-            }
-
-            $inventory->save(); // luu thay doi vao database
+            $this->inventoryService->adjustStock(
+                $id,
+                $request->adjustment_type,
+                $request->quantity
+            );
 
             $action = $request->adjustment_type === 'in' ? 'nhập' : 'xuất';
 
-            return redirect()->route('dashboard.inventory.show', $id) // chuyen huong ve trang chi tiet inventory
-                ->with('success', "Đã {$action} kho thành công {$request->quantity} sản phẩm!"); // hien thi thong bao thanh cong
-
-        } catch (\Exception $e) { // neu co loi xay ra
+            return redirect()->route('dashboard.inventory.show', $id)
+                ->with('success', "Đã {$action} kho thành công {$request->quantity} sản phẩm!");
+        } catch (\Exception $e) {
             return back()
-                ->with('error', 'Lỗi khi điều chỉnh tồn kho: '.$e->getMessage()); // hien thi thong bao loi
+                ->with('error', 'Lỗi khi điều chỉnh tồn kho: '.$e->getMessage());
         }
     }
 }

@@ -420,4 +420,218 @@ class ProductService
             ProductDetail::where('product_id', $productId)->delete();
         }
     }
+
+    // ==================== API METHODS ====================
+
+    /**
+     * Lấy danh sách sản phẩm cho API với filters
+     */
+    public function getProducts(array $filters = [])
+    {
+        $query = Product::with(['category', 'details']);
+
+        // Lọc theo category
+        if (!empty($filters['category'])) {
+            $query->where('category_id', $filters['category']);
+        }
+
+        // Lọc theo tên (tìm gần đúng)
+        if (!empty($filters['name'])) {
+            $query->where('name', 'LIKE', '%' . $filters['name'] . '%');
+        }
+
+        // Lọc theo giá tối thiểu
+        if (!empty($filters['min_price'])) {
+            $query->where('price', '>=', $filters['min_price']);
+        }
+
+        // Lọc theo giá tối đa
+        if (!empty($filters['max_price'])) {
+            $query->where('price', '<=', $filters['max_price']);
+        }
+
+        // Lọc theo số lượng tồn kho
+        if (!empty($filters['stock_quantity'])) {
+            $query->where('stock_quantity', $filters['stock_quantity']);
+        }
+
+        return $query->paginate(15);
+    }
+
+    /**
+     * Tìm sản phẩm theo ID
+     */
+    public function findProduct($productId)
+    {
+        return Product::with(['category', 'details'])->find($productId);
+    }
+
+    /**
+     * Tạo sản phẩm mới cho API
+     */
+    public function createProductFull(array $data)
+    {
+        // Tạo product
+        $product = Product::create([
+            'name' => $data['name'],
+            'description' => $data['description'] ?? null,
+            'price' => $data['price'],
+            'category_id' => $data['category_id'],
+            'stock_quantity' => $data['stock_quantity'],
+            'image_url' => $data['image_url'] ?? null,
+        ]);
+
+        // Tự động tạo inventory
+        Inventory::create([
+            'product_id' => $product->product_id,
+            'stock_in' => $data['stock_quantity'] ?? 0,
+            'stock_out' => 0,
+            'current_stock' => $data['stock_quantity'] ?? 0,
+        ]);
+
+        // Tạo ProductDetail nếu có thông tin chi tiết
+        $this->createOrUpdateProductDetails($product->product_id, $data);
+
+        return $product->fresh(['category', 'details']);
+    }
+
+    /**
+     * Cập nhật sản phẩm cho API
+     */
+    public function updateProductFull($productId, array $data)
+    {
+        $product = Product::find($productId);
+
+        if (!$product) {
+            return null;
+        }
+
+        // Lưu số lượng cũ để tính toán thay đổi inventory
+        $oldQuantity = $product->stock_quantity;
+        $newQuantity = $data['stock_quantity'];
+        $quantityDifference = $newQuantity - $oldQuantity;
+
+        // Cập nhật product
+        $product->update([
+            'name' => $data['name'],
+            'description' => $data['description'] ?? null,
+            'price' => $data['price'],
+            'category_id' => $data['category_id'],
+            'stock_quantity' => $newQuantity,
+            'image_url' => $data['image_url'] ?? $product->image_url,
+        ]);
+
+        // Cập nhật inventory
+        $this->updateInventory($product->product_id, $quantityDifference);
+
+        // Cập nhật hoặc tạo ProductDetail
+        $this->createOrUpdateProductDetails($product->product_id, $data);
+
+        return $product->fresh(['category', 'details']);
+    }
+
+    /**
+     * Xóa sản phẩm theo ID
+     */
+    public function deleteProductById($productId)
+    {
+        $product = Product::find($productId);
+
+        if (!$product) {
+            return false;
+        }
+
+        // Xóa ProductDetail nếu có
+        ProductDetail::where('product_id', $product->product_id)->delete();
+
+        // Xóa Inventory nếu có
+        Inventory::where('product_id', $product->product_id)->delete();
+
+        // Xóa sản phẩm
+        $product->delete();
+
+        return true;
+    }
+
+    /**
+     * Lấy danh sách ProductDetail với filters
+     */
+    public function getProductDetails(array $filters = [])
+    {
+        $query = ProductDetail::query();
+
+        if (!empty($filters['product_id'])) {
+            $query->where('product_id', $filters['product_id']);
+        }
+
+        if (!empty($filters['color'])) {
+            $query->where('color', $filters['color']);
+        }
+
+        if (!empty($filters['storage'])) {
+            $query->where('storage', $filters['storage']);
+        }
+
+        if (!empty($filters['ram'])) {
+            $query->where('ram', $filters['ram']);
+        }
+
+        if (!empty($filters['chip'])) {
+            $query->where('chip', 'LIKE', '%' . $filters['chip'] . '%');
+        }
+
+        if (!empty($filters['os'])) {
+            $query->where('os', 'LIKE', '%' . $filters['os'] . '%');
+        }
+
+        return $query->paginate(10);
+    }
+
+    /**
+     * Tìm ProductDetail theo ID
+     */
+    public function findProductDetail($detailId)
+    {
+        return ProductDetail::find($detailId);
+    }
+
+    /**
+     * Tạo ProductDetail mới
+     */
+    public function createProductDetail(array $data)
+    {
+        return ProductDetail::create($data);
+    }
+
+    /**
+     * Cập nhật ProductDetail
+     */
+    public function updateProductDetail($detailId, array $data)
+    {
+        $productDetail = ProductDetail::find($detailId);
+
+        if (!$productDetail) {
+            return null;
+        }
+
+        $productDetail->update($data);
+
+        return $productDetail;
+    }
+
+    /**
+     * Xóa ProductDetail
+     */
+    public function deleteProductDetail($detailId)
+    {
+        $productDetail = ProductDetail::find($detailId);
+
+        if (!$productDetail) {
+            return false;
+        }
+
+        $productDetail->delete();
+
+        return true;
+    }
 }

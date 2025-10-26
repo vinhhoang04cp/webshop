@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\Exceptions\HttpResponseException;
 
 class CouponRequest extends FormRequest
 {
@@ -22,8 +24,12 @@ class CouponRequest extends FormRequest
                 'max:50',
                 'unique:coupons,code'.($couponId ? ','.$couponId.',coupon_id' : ''),
             ],
+            'name' => 'nullable|string|max:255',
             'discount_type' => 'required|in:percentage,fixed',
             'discount_value' => 'required|numeric|min:0',
+            'min_order_amount' => 'nullable|numeric|min:0',
+            'max_discount_amount' => 'nullable|numeric|min:0',
+            'usage_limit' => 'nullable|integer|min:0',
             'product_id' => 'nullable|exists:products,product_id',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after:start_date',
@@ -60,5 +66,14 @@ class CouponRequest extends FormRequest
                 $validator->errors()->add('discount_value', 'Giá trị phần trăm không được vượt quá 100%');
             }
         });
+    }
+
+    protected function failedValidation(Validator $validator)
+    {
+        throw new HttpResponseException(response()->json([
+            'status' => false,
+            'message' => 'Validation errors',
+            'errors' => $validator->errors(),
+        ], 422));
     }
 }

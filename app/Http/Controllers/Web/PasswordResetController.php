@@ -5,15 +5,18 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PasswordResetLinkRequest;
 use App\Http\Requests\PasswordResetRequest;
-use App\Models\User;
+use App\Services\PasswordResetService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Str;
 
 class PasswordResetController extends Controller
 {
+    protected $passwordResetService;
+
+    public function __construct(PasswordResetService $passwordResetService)
+    {
+        $this->passwordResetService = $passwordResetService;
+    }
+
     /**
      * Hiển thị form yêu cầu reset password
      *
@@ -31,26 +34,8 @@ class PasswordResetController extends Controller
      */
     public function sendResetLink(PasswordResetLinkRequest $request)
     {
-        $token = Str::random(64);
-
-        // Lưu token vào database
-        DB::table('password_reset_tokens')->updateOrInsert(
-            ['email' => $request->email],
-            [
-                'token' => Hash::make($token),
-                'created_at' => now(),
-            ]
-        );
-
-        // Tạo link reset password
-        $resetLink = route('password.reset', ['token' => $token, 'email' => $request->email]);
-
-        // Gửi email
         try {
-            Mail::send('emails.reset-password', ['resetLink' => $resetLink], function ($message) use ($request) {
-                $message->to($request->email);
-                $message->subject('Yêu cầu đặt lại mật khẩu');
-            });
+            $this->passwordResetService->sendResetLink($request->email);
 
             return back()->with('success', 'Link đặt lại mật khẩu đã được gửi đến email của bạn!');
         } catch (\Exception $e) {
@@ -79,33 +64,16 @@ class PasswordResetController extends Controller
      */
     public function resetPassword(PasswordResetRequest $request)
     {
-        $passwordReset = DB::table('password_reset_tokens')
-            ->where('email', $request->email)
-            ->first();
+        try {
+            $this->passwordResetService->resetPassword(
+                $request->email,
+                $request->token,
+                $request->password
+            );
 
-        if (! $passwordReset) {
-            return back()->withErrors(['email' => 'Token không hợp lệ.']);
+            return redirect()->route('login')->with('success', 'Mật khẩu đã được đặt lại thành công. Vui lòng đăng nhập.');
+        } catch (\Exception $e) {
+            return back()->withErrors(['email' => $e->getMessage()]);
         }
-
-        // Kiểm tra token có khớp không
-        if (! Hash::check($request->token, $passwordReset->token)) {
-            return back()->withErrors(['email' => 'Token không hợp lệ.']);
-        }
-
-        // Kiểm tra token có hết hạn chưa (24 giờ)
-        $created = \Carbon\Carbon::parse($passwordReset->created_at);
-        if ($created->addHours(24)->isPast()) {
-            return back()->withErrors(['email' => 'Token đã hết hạn. Vui lòng yêu cầu lại.']);
-        }
-
-        // Cập nhật mật khẩu mới
-        $user = User::where('email', $request->email)->first();
-        $user->password = Hash::make($request->password);
-        $user->save();
-
-        // Xóa token đã sử dụng
-        DB::table('password_reset_tokens')->where('email', $request->email)->delete();
-
-        return redirect()->route('login')->with('success', 'Mật khẩu đã được đặt lại thành công. Vui lòng đăng nhập.');
     }
 }
