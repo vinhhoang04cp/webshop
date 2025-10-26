@@ -3,17 +3,19 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
-use App\Models\Order;
+use App\Services\OrderService;
 use App\Services\PaymentService;
 use Illuminate\Http\Request;
 
 class PaymentController extends Controller
 {
     protected $paymentService;
+    protected $orderService;
 
-    public function __construct(PaymentService $paymentService)
+    public function __construct(PaymentService $paymentService, OrderService $orderService)
     {
         $this->paymentService = $paymentService;
+        $this->orderService = $orderService;
     }
 
     /**
@@ -29,22 +31,22 @@ class PaymentController extends Controller
 
         session()->forget('pending_payment_order_id');
 
-        $order = Order::where('order_id', $orderId)->firstOrFail();
+        try {
+            // Sử dụng OrderService để lấy và validate order
+            $order = $this->orderService->getOrderForPayment($orderId, auth()->id());
 
-        // Kiểm tra order thuộc về user hiện tại
-        if ($order->user_id !== auth()->id()) {
-            return redirect()->route('cart.index')->with('error', 'Đơn hàng không hợp lệ');
+            $paymentData = $this->paymentService->createVNPayPaymentUrl($orderId, $request->ip());
+
+            // Lưu thông tin transaction vào session
+            session([
+                'vnpay_txnref' => $paymentData['txn_ref'],
+                'order_id' => $paymentData['order_id'],
+            ]);
+
+            return redirect($paymentData['url']);
+        } catch (\Exception $e) {
+            return redirect()->route('cart.index')->with('error', $e->getMessage());
         }
-
-        $paymentData = $this->paymentService->createVNPayPaymentUrl($orderId, $request->ip());
-
-        // Lưu thông tin transaction vào session
-        session([
-            'vnpay_txnref' => $paymentData['txn_ref'],
-            'order_id' => $paymentData['order_id'],
-        ]);
-
-        return redirect($paymentData['url']);
     }
 
     /**
@@ -109,9 +111,13 @@ class PaymentController extends Controller
     public function success(Request $request)
     {
         $orderId = $request->get('order_id');
-        $order = Order::where('order_id', $orderId)->with('orderItems.product')->firstOrFail();
-
-        return view('payment.success', compact('order'));
+        
+        try {
+            $order = $this->orderService->getOrderWithItemsForDisplay($orderId);
+            return view('payment.success', compact('order'));
+        } catch (\Exception $e) {
+            return redirect()->route('cart.index')->with('error', 'Không tìm thấy đơn hàng');
+        }
     }
 
     /**
@@ -120,8 +126,12 @@ class PaymentController extends Controller
     public function failed(Request $request)
     {
         $orderId = $request->get('order_id');
-        $order = Order::where('order_id', $orderId)->firstOrFail();
-
-        return view('payment.failed', compact('order'));
+        
+        try {
+            $order = $this->orderService->getOrderById($orderId);
+            return view('payment.failed', compact('order'));
+        } catch (\Exception $e) {
+            return redirect()->route('cart.index')->with('error', 'Không tìm thấy đơn hàng');
+        }
     }
 }

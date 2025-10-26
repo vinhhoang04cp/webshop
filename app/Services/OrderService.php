@@ -491,4 +491,37 @@ class OrderService
             }
         }
     }
+
+    /**
+     * Lấy đơn hàng để xử lý thanh toán
+     * Kiểm tra quyền sở hữu đơn hàng
+     */
+    public function getOrderForPayment($orderId, $userId)
+    {
+        $order = Order::where('order_id', $orderId)->firstOrFail();
+
+        if ($order->user_id !== $userId) {
+            throw new \Exception('Đơn hàng không thuộc về người dùng này');
+        }
+
+        return $order;
+    }
+
+    /**
+     * Lấy đơn hàng với items để hiển thị
+     */
+    public function getOrderWithItemsForDisplay($orderId)
+    {
+        return Order::where('order_id', $orderId)
+            ->with('orderItems.product')
+            ->firstOrFail();
+    }
+
+    /**
+     * Lấy đơn hàng cơ bản theo ID
+     */
+    public function getOrderById($orderId)
+    {
+        return Order::where('order_id', $orderId)->firstOrFail();
+    }
 }
