@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CouponRequest;
+use App\Http\Resources\CouponResource;
 use App\Services\CouponService;
 use Illuminate\Http\Request;
 
@@ -21,13 +22,14 @@ class CouponController extends Controller
      */
     public function index(Request $request)
     {
-        $filters = $request->only(['code', 'description']);
-        $coupons = $this->couponService->getCoupons($filters);
+        $filters = $request->only(['code', 'description', 'is_active', 'discount_type', 'product_id']);
+        $perPage = $request->input('per_page', 15);
+        $coupons = $this->couponService->getCoupons($filters, $perPage);
 
-        return response()->json([
+        return CouponResource::collection($coupons)->additional([
             'status' => true,
-            'data' => $coupons,
-        ], 200);
+            'message' => 'Coupons retrieved successfully',
+        ]);
     }
 
     /**
@@ -37,11 +39,10 @@ class CouponController extends Controller
     {
         $coupon = $this->couponService->createCouponFull($request->validated());
 
-        return response()->json([
+        return (new CouponResource($coupon))->additional([
             'status' => true,
             'message' => 'Coupon created successfully',
-            'data' => $coupon,
-        ], 201);
+        ])->response()->setStatusCode(201);
     }
 
     /**
@@ -49,7 +50,7 @@ class CouponController extends Controller
      */
     public function show(string $id)
     {
-        $coupon = $this->couponService->findCoupon($id);
+        $coupon = $this->couponService->findCoupon($id, true);
 
         if (! $coupon) {
             return response()->json([
@@ -58,11 +59,10 @@ class CouponController extends Controller
             ], 404);
         }
 
-        return response()->json([
+        return (new CouponResource($coupon))->additional([
             'status' => true,
             'message' => 'Coupon retrieved successfully',
-            'data' => $coupon,
-        ], 200);
+        ]);
     }
 
     /**
@@ -70,7 +70,7 @@ class CouponController extends Controller
      */
     public function update(CouponRequest $request, string $id)
     {
-        $coupon = $this->couponService->findCoupon($id);
+        $coupon = $this->couponService->findCoupon($id, false);
 
         if (! $coupon) {
             return response()->json([
@@ -81,11 +81,10 @@ class CouponController extends Controller
 
         $coupon = $this->couponService->updateCouponFull($id, $request->validated());
 
-        return response()->json([
+        return (new CouponResource($coupon))->additional([
             'status' => true,
             'message' => 'Coupon updated successfully',
-            'data' => $coupon,
-        ], 200);
+        ]);
     }
 
     /**
@@ -93,7 +92,7 @@ class CouponController extends Controller
      */
     public function destroy(string $id)
     {
-        $coupon = $this->couponService->findCoupon($id);
+        $coupon = $this->couponService->findCoupon($id, false);
 
         if (! $coupon) {
             return response()->json([
@@ -108,5 +107,77 @@ class CouponController extends Controller
             'status' => true,
             'message' => 'Coupon deleted successfully',
         ], 200);
+    }
+
+    /**
+     * Toggle coupon active status
+     */
+    public function toggleStatus(string $id)
+    {
+        $coupon = $this->couponService->findCoupon($id, false);
+
+        if (! $coupon) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Coupon not found',
+            ], 404);
+        }
+
+        $coupon = $this->couponService->toggleCouponStatus($id);
+
+        $statusText = $coupon->is_active ? 'activated' : 'deactivated';
+
+        return (new CouponResource($coupon))->additional([
+            'status' => true,
+            'message' => "Coupon {$statusText} successfully",
+        ]);
+    }
+
+    /**
+     * Validate a coupon code
+     */
+    public function validate(Request $request)
+    {
+        $request->validate([
+            'code' => 'required|string',
+            'order_amount' => 'nullable|numeric|min:0',
+        ]);
+
+        $coupon = \App\Models\Coupon::where('code', strtoupper($request->code))->first();
+
+        if (! $coupon) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Coupon not found',
+                'data' => [
+                    'valid' => false,
+                    'message' => 'Mã giảm giá không tồn tại',
+                ],
+            ], 404);
+        }
+
+        $orderAmount = $request->input('order_amount', 0);
+        $validation = $coupon->isValid($orderAmount);
+
+        if ($validation['valid']) {
+            $discount = $coupon->calculateDiscount($orderAmount);
+
+            return (new CouponResource($coupon))->additional([
+                'status' => true,
+                'message' => 'Coupon is valid',
+                'discount_amount' => $discount,
+                'final_amount' => max(0, $orderAmount - $discount),
+            ]);
+        }
+
+        return response()->json([
+            'status' => false,
+            'message' => $validation['message'],
+            'data' => [
+                'valid' => false,
+                'message' => $validation['message'],
+                'coupon' => new CouponResource($coupon),
+            ],
+        ], 400);
     }
 }

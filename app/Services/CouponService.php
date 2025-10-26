@@ -177,11 +177,11 @@ class CouponService
     }
 
     /**
-     * Get coupons with filters (for API)
+     * Get coupons with filters (for API and Web)
      */
     public function getCoupons(array $filters = [], int $perPage = 15)
     {
-        $query = Coupon::query();
+        $query = Coupon::with('product');
 
         if (isset($filters['code'])) {
             $query->where('code', 'LIKE', '%'.$filters['code'].'%');
@@ -191,15 +191,33 @@ class CouponService
             $query->where('description', 'LIKE', '%'.$filters['description'].'%');
         }
 
-        return $query->paginate($perPage);
+        if (isset($filters['is_active'])) {
+            $query->where('is_active', $filters['is_active']);
+        }
+
+        if (isset($filters['discount_type'])) {
+            $query->where('discount_type', $filters['discount_type']);
+        }
+
+        if (isset($filters['product_id'])) {
+            $query->where('product_id', $filters['product_id']);
+        }
+
+        return $query->orderBy('created_at', 'desc')->paginate($perPage);
     }
 
     /**
-     * Find coupon by ID (nullable)
+     * Find coupon by ID (nullable) with optional relationships
      */
-    public function findCoupon($couponId)
+    public function findCoupon($couponId, $withRelations = true)
     {
-        return Coupon::find($couponId);
+        $query = Coupon::query();
+
+        if ($withRelations) {
+            $query->with('product');
+        }
+
+        return $query->find($couponId);
     }
 
     /**

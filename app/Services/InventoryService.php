@@ -102,11 +102,11 @@ class InventoryService
     }
 
     /**
-     * Kiểm tra tồn kho thấp
+     * Kiểm tra tồn kho thấp (dùng chung cho Web và API)
      */
     public function getLowStockInventories(int $threshold = 10)
     {
-        return Inventory::with('product')
+        return Inventory::with('product.category')
             ->where('current_stock', '<', $threshold)
             ->where('current_stock', '>', 0)
             ->orderBy('current_stock', 'asc')
@@ -114,11 +114,11 @@ class InventoryService
     }
 
     /**
-     * Kiểm tra hết hàng
+     * Kiểm tra hết hàng (dùng chung cho Web và API)
      */
     public function getOutOfStockInventories()
     {
-        return Inventory::with('product')
+        return Inventory::with('product.category')
             ->where('current_stock', '=', 0)
             ->get();
     }
@@ -139,11 +139,11 @@ class InventoryService
     }
 
     /**
-     * Get inventories with filters (for API)
+     * Get inventories with filters (for API and Web)
      */
     public function getInventories(array $filters = [], int $perPage = 10)
     {
-        $query = Inventory::with('product');
+        $query = Inventory::with('product.category');
 
         if (isset($filters['product_id'])) {
             $query->where('product_id', $filters['product_id']);
@@ -161,15 +161,46 @@ class InventoryService
             $query->where('current_stock', '<', 10);
         }
 
+        // Stock status filter (out, low, available)
+        if (isset($filters['stock_status'])) {
+            $status = $filters['stock_status'];
+            if ($status === 'low') {
+                $query->where('current_stock', '<', 10)->where('current_stock', '>', 0);
+            } elseif ($status === 'out') {
+                $query->where('current_stock', '=', 0);
+            } elseif ($status === 'available') {
+                $query->where('current_stock', '>=', 10);
+            }
+        }
+
+        // Search by product name
+        if (isset($filters['search'])) {
+            $searchTerm = $filters['search'];
+            $query->whereHas('product', function ($q) use ($searchTerm) {
+                $q->where('name', 'like', '%'.$searchTerm.'%');
+            });
+        }
+
+        // Sorting
+        $sortBy = $filters['sort_by'] ?? 'updated_at';
+        $sortOrder = $filters['sort_order'] ?? 'desc';
+        $query->orderBy($sortBy, $sortOrder);
+
         return $query->paginate($perPage);
     }
 
     /**
-     * Find inventory by ID
+     * Find inventory by ID with optional relationships
      */
-    public function findInventory($inventoryId)
+    public function findInventory($inventoryId, $withRelations = true)
     {
-        return Inventory::with('product')->where('inventory_id', $inventoryId)->first();
+        $query = Inventory::query();
+
+        if ($withRelations) {
+            $query->with('product.category');
+        }
+
+        return $query->where('inventory_id', $inventoryId)->first();
     }
 
     /**

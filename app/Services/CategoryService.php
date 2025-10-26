@@ -99,7 +99,7 @@ class CategoryService
      */
     public function getCategories(array $filters = [], int $perPage = 15)
     {
-        $query = Category::query();
+        $query = Category::withCount('products'); // Eager load products count
 
         if (isset($filters['name'])) {
             $query->where('name', 'LIKE', '%'.$filters['name'].'%');
@@ -113,10 +113,14 @@ class CategoryService
     }
 
     /**
-     * Find category by ID (nullable)
+     * Find category by ID (nullable, with optional relationships)
      */
-    public function findCategory($categoryId)
+    public function findCategory($categoryId, $withRelations = false)
     {
+        if ($withRelations) {
+            return Category::with('products')->find($categoryId);
+        }
+
         return Category::find($categoryId);
     }
 

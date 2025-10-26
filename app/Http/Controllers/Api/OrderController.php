@@ -25,16 +25,19 @@ class OrderController extends Controller
      */
     public function index(Request $request)
     {
-        $filters = [];
+        $filters = $request->only(['status', 'search', 'sort_by', 'sort_order']);
 
         if ($request->user()->isAdmin()) {
-            $filters = $request->only(['user_id', 'min_date', 'max_date', 'min_total', 'max_total']);
+            $filters = array_merge($filters, $request->only(['user_id', 'min_date', 'max_date', 'min_total', 'max_total']));
         }
+
+        $perPage = $request->input('per_page', 15);
 
         $orders = $this->orderService->getOrders(
             $request->user()->id,
             $request->user()->isAdmin(),
-            $filters
+            $filters,
+            $perPage
         );
 
         return new OrderCollection($orders);
@@ -76,7 +79,7 @@ class OrderController extends Controller
      */
     public function show(Request $request, $id)
     {
-        $order = $this->orderService->findOrder($id);
+        $order = $this->orderService->findOrder($id, true);
 
         if (! $order) {
             return response()->json([
@@ -92,7 +95,10 @@ class OrderController extends Controller
             ], 403);
         }
 
-        return new OrderResource($order);
+        return (new OrderResource($order))->additional([
+            'status' => true,
+            'message' => 'Order retrieved successfully',
+        ]);
     }
 
     /**
@@ -157,7 +163,10 @@ class OrderController extends Controller
 
             DB::commit();
 
-            return new OrderResource($order);
+            return (new OrderResource($order))->additional([
+                'status' => true,
+                'message' => 'Order updated successfully',
+            ]);
 
         } catch (\Exception $e) {
             DB::rollback();
@@ -196,6 +205,91 @@ class OrderController extends Controller
         return response()->json([
             'status' => true,
             'message' => 'Order deleted successfully',
+        ], 200);
+    }
+
+    /**
+     * Change order status (Admin only)
+     */
+    public function changeStatus(Request $request, $id)
+    {
+        $request->validate([
+            'status' => 'required|in:pending,processing,shipped,delivered,cancelled',
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            $order = $this->orderService->findOrder($id, false);
+
+            if (! $order) {
+                DB::rollback();
+
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Order not found',
+                ], 404);
+            }
+
+            if (! $this->orderService->canTransitionToStatus($order, $request->status)) {
+                DB::rollback();
+
+                return response()->json([
+                    'status' => false,
+                    'message' => "Cannot change status from '{$order->status}' to '{$request->status}'. Invalid status transition.",
+                    'current_status' => $order->status,
+                    'allowed_transitions' => Order::STATUS_TRANSITIONS[$order->status] ?? [],
+                ], 422);
+            }
+
+            $order = $this->orderService->updateOrderStatus($id, $request->status);
+
+            DB::commit();
+
+            return (new OrderResource($order))->additional([
+                'status' => true,
+                'message' => 'Order status updated successfully',
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollback();
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to update order status',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Get all available statuses
+     */
+    public function getStatuses(Request $request)
+    {
+        $statuses = $this->orderService->getAllStatuses();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Statuses retrieved successfully',
+            'data' => $statuses,
+        ], 200);
+    }
+
+    /**
+     * Get order statistics
+     */
+    public function stats(Request $request)
+    {
+        $stats = $this->orderService->getOrderStats(
+            $request->user()->id,
+            $request->user()->isAdmin()
+        );
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Order statistics retrieved successfully',
+            'data' => $stats,
         ], 200);
     }
 }

@@ -7,6 +7,7 @@ use App\Http\Requests\ProductRequest;
 use App\Http\Requests\RatingRequest;
 use App\Http\Resources\ProductCollection;
 use App\Http\Resources\ProductResource;
+use App\Http\Resources\RatingResource;
 use App\Models\Rating;
 use App\Services\ProductService;
 use Illuminate\Http\Request;
@@ -25,15 +26,13 @@ class ProductController extends Controller
      */
     public function index(Request $request)
     {
-        $filters = [
-            'category' => $request->get('category'),
-            'name' => $request->get('name'),
-            'min_price' => $request->get('min_price'),
-            'max_price' => $request->get('max_price'),
-            'stock_quantity' => $request->get('stock_quantity'),
-        ];
+        $filters = $request->only([
+            'category', 'name', 'search', 'min_price', 'max_price',
+            'stock_quantity', 'stock_status', 'has_discount', 'sort_by', 'sort_order',
+        ]);
+        $perPage = $request->input('per_page', 15);
 
-        $products = $this->productService->getProducts($filters);
+        $products = $this->productService->getProducts($filters, $perPage);
 
         return new ProductCollection($products);
     }
@@ -67,7 +66,7 @@ class ProductController extends Controller
      */
     public function show($id)
     {
-        $product = $this->productService->findProduct($id);
+        $product = $this->productService->findProduct($id, true);
 
         if (! $product) {
             return response()->json([
@@ -76,13 +75,10 @@ class ProductController extends Controller
             ], 404);
         }
 
-        return (new ProductResource($product))
-            ->additional([
-                'status' => true,
-                'message' => 'Product retrieved successfully',
-            ])
-            ->response()
-            ->setStatusCode(200);
+        return (new ProductResource($product))->additional([
+            'status' => true,
+            'message' => 'Product retrieved successfully',
+        ]);
     }
 
     /**
@@ -148,7 +144,7 @@ class ProductController extends Controller
     public function getRatings($id)
     {
         try {
-            $product = $this->productService->findProduct($id);
+            $product = $this->productService->findProduct($id, false);
 
             if (! $product) {
                 return response()->json([
@@ -158,34 +154,19 @@ class ProductController extends Controller
             }
 
             $ratings = Rating::where('product_id', $id)
-                ->with('user:id,name')
+                ->with('user:id,name,email')
                 ->orderBy('created_at', 'desc')
-                ->get()
-                ->map(function ($rating) {
-                    return [
-                        'id' => $rating->id,
-                        'rating' => $rating->rating,
-                        'review' => $rating->review,
-                        'user' => [
-                            'id' => $rating->user->id,
-                            'name' => $rating->user->name,
-                        ],
-                        'created_at' => $rating->created_at,
-                    ];
-                });
+                ->get();
 
             $averageRating = $ratings->avg('rating');
             $totalRatings = $ratings->count();
 
-            return response()->json([
+            return RatingResource::collection($ratings)->additional([
                 'status' => true,
                 'message' => 'Ratings retrieved successfully',
-                'data' => [
-                    'ratings' => $ratings,
-                    'average_rating' => round($averageRating, 1),
-                    'total_ratings' => $totalRatings,
-                ],
-            ], 200);
+                'average_rating' => round($averageRating, 1),
+                'total_ratings' => $totalRatings,
+            ]);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
@@ -212,16 +193,10 @@ class ProductController extends Controller
 
             $rating = $this->productService->createRating($request->validated(), $id);
 
-            return response()->json([
+            return (new RatingResource($rating))->additional([
                 'status' => true,
                 'message' => 'Rating added successfully',
-                'data' => [
-                    'id' => $rating->id,
-                    'rating' => $rating->rating,
-                    'review' => $rating->review,
-                    'created_at' => $rating->created_at,
-                ],
-            ], 201);
+            ])->response()->setStatusCode(201);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
@@ -253,16 +228,10 @@ class ProductController extends Controller
             $rating->review = $request->review ?? $rating->review;
             $rating->save();
 
-            return response()->json([
+            return (new RatingResource($rating))->additional([
                 'status' => true,
                 'message' => 'Rating updated successfully',
-                'data' => [
-                    'id' => $rating->id,
-                    'rating' => $rating->rating,
-                    'review' => $rating->review,
-                    'updated_at' => $rating->updated_at,
-                ],
-            ], 200);
+            ]);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
@@ -311,5 +280,19 @@ class ProductController extends Controller
                 'error' => $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Get product statistics
+     */
+    public function stats(Request $request)
+    {
+        $stats = $this->productService->getProductStats();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Product statistics retrieved successfully',
+            'data' => $stats,
+        ], 200);
     }
 }

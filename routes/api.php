@@ -21,6 +21,7 @@ Route::post('/auth/social/token', [\App\Http\Controllers\Api\SocialAuthControlle
 // Public product routes - Khách có thể xem sản phẩm mà không cần đăng nhập
 Route::prefix('products')->middleware('throttle:60,1')->group(function () {
     Route::get('/', [\App\Http\Controllers\Api\ProductController::class, 'index']);
+    Route::get('/stats', [\App\Http\Controllers\Api\ProductController::class, 'stats']);
     Route::get('/{id}', [\App\Http\Controllers\Api\ProductController::class, 'show']);
 
     // Public rating routes - Khách có thể xem ratings
@@ -87,9 +88,12 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () { // boc
     Route::prefix('orders')->group(function () {
         Route::get('/', [\App\Http\Controllers\Api\OrderController::class, 'index']);
         Route::post('/', [\App\Http\Controllers\Api\OrderController::class, 'store']);
+        Route::get('/statuses', [\App\Http\Controllers\Api\OrderController::class, 'getStatuses']);
+        Route::get('/stats', [\App\Http\Controllers\Api\OrderController::class, 'stats']);
         Route::get('/{id}', [\App\Http\Controllers\Api\OrderController::class, 'show']);
         Route::put('/{id}', [\App\Http\Controllers\Api\OrderController::class, 'update']);
         Route::delete('/{id}', [\App\Http\Controllers\Api\OrderController::class, 'destroy']);
+        Route::post('/{id}/change-status', [\App\Http\Controllers\Api\OrderController::class, 'changeStatus'])->middleware('admin');
     });
 
     // Order items management (Internal use)
@@ -165,10 +169,22 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () { // boc
         Route::post('/upsert', [\App\Http\Controllers\Api\InventoryController::class, 'upsert']);
         Route::put('/{id}/update-stock', [\App\Http\Controllers\Api\InventoryController::class, 'updateStock']);
         Route::get('/low-stock/list', [\App\Http\Controllers\Api\InventoryController::class, 'lowStock']);
+        Route::get('/out-of-stock/list', [\App\Http\Controllers\Api\InventoryController::class, 'outOfStock']);
+        Route::get('/stats', [\App\Http\Controllers\Api\InventoryController::class, 'stats']);
+    });
+
+    // Coupon management (Admin only)
+    Route::prefix('coupons')->middleware('admin')->group(function () {
+        Route::post('/', [\App\Http\Controllers\Api\CouponController::class, 'store']);
+        Route::put('/{id}', [\App\Http\Controllers\Api\CouponController::class, 'update']);
+        Route::delete('/{id}', [\App\Http\Controllers\Api\CouponController::class, 'destroy']);
+        Route::post('/{id}/toggle-status', [\App\Http\Controllers\Api\CouponController::class, 'toggleStatus']);
     });
 });
 
-// Coupon routes - Public access to view coupons
+// Coupon routes - Public access to view and validate coupons
 Route::prefix('coupons')->middleware('throttle:60,1')->group(function () {
     Route::get('/', [\App\Http\Controllers\Api\CouponController::class, 'index']);
+    Route::get('/{id}', [\App\Http\Controllers\Api\CouponController::class, 'show']);
+    Route::post('/validate', [\App\Http\Controllers\Api\CouponController::class, 'validate']);
 });

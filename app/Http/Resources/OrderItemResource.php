@@ -20,10 +20,29 @@ class OrderItemResource extends JsonResource
             'product_id' => $this->product_id,
             'quantity' => $this->quantity,
             'price' => $this->price,
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
-            'total_price' => $this->total_price,
-            'product' => new ProductResource($this->whenLoaded('product')),
+            'subtotal' => $this->quantity * $this->price,
+            'created_at' => $this->created_at?->format('Y-m-d H:i:s'),
+            'updated_at' => $this->updated_at?->format('Y-m-d H:i:s'),
+            'product' => $this->whenLoaded('product', function () {
+                return [
+                    'product_id' => $this->product->product_id,
+                    'name' => $this->product->name,
+                    'slug' => $this->product->slug,
+                    'price' => $this->product->price,
+                    'image' => $this->product->image,
+                    'stock_quantity' => $this->product->stock_quantity,
+                    'category' => $this->when(
+                        $this->product->relationLoaded('category') && $this->product->category,
+                        function () {
+                            return [
+                                'category_id' => $this->product->category->category_id,
+                                'name' => $this->product->category->name,
+                                'slug' => $this->product->category->slug,
+                            ];
+                        }
+                    ),
+                ];
+            }),
         ];
     }
 }

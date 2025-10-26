@@ -16,12 +16,21 @@ class ProductCollection extends ResourceCollection
     {
         return [
             'data' => ProductResource::collection($this->collection),
+            'status' => true,
+            'message' => 'Products retrieved successfully',
             'meta' => [
-                'total' => $this->total(),
-                'count' => $this->count(),
-                'per_page' => $this->perPage(),
                 'current_page' => $this->currentPage(),
-                'total_pages' => $this->lastPage(),
+                'from' => $this->firstItem(),
+                'last_page' => $this->lastPage(),
+                'per_page' => $this->perPage(),
+                'to' => $this->lastItem(),
+                'total' => $this->total(),
+            ],
+            'links' => [
+                'first' => $this->url(1),
+                'last' => $this->url($this->lastPage()),
+                'prev' => $this->previousPageUrl(),
+                'next' => $this->nextPageUrl(),
             ],
         ];
     }

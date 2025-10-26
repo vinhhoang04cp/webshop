@@ -15,24 +15,23 @@ class OrderCollection extends ResourceCollection
     public function toArray(Request $request): array
     {
         return [
-            'data' => $this->collection,
-            'meta' => [
-                'total' => $this->collection->count(),  // Dem so luong don hang trong collection
-            ],
-        ];
-    }
-
-    /**
-     * Get additional data that should be returned with the resource array.
-     *
-     * @return array<string, mixed>
-     */
-    public function with($request)
-    {
-        return [
+            'data' => OrderResource::collection($this->collection),
             'status' => true,
             'message' => 'Orders retrieved successfully',
-            'timestamp' => now(),
+            'meta' => [
+                'current_page' => $this->currentPage(),
+                'from' => $this->firstItem(),
+                'last_page' => $this->lastPage(),
+                'per_page' => $this->perPage(),
+                'to' => $this->lastItem(),
+                'total' => $this->total(),
+            ],
+            'links' => [
+                'first' => $this->url(1),
+                'last' => $this->url($this->lastPage()),
+                'prev' => $this->previousPageUrl(),
+                'next' => $this->nextPageUrl(),
+            ],
         ];
     }
 }

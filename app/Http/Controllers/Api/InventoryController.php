@@ -24,8 +24,8 @@ class InventoryController extends Controller
      */
     public function index(Request $request)
     {
-        $filters = $request->only(['product_id', 'min_stock', 'max_stock', 'low_stock']);
-        $perPage = $request->get('per_page', 10);
+        $filters = $request->only(['product_id', 'min_stock', 'max_stock', 'low_stock', 'stock_status', 'search', 'sort_by', 'sort_order']);
+        $perPage = $request->get('per_page', 15);
         $inventories = $this->inventoryService->getInventories($filters, $perPage);
 
         return new InventoryCollection($inventories);
@@ -40,11 +40,10 @@ class InventoryController extends Controller
             $result = $this->inventoryService->storeInventory($request->validated());
             $message = $result['created'] ? 'Inventory created successfully' : 'Inventory updated successfully';
 
-            return response()->json([
+            return (new InventoryResource($result['inventory']))->additional([
                 'success' => true,
                 'message' => $message,
-                'data' => new InventoryResource($result['inventory']),
-            ], $result['created'] ? 201 : 200);
+            ])->response()->setStatusCode($result['created'] ? 201 : 200);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -59,7 +58,7 @@ class InventoryController extends Controller
      */
     public function show(string $id)
     {
-        $inventory = $this->inventoryService->findInventory($id);
+        $inventory = $this->inventoryService->findInventory($id, true);
 
         if (! $inventory) {
             return response()->json([
@@ -68,10 +67,10 @@ class InventoryController extends Controller
             ], 404);
         }
 
-        return response()->json([
+        return (new InventoryResource($inventory))->additional([
             'success' => true,
-            'data' => new InventoryResource($inventory),
-        ], 200);
+            'message' => 'Inventory retrieved successfully',
+        ]);
     }
 
     /**
@@ -80,7 +79,7 @@ class InventoryController extends Controller
     public function update(InventoryRequest $request, string $id)
     {
         try {
-            $inventory = $this->inventoryService->findInventory($id);
+            $inventory = $this->inventoryService->findInventory($id, false);
 
             if (! $inventory) {
                 return response()->json([
@@ -91,11 +90,10 @@ class InventoryController extends Controller
 
             $inventory = $this->inventoryService->updateInventoryById($id, $request->validated(), $inventory);
 
-            return response()->json([
+            return (new InventoryResource($inventory))->additional([
                 'success' => true,
                 'message' => 'Inventory updated successfully',
-                'data' => new InventoryResource($inventory),
-            ], 200);
+            ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -111,7 +109,7 @@ class InventoryController extends Controller
     public function destroy(string $id)
     {
         try {
-            $inventory = $this->inventoryService->findInventory($id);
+            $inventory = $this->inventoryService->findInventory($id, false);
 
             if (! $inventory) {
                 return response()->json([
@@ -143,11 +141,12 @@ class InventoryController extends Controller
         try {
             $inventory = $this->inventoryService->updateStockByType($id, $request->validated());
 
-            return response()->json([
+            $actionText = $request->type === 'in' ? 'Stock imported' : ($request->type === 'out' ? 'Stock exported' : 'Stock adjusted');
+
+            return (new InventoryResource($inventory))->additional([
                 'success' => true,
-                'message' => 'Stock updated successfully',
-                'data' => new InventoryResource($inventory),
-            ], 200);
+                'message' => "{$actionText} successfully",
+            ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -165,10 +164,12 @@ class InventoryController extends Controller
         $threshold = $request->get('threshold', 10);
         $inventories = $this->inventoryService->getLowStockInventories($threshold);
 
-        return response()->json([
+        return InventoryResource::collection($inventories)->additional([
             'success' => true,
-            'data' => InventoryResource::collection($inventories),
-        ], 200);
+            'message' => 'Low stock items retrieved successfully',
+            'threshold' => $threshold,
+            'count' => $inventories->count(),
+        ]);
     }
 
     /**
@@ -181,12 +182,11 @@ class InventoryController extends Controller
             $message = $result['created'] ? 'Inventory created successfully' : 'Inventory updated successfully';
             $status = $result['created'] ? 201 : 200;
 
-            return response()->json([
+            return (new InventoryResource($result['inventory']))->additional([
                 'success' => true,
                 'message' => $message,
-                'data' => new InventoryResource($result['inventory']),
                 'action' => $result['created'] ? 'created' : 'updated',
-            ], $status);
+            ])->response()->setStatusCode($status);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -194,5 +194,33 @@ class InventoryController extends Controller
                 'error' => config('app.debug') ? $e->getMessage() : null,
             ], 500);
         }
+    }
+
+    /**
+     * Get out of stock items
+     */
+    public function outOfStock(Request $request)
+    {
+        $inventories = $this->inventoryService->getOutOfStockInventories();
+
+        return InventoryResource::collection($inventories)->additional([
+            'success' => true,
+            'message' => 'Out of stock items retrieved successfully',
+            'count' => $inventories->count(),
+        ]);
+    }
+
+    /**
+     * Get inventory statistics
+     */
+    public function stats(Request $request)
+    {
+        $stats = $this->inventoryService->getInventoryStats();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Inventory statistics retrieved successfully',
+            'data' => $stats,
+        ], 200);
     }
 }

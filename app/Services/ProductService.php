@@ -424,11 +424,11 @@ class ProductService
     // ==================== API METHODS ====================
 
     /**
-     * Lấy danh sách sản phẩm cho API với filters
+     * Lấy danh sách sản phẩm cho API với filters (dùng chung cho Web & API)
      */
-    public function getProducts(array $filters = [])
+    public function getProducts(array $filters = [], int $perPage = 15)
     {
-        $query = Product::with(['category', 'details']);
+        $query = Product::with(['category', 'details', 'inventory']);
 
         // Lọc theo category
         if (! empty($filters['category'])) {
@@ -438,6 +438,15 @@ class ProductService
         // Lọc theo tên (tìm gần đúng)
         if (! empty($filters['name'])) {
             $query->where('name', 'LIKE', '%'.$filters['name'].'%');
+        }
+
+        // Search (name or description)
+        if (! empty($filters['search'])) {
+            $searchTerm = $filters['search'];
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('name', 'LIKE', "%{$searchTerm}%")
+                    ->orWhere('description', 'LIKE', "%{$searchTerm}%");
+            });
         }
 
         // Lọc theo giá tối thiểu
@@ -455,15 +464,59 @@ class ProductService
             $query->where('stock_quantity', $filters['stock_quantity']);
         }
 
-        return $query->paginate(15);
+        // Filter by stock status
+        if (! empty($filters['stock_status'])) {
+            $status = $filters['stock_status'];
+            if ($status === 'out_of_stock') {
+                $query->where('stock_quantity', 0);
+            } elseif ($status === 'low_stock') {
+                $query->where('stock_quantity', '>', 0)->where('stock_quantity', '<', 10);
+            } elseif ($status === 'in_stock') {
+                $query->where('stock_quantity', '>=', 10);
+            }
+        }
+
+        // Filter by discount (promotion products)
+        if (! empty($filters['has_discount'])) {
+            $query->whereNotNull('original_price')
+                ->whereColumn('original_price', '>', 'price');
+        }
+
+        // Sorting
+        $sortBy = $filters['sort_by'] ?? 'created_at';
+        $sortOrder = $filters['sort_order'] ?? 'desc';
+        $query->orderBy($sortBy, $sortOrder);
+
+        return $query->paginate($perPage);
     }
 
     /**
-     * Tìm sản phẩm theo ID
+     * Tìm sản phẩm theo ID with optional relationships
      */
-    public function findProduct($productId)
+    public function findProduct($productId, $withRelations = true)
     {
-        return Product::with(['category', 'details'])->find($productId);
+        $query = Product::query();
+
+        if ($withRelations) {
+            $query->with(['category', 'details', 'inventory', 'ratings.user']);
+        }
+
+        return $query->find($productId);
+    }
+
+    /**
+     * Get product statistics (for API)
+     */
+    public function getProductStats()
+    {
+        return [
+            'total_products' => Product::count(),
+            'in_stock' => Product::where('stock_quantity', '>=', 10)->count(),
+            'low_stock' => Product::where('stock_quantity', '>', 0)->where('stock_quantity', '<', 10)->count(),
+            'out_of_stock' => Product::where('stock_quantity', 0)->count(),
+            'total_value' => Product::sum(\DB::raw('price * stock_quantity')),
+            'with_discount' => Product::whereNotNull('original_price')->whereColumn('original_price', '>', 'price')->count(),
+        ];
     }
 
     /**

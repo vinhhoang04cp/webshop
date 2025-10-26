@@ -24,7 +24,8 @@ class OrderItemController extends Controller
     public function index(Request $request)
     {
         $filters = $request->only(['order_id', 'product_id', 'min_price', 'max_price', 'min_quantity', 'max_quantity']);
-        $orderItems = $this->orderService->getOrderItems($filters, 10);
+        $perPage = $request->input('per_page', 15);
+        $orderItems = $this->orderService->getOrderItems($filters, $perPage);
 
         return new OrderItemCollection($orderItems);
     }
@@ -46,7 +47,7 @@ class OrderItemController extends Controller
      */
     public function show($id)
     {
-        $orderItem = $this->orderService->findOrderItem($id);
+        $orderItem = $this->orderService->findOrderItem($id, true);
 
         if (! $orderItem) {
             return response()->json([
@@ -55,7 +56,10 @@ class OrderItemController extends Controller
             ], 404);
         }
 
-        return new OrderItemResource($orderItem);
+        return (new OrderItemResource($orderItem))->additional([
+            'status' => true,
+            'message' => 'Order item retrieved successfully',
+        ]);
     }
 
     /**
@@ -63,7 +67,7 @@ class OrderItemController extends Controller
      */
     public function update(OrderItemRequest $request, string $id)
     {
-        $orderItem = $this->orderService->findOrderItem($id);
+        $orderItem = $this->orderService->findOrderItem($id, false);
 
         if (! $orderItem) {
             return response()->json([
@@ -74,13 +78,10 @@ class OrderItemController extends Controller
 
         $orderItem = $this->orderService->updateOrderItem($id, $request->validated());
 
-        return (new OrderItemResource($orderItem))
-            ->additional([
-                'status' => true,
-                'message' => 'Order item updated successfully',
-            ])
-            ->response()
-            ->setStatusCode(200);
+        return (new OrderItemResource($orderItem))->additional([
+            'status' => true,
+            'message' => 'Order item updated successfully',
+        ]);
     }
 
     /**
@@ -88,7 +89,7 @@ class OrderItemController extends Controller
      */
     public function destroy($id)
     {
-        $orderItem = $this->orderService->findOrderItem($id);
+        $orderItem = $this->orderService->findOrderItem($id, false);
 
         if (! $orderItem) {
             return response()->json([

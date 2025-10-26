@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\UserResource;
 use App\Services\AuthService;
 use App\Services\SocialAuthService;
 use Exception;
@@ -70,18 +71,17 @@ class SocialAuthController extends Controller
             $socialUser = Socialite::driver($provider)->stateless()->user();
             $user = $this->socialAuthService->findOrCreateUser($socialUser, $provider);
 
+            // Load roles
+            $user->load('roles');
+
             // Tạo API token
             $token = $this->authService->createApiToken($user);
 
-            // Lấy thông tin user với roles
-            $userWithRoles = $this->authService->getUserWithRoles($user);
-
-            return response()->json([
+            return (new UserResource($user))->additional([
                 'status' => true,
                 'message' => 'Social authentication successful',
-                'user' => $userWithRoles,
                 'token' => $token,
-            ], 200);
+            ]);
         } catch (Exception $e) {
             return response()->json([
                 'status' => false,
@@ -125,18 +125,17 @@ class SocialAuthController extends Controller
             // Tìm hoặc tạo user trong database
             $user = $this->socialAuthService->findOrCreateUser($socialUser, $provider);
 
+            // Load roles
+            $user->load('roles');
+
             // Tạo API token
             $token = $this->authService->createApiToken($user);
 
-            // Lấy thông tin user với roles
-            $userWithRoles = $this->authService->getUserWithRoles($user);
-
-            return response()->json([
+            return (new UserResource($user))->additional([
                 'status' => true,
                 'message' => 'Social authentication successful',
-                'user' => $userWithRoles,
                 'token' => $token,
-            ], 200);
+            ]);
         } catch (Exception $e) {
             return response()->json([
                 'status' => false,

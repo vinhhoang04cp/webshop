@@ -47,10 +47,12 @@ class CategoryController extends Controller
 
     /**
      * Display the specified category.
+     * Query params: ?with_products=1 to include products
      */
-    public function show($id)
+    public function show(Request $request, $id)
     {
-        $category = $this->categoryService->findCategory($id);
+        $withProducts = $request->query('with_products', false);
+        $category = $this->categoryService->findCategory($id, $withProducts);
 
         if (! $category) {
             return response()->json([

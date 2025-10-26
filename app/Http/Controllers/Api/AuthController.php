@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
+use App\Http\Resources\UserResource;
 use App\Services\AuthService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -34,14 +35,16 @@ class AuthController extends Controller
             ]);
         }
 
+        // Load roles
+        $user->load('roles');
+
         $token = $this->authService->createApiToken($user);
 
-        return response()->json([
+        return (new UserResource($user))->additional([
             'status' => true,
             'message' => 'Login successful',
-            'user' => $user,
             'token' => $token,
-        ], 200);
+        ]);
     }
 
     /**
@@ -52,17 +55,17 @@ class AuthController extends Controller
         try {
             // Sử dụng phương thức register chung, gán role customer mặc định
             $user = $this->authService->register($request->validated(), true);
+
+            // Load roles
+            $user->load('roles');
+
             $token = $this->authService->createApiToken($user);
 
-            // Lấy thông tin user kèm roles
-            $userWithRoles = $this->authService->getUserWithRoles($user);
-
-            return response()->json([
+            return (new UserResource($user))->additional([
                 'status' => true,
                 'message' => 'Registration successful',
-                'user' => $userWithRoles,
                 'token' => $token,
-            ], 201);
+            ])->response()->setStatusCode(201);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
@@ -90,15 +93,12 @@ class AuthController extends Controller
      */
     public function profile(Request $request)
     {
-        $userWithRoles = $this->authService->getUserWithRoles($request->user());
+        $user = $request->user()->load('roles');
 
-        return response()->json([
+        return (new UserResource($user))->additional([
             'status' => true,
             'message' => 'Profile retrieved successfully',
-            'data' => [
-                'user' => $userWithRoles,
-            ],
-        ], 200);
+        ]);
     }
 
     /**
@@ -141,13 +141,12 @@ class AuthController extends Controller
             ], 401);
         }
 
-        $userWithRoles = $this->authService->getUserWithRoles($user);
+        $user->load('roles');
 
-        return response()->json([
+        return (new UserResource($user))->additional([
             'status' => true,
             'message' => 'Authenticated',
             'authenticated' => true,
-            'user' => $userWithRoles,
-        ], 200);
+        ]);
     }
 }

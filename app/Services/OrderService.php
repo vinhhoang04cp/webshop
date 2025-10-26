@@ -202,11 +202,11 @@ class OrderService
     }
 
     /**
-     * Get order items with filters (for API)
+     * Get order items with filters (for API and Web)
      */
     public function getOrderItems(array $filters = [], int $perPage = 10)
     {
-        $query = OrderItem::query();
+        $query = OrderItem::with(['product.category', 'order.user']);
 
         if (isset($filters['order_id'])) {
             $query->where('order_id', $filters['order_id']);
@@ -231,11 +231,17 @@ class OrderService
     }
 
     /**
-     * Find order item by ID
+     * Find order item by ID with optional relationships
      */
-    public function findOrderItem($orderItemId)
+    public function findOrderItem($orderItemId, $withRelations = true)
     {
-        return OrderItem::find($orderItemId);
+        $query = OrderItem::query();
+
+        if ($withRelations) {
+            $query->with(['product.category', 'order']);
+        }
+
+        return $query->find($orderItemId);
     }
 
     /**
@@ -289,11 +295,11 @@ class OrderService
     }
 
     /**
-     * Get orders with filters (for API)
+     * Get orders with filters (for API and Web)
      */
     public function getOrders($userId, $isAdmin, array $filters = [], int $perPage = 10)
     {
-        $query = Order::with('user');
+        $query = Order::with(['user', 'items.product.category']);
 
         if (! $isAdmin) {
             $query->where('user_id', $userId);
@@ -315,15 +321,43 @@ class OrderService
             }
         }
 
+        // Status filter
+        if (isset($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        // Search filter (order_id, user name, user email)
+        if (isset($filters['search'])) {
+            $searchTerm = $filters['search'];
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('order_id', 'LIKE', "%{$searchTerm}%")
+                    ->orWhereHas('user', function ($userQuery) use ($searchTerm) {
+                        $userQuery->where('name', 'LIKE', "%{$searchTerm}%")
+                            ->orWhere('email', 'LIKE', "%{$searchTerm}%");
+                    });
+            });
+        }
+
+        // Sorting
+        $sortBy = $filters['sort_by'] ?? 'order_date';
+        $sortOrder = $filters['sort_order'] ?? 'desc';
+        $query->orderBy($sortBy, $sortOrder);
+
         return $query->paginate($perPage);
     }
 
     /**
-     * Find order by ID
+     * Find order by ID with optional relationships
      */
-    public function findOrder($orderId)
+    public function findOrder($orderId, $withRelations = true)
     {
-        return Order::with('items')->where('order_id', $orderId)->first();
+        $query = Order::query();
+
+        if ($withRelations) {
+            $query->with(['user', 'items.product.category']);
+        }
+
+        return $query->where('order_id', $orderId)->first();
     }
 
     /**
@@ -523,5 +557,34 @@ class OrderService
     public function getOrderById($orderId)
     {
         return Order::where('order_id', $orderId)->firstOrFail();
+    }
+
+    /**
+     * Get order statistics (for API)
+     */
+    public function getOrderStats($userId = null, $isAdmin = false)
+    {
+        $query = Order::query();
+
+        if (! $isAdmin && $userId) {
+            $query->where('user_id', $userId);
+        }
+
+        $stats = [
+            'total_orders' => $query->count(),
+            'pending' => (clone $query)->where('status', Order::STATUS_PENDING)->count(),
+            'processing' => (clone $query)->where('status', Order::STATUS_PROCESSING)->count(),
+            'shipped' => (clone $query)->where('status', Order::STATUS_SHIPPED)->count(),
+            'delivered' => (clone $query)->where('status', Order::STATUS_DELIVERED)->count(),
+            'cancelled' => (clone $query)->where('status', Order::STATUS_CANCELLED)->count(),
+            'total_revenue' => (clone $query)->whereIn('status', [Order::STATUS_DELIVERED])->sum('total_amount'),
+        ];
+
+        if ($isAdmin) {
+            $stats['pending_value'] = (clone $query)->where('status', Order::STATUS_PENDING)->sum('total_amount');
+            $stats['processing_value'] = (clone $query)->where('status', Order::STATUS_PROCESSING)->sum('total_amount');
+        }
+
+        return $stats;
     }
 }
