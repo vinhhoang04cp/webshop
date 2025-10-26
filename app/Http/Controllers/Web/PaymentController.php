@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 class PaymentController extends Controller
 {
     protected $paymentService;
+
     protected $orderService;
 
     public function __construct(PaymentService $paymentService, OrderService $orderService)
@@ -111,9 +112,10 @@ class PaymentController extends Controller
     public function success(Request $request)
     {
         $orderId = $request->get('order_id');
-        
+
         try {
             $order = $this->orderService->getOrderWithItemsForDisplay($orderId);
+
             return view('payment.success', compact('order'));
         } catch (\Exception $e) {
             return redirect()->route('cart.index')->with('error', 'Không tìm thấy đơn hàng');
@@ -126,9 +128,10 @@ class PaymentController extends Controller
     public function failed(Request $request)
     {
         $orderId = $request->get('order_id');
-        
+
         try {
             $order = $this->orderService->getOrderById($orderId);
+
             return view('payment.failed', compact('order'));
         } catch (\Exception $e) {
             return redirect()->route('cart.index')->with('error', 'Không tìm thấy đơn hàng');
