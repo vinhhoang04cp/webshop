@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ProductDetailRequest;
+use App\Http\Resources\ErrorResource;
 use App\Http\Resources\ProductDetailCollection;
 use App\Http\Resources\ProductDetailResource;
+use App\Http\Resources\SuccessResource;
 use App\Services\ProductService;
 use Illuminate\Http\Request;
 
@@ -45,15 +47,9 @@ class ProductDetailController extends Controller
         try {
             $productDetail = $this->productService->createProductDetail($request->validated());
 
-            return (new ProductDetailResource($productDetail))
-                ->additional(['message' => 'Product detail created successfully'])
-                ->response()
-                ->setStatusCode(201);
+            return ProductDetailResource::created($productDetail);
         } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Failed to create product detail',
-                'error' => $e->getMessage(),
-            ], 500);
+            return ErrorResource::serverError('Failed to create product detail: '.$e->getMessage());
         }
     }
 
@@ -65,10 +61,10 @@ class ProductDetailController extends Controller
         $productDetail = $this->productService->findProductDetail($id);
 
         if (! $productDetail) {
-            return response()->json(['message' => 'Product detail not found'], 404);
+            return ErrorResource::notFound('Product detail not found');
         }
 
-        return new ProductDetailResource($productDetail);
+        return ProductDetailResource::retrieved($productDetail);
     }
 
     /**
@@ -80,18 +76,12 @@ class ProductDetailController extends Controller
             $productDetail = $this->productService->updateProductDetail($id, $request->validated());
 
             if (! $productDetail) {
-                return response()->json(['message' => 'Product detail not found'], 404);
+                return ErrorResource::notFound('Product detail not found');
             }
 
-            return (new ProductDetailResource($productDetail))
-                ->additional(['message' => 'Product detail updated successfully'])
-                ->response()
-                ->setStatusCode(200);
+            return ProductDetailResource::updated($productDetail);
         } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Failed to update product detail',
-                'error' => $e->getMessage(),
-            ], 500);
+            return ErrorResource::serverError('Failed to update product detail: '.$e->getMessage());
         }
     }
 
@@ -103,9 +93,9 @@ class ProductDetailController extends Controller
         $deleted = $this->productService->deleteProductDetail($id);
 
         if (! $deleted) {
-            return response()->json(['message' => 'Product detail not found'], 404);
+            return ErrorResource::notFound('Product detail not found');
         }
 
-        return response()->json(['message' => 'Product detail deleted successfully']);
+        return SuccessResource::deleted('Product detail deleted successfully');
     }
 }

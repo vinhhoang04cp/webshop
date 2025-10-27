@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ProductRequest;
 use App\Http\Requests\RatingRequest;
+use App\Http\Resources\ErrorResource;
 use App\Http\Resources\ProductCollection;
 use App\Http\Resources\ProductResource;
 use App\Http\Resources\RatingResource;
+use App\Http\Resources\SuccessResource;
 use App\Models\Rating;
 use App\Services\ProductService;
 use Illuminate\Http\Request;
@@ -45,19 +47,9 @@ class ProductController extends Controller
         try {
             $product = $this->productService->createProductFull($request->validated());
 
-            return (new ProductResource($product))
-                ->additional([
-                    'status' => true,
-                    'message' => 'Product created successfully',
-                ])
-                ->response()
-                ->setStatusCode(201);
-
+            return ProductResource::created($product);
         } catch (\Exception $e) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Error creating product: '.$e->getMessage(),
-            ], 500);
+            return ErrorResource::serverError('Error creating product: '.$e->getMessage());
         }
     }
 
@@ -69,16 +61,10 @@ class ProductController extends Controller
         $product = $this->productService->findProduct($id, true);
 
         if (! $product) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Product not found',
-            ], 404);
+            return ErrorResource::notFound('Product not found');
         }
 
-        return (new ProductResource($product))->additional([
-            'status' => true,
-            'message' => 'Product retrieved successfully',
-        ]);
+        return ProductResource::retrieved($product);
     }
 
     /**
@@ -90,23 +76,12 @@ class ProductController extends Controller
             $product = $this->productService->updateProductFull($id, $request->validated());
 
             if (! $product) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Product not found',
-                ], 404);
+                return ErrorResource::notFound('Product not found');
             }
 
-            return (new ProductResource($product))
-                ->additional([
-                    'status' => true,
-                    'message' => 'Product updated successfully',
-                ]);
-
+            return ProductResource::updated($product);
         } catch (\Exception $e) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Error updating product: '.$e->getMessage(),
-            ], 500);
+            return ErrorResource::serverError('Error updating product: '.$e->getMessage());
         }
     }
 
@@ -119,22 +94,12 @@ class ProductController extends Controller
             $deleted = $this->productService->deleteProductById($id);
 
             if (! $deleted) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Product not found',
-                ], 404);
+                return ErrorResource::notFound('Product not found');
             }
 
-            return response()->json([
-                'status' => true,
-                'message' => 'Product and related data deleted successfully',
-            ], 200);
-
+            return SuccessResource::deleted('Product and related data deleted successfully');
         } catch (\Exception $e) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Error deleting product: '.$e->getMessage(),
-            ], 500);
+            return ErrorResource::serverError('Error deleting product: '.$e->getMessage());
         }
     }
 
@@ -147,10 +112,7 @@ class ProductController extends Controller
             $product = $this->productService->findProduct($id, false);
 
             if (! $product) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Product not found',
-                ], 404);
+                return ErrorResource::notFound('Product not found');
             }
 
             $ratings = Rating::where('product_id', $id)
@@ -168,11 +130,7 @@ class ProductController extends Controller
                 'total_ratings' => $totalRatings,
             ]);
         } catch (\Exception $e) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Error retrieving ratings',
-                'error' => $e->getMessage(),
-            ], 500);
+            return ErrorResource::serverError('Error retrieving ratings: '.$e->getMessage());
         }
     }
 
@@ -185,24 +143,14 @@ class ProductController extends Controller
             $product = $this->productService->findProduct($id);
 
             if (! $product) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Product not found',
-                ], 404);
+                return ErrorResource::notFound('Product not found');
             }
 
             $rating = $this->productService->createRating($request->validated(), $id);
 
-            return (new RatingResource($rating))->additional([
-                'status' => true,
-                'message' => 'Rating added successfully',
-            ])->response()->setStatusCode(201);
+            return RatingResource::created($rating);
         } catch (\Exception $e) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Failed to add rating',
-                'error' => $e->getMessage(),
-            ], 400);
+            return ErrorResource::badRequest('Failed to add rating: '.$e->getMessage());
         }
     }
 
@@ -218,26 +166,16 @@ class ProductController extends Controller
                 ->first();
 
             if (! $rating) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Rating not found or you do not have permission to update',
-                ], 404);
+                return ErrorResource::notFound('Rating not found or you do not have permission to update');
             }
 
             $rating->rating = $request->rating;
             $rating->review = $request->review ?? $rating->review;
             $rating->save();
 
-            return (new RatingResource($rating))->additional([
-                'status' => true,
-                'message' => 'Rating updated successfully',
-            ]);
+            return RatingResource::updated($rating);
         } catch (\Exception $e) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Failed to update rating',
-                'error' => $e->getMessage(),
-            ], 500);
+            return ErrorResource::serverError('Failed to update rating: '.$e->getMessage());
         }
     }
 
@@ -253,32 +191,19 @@ class ProductController extends Controller
                 ->first();
 
             if (! $rating) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Rating not found',
-                ], 404);
+                return ErrorResource::notFound('Rating not found');
             }
 
             // Kiểm tra quyền: chỉ user tạo rating hoặc admin mới được xóa
             if ($rating->user_id !== $user->id && ! $user->isAdmin()) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'You do not have permission to delete this rating',
-                ], 403);
+                return ErrorResource::forbidden('You do not have permission to delete this rating');
             }
 
             $rating->delete();
 
-            return response()->json([
-                'status' => true,
-                'message' => 'Rating deleted successfully',
-            ], 200);
+            return SuccessResource::deleted('Rating deleted successfully');
         } catch (\Exception $e) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Failed to delete rating',
-                'error' => $e->getMessage(),
-            ], 500);
+            return ErrorResource::serverError('Failed to delete rating: '.$e->getMessage());
         }
     }
 
@@ -293,6 +218,6 @@ class ProductController extends Controller
             'status' => true,
             'message' => 'Product statistics retrieved successfully',
             'data' => $stats,
-        ], 200);
+        ]);
     }
 }

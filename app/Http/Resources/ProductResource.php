@@ -8,6 +8,66 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class ProductResource extends JsonResource
 {
     /**
+     * Custom message for the response
+     */
+    protected $message = 'Product retrieved successfully';
+
+    /**
+     * Custom status code for the response
+     */
+    protected $statusCode = 200;
+
+    /**
+     * Set custom message
+     */
+    public function withMessage(string $message)
+    {
+        $this->message = $message;
+
+        return $this;
+    }
+
+    /**
+     * Set custom status code
+     */
+    public function withStatusCode(int $statusCode)
+    {
+        $this->statusCode = $statusCode;
+
+        return $this;
+    }
+
+    /**
+     * Static helper for created response
+     */
+    public static function created($resource)
+    {
+        return (new static($resource))
+            ->withMessage('Product created successfully')
+            ->withStatusCode(201);
+    }
+
+    /**
+     * Static helper for updated response
+     */
+    public static function updated($resource)
+    {
+        return (new static($resource))
+            ->withMessage('Product updated successfully')
+            ->withStatusCode(200);
+    }
+
+    /**
+     * Static helper for retrieved response
+     */
+    public static function retrieved($resource)
+    {
+        return (new static($resource))
+            ->withMessage('Product retrieved successfully')
+            ->withStatusCode(200);
+    }
+
+    /**
      * Transform the resource into an array.
      *
      * @return array<string, mixed>
@@ -60,6 +120,27 @@ class ProductResource extends JsonResource
             'created_at' => $this->created_at?->format('Y-m-d H:i:s'),
             'updated_at' => $this->updated_at?->format('Y-m-d H:i:s'),
         ];
+    }
+
+    /**
+     * Get additional data that should be returned with the resource array.
+     *
+     * @return array<string, mixed>
+     */
+    public function with(Request $request): array
+    {
+        return [
+            'status' => true,
+            'message' => $this->message,
+        ];
+    }
+
+    /**
+     * Customize the outgoing response for the resource.
+     */
+    public function withResponse($request, $response)
+    {
+        $response->setStatusCode($this->statusCode);
     }
 
     /**

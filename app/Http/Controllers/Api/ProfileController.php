@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ChangePasswordRequest;
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Http\Resources\ErrorResource;
+use App\Http\Resources\SuccessResource;
 use App\Http\Resources\UserResource;
 use App\Services\ProfileService;
 use Illuminate\Http\Request;
@@ -54,11 +56,7 @@ class ProfileController extends Controller
                 'message' => 'Profile updated successfully',
             ]);
         } catch (\Exception $e) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Failed to update profile',
-                'error' => $e->getMessage(),
-            ], 500);
+            return ErrorResource::serverError('Failed to update profile', $e->getMessage());
         }
     }
 
@@ -76,16 +74,11 @@ class ProfileController extends Controller
                 $request->new_password
             );
 
-            return response()->json([
-                'status' => true,
-                'message' => 'Password changed successfully',
-            ], 200);
+            return SuccessResource::message('Password changed successfully');
         } catch (\Exception $e) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Failed to change password',
+            return ErrorResource::badRequest('Failed to change password', [
                 'error' => $e->getMessage(),
-            ], 400);
+            ]);
         }
     }
 
@@ -103,11 +96,7 @@ class ProfileController extends Controller
                 'message' => 'Avatar deleted successfully',
             ]);
         } catch (\Exception $e) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Failed to delete avatar',
-                'error' => $e->getMessage(),
-            ], 500);
+            return ErrorResource::serverError('Failed to delete avatar', $e->getMessage());
         }
     }
 }

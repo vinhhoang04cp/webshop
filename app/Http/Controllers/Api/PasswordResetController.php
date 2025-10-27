@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PasswordResetLinkRequest;
 use App\Http\Requests\PasswordResetRequest;
+use App\Http\Resources\ErrorResource;
+use App\Http\Resources\SuccessResource;
 use App\Services\PasswordResetService;
 
 /**
@@ -35,16 +37,11 @@ class PasswordResetController extends Controller
 
             $result = $this->passwordResetService->sendResetLink($request->email, $resetUrl);
 
-            return response()->json([
-                'status' => true,
-                'message' => 'Link đặt lại mật khẩu đã được gửi đến email của bạn. Vui lòng kiểm tra email.',
-            ], 200);
+            return SuccessResource::message('Link đặt lại mật khẩu đã được gửi đến email của bạn. Vui lòng kiểm tra email.');
         } catch (\Exception $e) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Không thể gửi email reset password',
+            return ErrorResource::badRequest('Không thể gửi email reset password', [
                 'error' => $e->getMessage(),
-            ], 400);
+            ]);
         }
     }
 
@@ -60,16 +57,11 @@ class PasswordResetController extends Controller
                 $request->password
             );
 
-            return response()->json([
-                'status' => true,
-                'message' => 'Mật khẩu đã được đặt lại thành công. Bạn có thể đăng nhập với mật khẩu mới.',
-            ], 200);
+            return SuccessResource::message('Mật khẩu đã được đặt lại thành công. Bạn có thể đăng nhập với mật khẩu mới.');
         } catch (\Exception $e) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Không thể reset password',
+            return ErrorResource::badRequest('Không thể reset password', [
                 'error' => $e->getMessage(),
-            ], 400);
+            ]);
         }
     }
 
@@ -92,18 +84,14 @@ class PasswordResetController extends Controller
                 ], 200);
             }
 
-            return response()->json([
-                'status' => false,
-                'message' => 'Token không hợp lệ hoặc đã hết hạn',
+            return ErrorResource::badRequest('Token không hợp lệ hoặc đã hết hạn', [
                 'valid' => false,
-            ], 400);
+            ]);
         } catch (\Exception $e) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Lỗi khi xác thực token',
+            return ErrorResource::serverError('Lỗi khi xác thực token', [
                 'error' => $e->getMessage(),
                 'valid' => false,
-            ], 500);
+            ]);
         }
     }
 }

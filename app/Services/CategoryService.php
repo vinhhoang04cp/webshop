@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\Category;
+use Exception;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class CategoryService
 {
@@ -113,6 +115,21 @@ class CategoryService
     }
 
     /**
+     * Find category by ID with optional relationships
+     * Throws ModelNotFoundException if not found
+     */
+    public function findCategoryOrFail($categoryId, $withRelations = false)
+    {
+        $query = Category::query();
+
+        if ($withRelations) {
+            $query->with('products');
+        }
+
+        return $query->findOrFail($categoryId);
+    }
+
+    /**
      * Find category by ID (nullable, with optional relationships)
      */
     public function findCategory($categoryId, $withRelations = false)
@@ -133,22 +150,42 @@ class CategoryService
     }
 
     /**
-     * Create category and return fresh instance
+     * Create category and return fresh instance with products count
      */
     public function createCategoryWithFresh(array $data)
     {
         $category = $this->createCategory($data);
 
-        return $category->fresh();
+        return $category->fresh()->loadCount('products');
     }
 
     /**
-     * Update category and return fresh instance
+     * Update category and return fresh instance with products count
+     * Throws ModelNotFoundException if not found
      */
     public function updateCategoryWithFresh($categoryId, array $data)
     {
         $category = $this->updateCategory($categoryId, $data);
 
-        return $category->fresh();
+        return $category->fresh()->loadCount('products');
+    }
+
+    /**
+     * Delete category with validation
+     * Throws ModelNotFoundException if not found
+     * Throws Exception if category has associated products
+     */
+    public function deleteCategoryWithValidation($categoryId)
+    {
+        $category = Category::findOrFail($categoryId);
+
+        // Kiểm tra xem category có sản phẩm liên kết không
+        if (! $this->canDeleteCategory($category)) {
+            throw new Exception('Cannot delete category with associated products');
+        }
+
+        $category->delete();
+
+        return true;
     }
 }

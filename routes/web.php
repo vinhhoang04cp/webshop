@@ -1,13 +1,19 @@
 <?php
 
 use App\Http\Controllers\Web\AuthController;
+use App\Http\Controllers\Web\CategoryController;
+use App\Http\Controllers\Web\CouponController;
 use App\Http\Controllers\Web\CustomerCartController;
 use App\Http\Controllers\Web\CustomerProductController;
 use App\Http\Controllers\Web\HomeController;
+use App\Http\Controllers\Web\InventoryController;
+use App\Http\Controllers\Web\OrderController;
 use App\Http\Controllers\Web\PageController;
 use App\Http\Controllers\Web\PasswordResetController;
 use App\Http\Controllers\Web\PaymentController;
+use App\Http\Controllers\Web\ProductController;
 use App\Http\Controllers\Web\ProfileController;
+use App\Http\Controllers\Web\ReportController;
 use App\Http\Controllers\Web\SocialAuthController;
 use App\Http\Controllers\Web\UserManagementController;
 use Illuminate\Support\Facades\Route;
@@ -75,107 +81,107 @@ Route::middleware(['auth'])->group(function () {
 
     // Categories create/edit/delete - chỉ admin (PHẢI ĐẶT TRƯỚC {id})
     Route::middleware('role:admin')->group(function () {
-        Route::get('/dashboard/categories/create', [\App\Http\Controllers\Web\CategoryController::class, 'create'])
+        Route::get('/dashboard/categories/create', [CategoryController::class, 'create'])
             ->name('dashboard.categories.create');
-        Route::post('/dashboard/categories', [\App\Http\Controllers\Web\CategoryController::class, 'store'])
+        Route::post('/dashboard/categories', [CategoryController::class, 'store'])
             ->name('dashboard.categories.store');
-        Route::get('/dashboard/categories/{id}/edit', [\App\Http\Controllers\Web\CategoryController::class, 'edit'])
+        Route::get('/dashboard/categories/{id}/edit', [CategoryController::class, 'edit'])
             ->name('dashboard.categories.edit');
-        Route::put('/dashboard/categories/{id}', [\App\Http\Controllers\Web\CategoryController::class, 'update'])
+        Route::put('/dashboard/categories/{id}', [CategoryController::class, 'update'])
             ->name('dashboard.categories.update');
-        Route::delete('/dashboard/categories/{id}', [\App\Http\Controllers\Web\CategoryController::class, 'destroy'])
+        Route::delete('/dashboard/categories/{id}', [CategoryController::class, 'destroy'])
             ->name('dashboard.categories.destroy');
     });
 
     // Categories CRUD - cần quyền manager trở lên (ĐẶT SAU create)
     Route::middleware('role:manager')->group(function () {
-        Route::get('/dashboard/categories', [\App\Http\Controllers\Web\CategoryController::class, 'index'])
+        Route::get('/dashboard/categories', [CategoryController::class, 'index'])
             ->name('dashboard.categories.index');
-        Route::get('/dashboard/categories/{id}', [\App\Http\Controllers\Web\CategoryController::class, 'show'])
+        Route::get('/dashboard/categories/{id}', [CategoryController::class, 'show'])
             ->name('dashboard.categories.show');
     });
 
     // Products CRUD - cần quyền manager trở lên
     Route::middleware('role:manager')->group(function () {
-        Route::get('/dashboard/products', [\App\Http\Controllers\Web\ProductController::class, 'index'])
+        Route::get('/dashboard/products', [ProductController::class, 'index'])
             ->name('dashboard.products.index');
     });
 
     // Products create/edit/delete - chỉ admin
     Route::middleware('role:admin')->group(function () {
-        Route::get('/dashboard/products/create', [\App\Http\Controllers\Web\ProductController::class, 'create'])
+        Route::get('/dashboard/products/create', [ProductController::class, 'create'])
             ->name('dashboard.products.create');
-        Route::post('/dashboard/products', [\App\Http\Controllers\Web\ProductController::class, 'store'])
+        Route::post('/dashboard/products', [ProductController::class, 'store'])
             ->name('dashboard.products.store');
-        Route::get('/dashboard/products/{id}/edit', [\App\Http\Controllers\Web\ProductController::class, 'edit'])
+        Route::get('/dashboard/products/{id}/edit', [ProductController::class, 'edit'])
             ->name('dashboard.products.edit');
-        Route::put('/dashboard/products/{id}', [\App\Http\Controllers\Web\ProductController::class, 'update'])
+        Route::put('/dashboard/products/{id}', [ProductController::class, 'update'])
             ->name('dashboard.products.update');
-        Route::delete('/dashboard/products/{id}', [\App\Http\Controllers\Web\ProductController::class, 'destroy'])
+        Route::delete('/dashboard/products/{id}', [ProductController::class, 'destroy'])
             ->name('dashboard.products.destroy');
     });
 
     // Products show - manager có thể xem
     Route::middleware('role:manager')->group(function () {
-        Route::get('/dashboard/products/{id}', [\App\Http\Controllers\Web\ProductController::class, 'show'])
+        Route::get('/dashboard/products/{id}', [ProductController::class, 'show'])
             ->name('dashboard.products.show');
     });
 
     // Coupons Management - cần quyền manager trở lên để xem
     Route::middleware('role:manager')->group(function () {
-        Route::get('/dashboard/coupons', [\App\Http\Controllers\Web\CouponController::class, 'index'])
+        Route::get('/dashboard/coupons', [CouponController::class, 'index'])
             ->name('dashboard.coupons.index');
     });
 
     // Coupons create/edit/delete - chỉ admin (ĐẶT TRƯỚC {id} để tránh conflict)
     Route::middleware('role:admin')->group(function () {
-        Route::get('/dashboard/coupons/create', [\App\Http\Controllers\Web\CouponController::class, 'create'])
+        Route::get('/dashboard/coupons/create', [CouponController::class, 'create'])
             ->name('dashboard.coupons.create');
-        Route::post('/dashboard/coupons', [\App\Http\Controllers\Web\CouponController::class, 'store'])
+        Route::post('/dashboard/coupons', [CouponController::class, 'store'])
             ->name('dashboard.coupons.store');
-        Route::get('/dashboard/coupons/{id}/edit', [\App\Http\Controllers\Web\CouponController::class, 'edit'])
+        Route::get('/dashboard/coupons/{id}/edit', [CouponController::class, 'edit'])
             ->name('dashboard.coupons.edit');
-        Route::put('/dashboard/coupons/{id}', [\App\Http\Controllers\Web\CouponController::class, 'update'])
+        Route::put('/dashboard/coupons/{id}', [CouponController::class, 'update'])
             ->name('dashboard.coupons.update');
-        Route::delete('/dashboard/coupons/{id}', [\App\Http\Controllers\Web\CouponController::class, 'destroy'])
+        Route::delete('/dashboard/coupons/{id}', [CouponController::class, 'destroy'])
             ->name('dashboard.coupons.destroy');
-        Route::patch('/dashboard/coupons/{id}/toggle-status', [\App\Http\Controllers\Web\CouponController::class, 'toggleStatus'])
+        Route::patch('/dashboard/coupons/{id}/toggle-status', [CouponController::class, 'toggleStatus'])
             ->name('dashboard.coupons.toggle-status');
     });
 
     // Coupons show - manager có thể xem (ĐẶT SAU các route cụ thể)
     Route::middleware('role:manager')->group(function () {
-        Route::get('/dashboard/coupons/{id}', [\App\Http\Controllers\Web\CouponController::class, 'show'])
+        Route::get('/dashboard/coupons/{id}', [CouponController::class, 'show'])
             ->name('dashboard.coupons.show');
     });
 
     // Orders Management - cần quyền manager trở lên
     Route::middleware('role:manager')->group(function () {
-        Route::get('/dashboard/orders', [\App\Http\Controllers\Web\OrderController::class, 'index'])
+        Route::get('/dashboard/orders', [OrderController::class, 'index'])
             ->name('dashboard.orders.index');
-        Route::get('/dashboard/orders/{id}', [\App\Http\Controllers\Web\OrderController::class, 'show'])
+        Route::get('/dashboard/orders/{id}', [OrderController::class, 'show'])
             ->name('dashboard.orders.show');
-        Route::get('/dashboard/orders/{id}/edit', [\App\Http\Controllers\Web\OrderController::class, 'edit'])
+        Route::get('/dashboard/orders/{id}/edit', [OrderController::class, 'edit'])
             ->name('dashboard.orders.edit');
-        Route::put('/dashboard/orders/{id}', [\App\Http\Controllers\Web\OrderController::class, 'update'])
+        Route::put('/dashboard/orders/{id}', [OrderController::class, 'update'])
             ->name('dashboard.orders.update');
     });
 
     // Orders delete - chỉ admin
-    Route::delete('/dashboard/orders/{id}', [\App\Http\Controllers\Web\OrderController::class, 'destroy'])
+    Route::delete('/dashboard/orders/{id}', [OrderController::class, 'destroy'])
         ->name('dashboard.orders.destroy')->middleware('role:admin');
 
     // Inventory Management - cần quyền manager trở lên
     Route::middleware('role:manager')->group(function () {
-        Route::get('/dashboard/inventory', [\App\Http\Controllers\Web\InventoryController::class, 'index'])
+        Route::get('/dashboard/inventory', [InventoryController::class, 'index'])
             ->name('dashboard.inventory.index');
-        Route::get('/dashboard/inventory/{id}', [\App\Http\Controllers\Web\InventoryController::class, 'show'])
+        Route::get('/dashboard/inventory/{id}', [InventoryController::class, 'show'])
             ->name('dashboard.inventory.show');
-        Route::get('/dashboard/inventory/{id}/edit', [\App\Http\Controllers\Web\InventoryController::class, 'edit'])
+        Route::get('/dashboard/inventory/{id}/edit', [InventoryController::class, 'edit'])
             ->name('dashboard.inventory.edit');
-        Route::put('/dashboard/inventory/{id}', [\App\Http\Controllers\Web\InventoryController::class, 'update'])
+        Route::put('/dashboard/inventory/{id}', [InventoryController::class, 'update'])
             ->name('dashboard.inventory.update');
-        Route::post('/dashboard/inventory/{id}/adjust', [\App\Http\Controllers\Web\InventoryController::class, 'adjustStock'])
+        Route::post('/dashboard/inventory/{id}/adjust', [InventoryController::class, 'adjustStock'])
             ->name('dashboard.inventory.adjust');
     });
 
@@ -206,15 +212,15 @@ Route::middleware(['auth'])->group(function () {
 
     // Reports - Báo cáo thống kê (manager và admin có thể xem)
     Route::middleware('role:manager')->group(function () {
-        Route::get('/dashboard/reports', [\App\Http\Controllers\Web\ReportController::class, 'index'])
+        Route::get('/dashboard/reports', [ReportController::class, 'index'])
             ->name('dashboard.reports.index');
-        Route::get('/dashboard/reports/revenue', [\App\Http\Controllers\Web\ReportController::class, 'revenue'])
+        Route::get('/dashboard/reports/revenue', [ReportController::class, 'revenue'])
             ->name('dashboard.reports.revenue');
-        Route::get('/dashboard/reports/products', [\App\Http\Controllers\Web\ReportController::class, 'products'])
+        Route::get('/dashboard/reports/products', [ReportController::class, 'products'])
             ->name('dashboard.reports.products');
-        Route::get('/dashboard/reports/customers', [\App\Http\Controllers\Web\ReportController::class, 'customers'])
+        Route::get('/dashboard/reports/customers', [ReportController::class, 'customers'])
             ->name('dashboard.reports.customers');
-        Route::get('/dashboard/reports/export', [\App\Http\Controllers\Web\ReportController::class, 'export'])
+        Route::get('/dashboard/reports/export', [ReportController::class, 'export'])
             ->name('dashboard.reports.export');
     });
 });

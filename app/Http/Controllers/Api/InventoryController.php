@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\InventoryAdjustmentRequest;
 use App\Http\Requests\InventoryRequest;
+use App\Http\Resources\ErrorResource;
 use App\Http\Resources\InventoryCollection;
 use App\Http\Resources\InventoryResource;
+use App\Http\Resources\SuccessResource;
 use App\Services\InventoryService;
 use Illuminate\Http\Request;
 
@@ -41,15 +43,14 @@ class InventoryController extends Controller
             $message = $result['created'] ? 'Inventory created successfully' : 'Inventory updated successfully';
 
             return (new InventoryResource($result['inventory']))->additional([
-                'success' => true,
+                'status' => true,
                 'message' => $message,
             ])->response()->setStatusCode($result['created'] ? 201 : 200);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to process inventory',
-                'error' => config('app.debug') ? $e->getMessage() : null,
-            ], 500);
+            return ErrorResource::serverError(
+                'Failed to process inventory',
+                config('app.debug') ? $e->getMessage() : null
+            );
         }
     }
 
@@ -61,14 +62,11 @@ class InventoryController extends Controller
         $inventory = $this->inventoryService->findInventory($id, true);
 
         if (! $inventory) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Inventory not found',
-            ], 404);
+            return ErrorResource::notFound('Inventory not found');
         }
 
         return (new InventoryResource($inventory))->additional([
-            'success' => true,
+            'status' => true,
             'message' => 'Inventory retrieved successfully',
         ]);
     }
@@ -82,24 +80,20 @@ class InventoryController extends Controller
             $inventory = $this->inventoryService->findInventory($id, false);
 
             if (! $inventory) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Inventory not found',
-                ], 404);
+                return ErrorResource::notFound('Inventory not found');
             }
 
             $inventory = $this->inventoryService->updateInventoryById($id, $request->validated(), $inventory);
 
             return (new InventoryResource($inventory))->additional([
-                'success' => true,
+                'status' => true,
                 'message' => 'Inventory updated successfully',
             ]);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to update inventory',
-                'error' => config('app.debug') ? $e->getMessage() : null,
-            ], 500);
+            return ErrorResource::serverError(
+                'Failed to update inventory',
+                config('app.debug') ? $e->getMessage() : null
+            );
         }
     }
 
@@ -112,24 +106,17 @@ class InventoryController extends Controller
             $inventory = $this->inventoryService->findInventory($id, false);
 
             if (! $inventory) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Inventory not found',
-                ], 404);
+                return ErrorResource::notFound('Inventory not found');
             }
 
             $this->inventoryService->deleteInventory($id);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Inventory deleted successfully',
-            ], 200);
+            return SuccessResource::deleted('Inventory deleted successfully');
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to delete inventory',
-                'error' => config('app.debug') ? $e->getMessage() : null,
-            ], 500);
+            return ErrorResource::serverError(
+                'Failed to delete inventory',
+                config('app.debug') ? $e->getMessage() : null
+            );
         }
     }
 
@@ -144,15 +131,14 @@ class InventoryController extends Controller
             $actionText = $request->type === 'in' ? 'Stock imported' : ($request->type === 'out' ? 'Stock exported' : 'Stock adjusted');
 
             return (new InventoryResource($inventory))->additional([
-                'success' => true,
+                'status' => true,
                 'message' => "{$actionText} successfully",
             ]);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to update stock',
-                'error' => config('app.debug') ? $e->getMessage() : null,
-            ], 500);
+            return ErrorResource::serverError(
+                'Failed to update stock',
+                config('app.debug') ? $e->getMessage() : null
+            );
         }
     }
 
@@ -165,7 +151,7 @@ class InventoryController extends Controller
         $inventories = $this->inventoryService->getLowStockInventories($threshold);
 
         return InventoryResource::collection($inventories)->additional([
-            'success' => true,
+            'status' => true,
             'message' => 'Low stock items retrieved successfully',
             'threshold' => $threshold,
             'count' => $inventories->count(),
@@ -183,16 +169,15 @@ class InventoryController extends Controller
             $status = $result['created'] ? 201 : 200;
 
             return (new InventoryResource($result['inventory']))->additional([
-                'success' => true,
+                'status' => true,
                 'message' => $message,
                 'action' => $result['created'] ? 'created' : 'updated',
             ])->response()->setStatusCode($status);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to process inventory',
-                'error' => config('app.debug') ? $e->getMessage() : null,
-            ], 500);
+            return ErrorResource::serverError(
+                'Failed to process inventory',
+                config('app.debug') ? $e->getMessage() : null
+            );
         }
     }
 
@@ -204,7 +189,7 @@ class InventoryController extends Controller
         $inventories = $this->inventoryService->getOutOfStockInventories();
 
         return InventoryResource::collection($inventories)->additional([
-            'success' => true,
+            'status' => true,
             'message' => 'Out of stock items retrieved successfully',
             'count' => $inventories->count(),
         ]);
@@ -218,7 +203,7 @@ class InventoryController extends Controller
         $stats = $this->inventoryService->getInventoryStats();
 
         return response()->json([
-            'success' => true,
+            'status' => true,
             'message' => 'Inventory statistics retrieved successfully',
             'data' => $stats,
         ], 200);

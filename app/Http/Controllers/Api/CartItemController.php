@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\CartItemRequest;
 use App\Http\Resources\CartItemCollection;
 use App\Http\Resources\CartItemResource;
+use App\Http\Resources\SuccessResource;
 use App\Services\CartService;
 use Illuminate\Http\Request;
 
@@ -26,9 +27,7 @@ class CartItemController extends Controller
         $filters = $request->only(['cart_id', 'product_id']);
         $cartItems = $this->cartService->getCartItemsWithFilters($filters);
 
-        return (new CartItemCollection($cartItems))
-            ->response()
-            ->setStatusCode(200);
+        return new CartItemCollection($cartItems);
     }
 
     /**
@@ -38,9 +37,7 @@ class CartItemController extends Controller
     {
         $cartItem = $this->cartService->createCartItem($request->validated());
 
-        return (new CartItemResource($cartItem))
-            ->response()
-            ->setStatusCode(201);
+        return CartItemResource::created($cartItem);
     }
 
     /**
@@ -50,9 +47,7 @@ class CartItemController extends Controller
     {
         $cartItem = $this->cartService->getCartItemById($id);
 
-        return (new CartItemResource($cartItem))
-            ->response()
-            ->setStatusCode(200);
+        return CartItemResource::retrieved($cartItem);
     }
 
     /**
@@ -62,13 +57,7 @@ class CartItemController extends Controller
     {
         $cartItem = $this->cartService->updateCartItemById($id, $request->validated());
 
-        return (new CartItemResource($cartItem))
-            ->additional([
-                'status' => true,
-                'message' => 'Cart item updated successfully',
-            ])
-            ->response()
-            ->setStatusCode(200);
+        return CartItemResource::updated($cartItem);
     }
 
     /**
@@ -78,9 +67,6 @@ class CartItemController extends Controller
     {
         $this->cartService->deleteCartItem($id);
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Cart item deleted successfully',
-        ], 200);
+        return SuccessResource::deleted('Cart item deleted successfully');
     }
 }

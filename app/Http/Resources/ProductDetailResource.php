@@ -7,12 +7,64 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class ProductDetailResource extends JsonResource
 {
-    public function with($request)
+    /**
+     * Custom message for the response
+     */
+    protected $message = 'Product detail retrieved successfully';
+
+    /**
+     * Custom status code for the response
+     */
+    protected $statusCode = 200;
+
+    /**
+     * Set custom message
+     */
+    public function withMessage(string $message)
     {
-        return [
-            'success' => true,
-            'message' => 'Product detail retrieved successfully',
-        ];
+        $this->message = $message;
+
+        return $this;
+    }
+
+    /**
+     * Set custom status code
+     */
+    public function withStatusCode(int $statusCode)
+    {
+        $this->statusCode = $statusCode;
+
+        return $this;
+    }
+
+    /**
+     * Static helper for created response
+     */
+    public static function created($resource)
+    {
+        return (new static($resource))
+            ->withMessage('Product detail created successfully')
+            ->withStatusCode(201);
+    }
+
+    /**
+     * Static helper for updated response
+     */
+    public static function updated($resource)
+    {
+        return (new static($resource))
+            ->withMessage('Product detail updated successfully')
+            ->withStatusCode(200);
+    }
+
+    /**
+     * Static helper for retrieved response
+     */
+    public static function retrieved($resource)
+    {
+        return (new static($resource))
+            ->withMessage('Product detail retrieved successfully')
+            ->withStatusCode(200);
     }
 
     /**
@@ -38,5 +90,26 @@ class ProductDetailResource extends JsonResource
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];
+    }
+
+    /**
+     * Get additional data that should be returned with the resource array.
+     *
+     * @return array<string, mixed>
+     */
+    public function with(Request $request): array
+    {
+        return [
+            'status' => true,
+            'message' => $this->message,
+        ];
+    }
+
+    /**
+     * Customize the outgoing response for the resource.
+     */
+    public function withResponse($request, $response)
+    {
+        $response->setStatusCode($this->statusCode);
     }
 }

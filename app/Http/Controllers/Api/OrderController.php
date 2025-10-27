@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\OrderRequest;
+use App\Http\Resources\ErrorResource;
 use App\Http\Resources\OrderCollection;
 use App\Http\Resources\OrderResource;
+use App\Http\Resources\SuccessResource;
 use App\Models\Order;
 use App\Services\OrderService;
 use Illuminate\Http\Request;
@@ -66,11 +68,9 @@ class OrderController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
 
-            return response()->json([
-                'status' => false,
-                'message' => 'Failed to create order',
+            return ErrorResource::unprocessableEntity('Failed to create order', [
                 'error' => $e->getMessage(),
-            ], 422);
+            ]);
         }
     }
 
@@ -82,17 +82,11 @@ class OrderController extends Controller
         $order = $this->orderService->findOrder($id, true);
 
         if (! $order) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Order not found',
-            ], 404);
+            return ErrorResource::notFound('Order not found');
         }
 
         if (! $request->user()->isAdmin() && ! $this->orderService->userOwnsOrder($order, $request->user()->id)) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Access denied. You can only access your own orders.',
-            ], 403);
+            return ErrorResource::forbidden('Access denied. You can only access your own orders.');
         }
 
         return (new OrderResource($order))->additional([
@@ -114,19 +108,13 @@ class OrderController extends Controller
             if (! $order) {
                 DB::rollback();
 
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Order not found',
-                ], 404);
+                return ErrorResource::notFound('Order not found');
             }
 
             if (! $request->user()->isAdmin() && ! $this->orderService->userOwnsOrder($order, $request->user()->id)) {
                 DB::rollback();
 
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Access denied. You can only update your own orders.',
-                ], 403);
+                return ErrorResource::forbidden('Access denied. You can only update your own orders.');
             }
 
             $orderData = $request->validated();
@@ -135,21 +123,19 @@ class OrderController extends Controller
                 if (! $request->user()->isAdmin()) {
                     DB::rollback();
 
-                    return response()->json([
-                        'status' => false,
-                        'message' => 'Only admin can change order status.',
-                    ], 403);
+                    return ErrorResource::forbidden('Only admin can change order status.');
                 }
 
                 if (! $this->orderService->canTransitionToStatus($order, $orderData['status'])) {
                     DB::rollback();
 
-                    return response()->json([
-                        'status' => false,
-                        'message' => "Cannot change status from '{$order->status}' to '{$orderData['status']}'. Invalid status transition.",
-                        'current_status' => $order->status,
-                        'allowed_transitions' => Order::STATUS_TRANSITIONS[$order->status] ?? [],
-                    ], 422);
+                    return ErrorResource::unprocessableEntity(
+                        "Cannot change status from '{$order->status}' to '{$orderData['status']}'. Invalid status transition.",
+                        [
+                            'current_status' => $order->status,
+                            'allowed_transitions' => Order::STATUS_TRANSITIONS[$order->status] ?? [],
+                        ]
+                    );
                 }
             }
 
@@ -171,11 +157,7 @@ class OrderController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
 
-            return response()->json([
-                'status' => false,
-                'message' => 'Failed to update order',
-                'error' => $e->getMessage(),
-            ], 500);
+            return ErrorResource::serverError('Failed to update order', $e->getMessage());
         }
     }
 
@@ -187,25 +169,16 @@ class OrderController extends Controller
         $order = $this->orderService->findOrder($id);
 
         if (! $order) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Order not found',
-            ], 404);
+            return ErrorResource::notFound('Order not found');
         }
 
         if (! $request->user()->isAdmin() && ! $this->orderService->userOwnsOrder($order, $request->user()->id)) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Access denied. You can only delete your own orders.',
-            ], 403);
+            return ErrorResource::forbidden('Access denied. You can only delete your own orders.');
         }
 
         $this->orderService->deleteOrderById($id);
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Order deleted successfully',
-        ], 200);
+        return SuccessResource::deleted('Order deleted successfully');
     }
 
     /**
@@ -225,21 +198,19 @@ class OrderController extends Controller
             if (! $order) {
                 DB::rollback();
 
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Order not found',
-                ], 404);
+                return ErrorResource::notFound('Order not found');
             }
 
             if (! $this->orderService->canTransitionToStatus($order, $request->status)) {
                 DB::rollback();
 
-                return response()->json([
-                    'status' => false,
-                    'message' => "Cannot change status from '{$order->status}' to '{$request->status}'. Invalid status transition.",
-                    'current_status' => $order->status,
-                    'allowed_transitions' => Order::STATUS_TRANSITIONS[$order->status] ?? [],
-                ], 422);
+                return ErrorResource::unprocessableEntity(
+                    "Cannot change status from '{$order->status}' to '{$request->status}'. Invalid status transition.",
+                    [
+                        'current_status' => $order->status,
+                        'allowed_transitions' => Order::STATUS_TRANSITIONS[$order->status] ?? [],
+                    ]
+                );
             }
 
             $order = $this->orderService->updateOrderStatus($id, $request->status);
@@ -254,11 +225,7 @@ class OrderController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
 
-            return response()->json([
-                'status' => false,
-                'message' => 'Failed to update order status',
-                'error' => $e->getMessage(),
-            ], 500);
+            return ErrorResource::serverError('Failed to update order status', $e->getMessage());
         }
     }
 

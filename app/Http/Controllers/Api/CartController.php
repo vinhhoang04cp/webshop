@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\CartRequest;
 use App\Http\Requests\CheckoutRequest;
 use App\Http\Resources\CartResource;
+use App\Http\Resources\ErrorResource;
+use App\Http\Resources\SuccessResource;
 use App\Services\CartService;
 use Exception;
 use Illuminate\Http\Request;
@@ -13,11 +15,12 @@ use Illuminate\Support\Facades\DB;
 
 class CartController extends Controller
 {
-    protected $cartService;
+    protected $cartService; // khai bao thuoc tinh cartService
 
-    public function __construct(CartService $cartService)
+    // __contruct(CartService $cartService) : khoi tao doi tuong cartService khi tao doi tuong CartController
+    public function __construct(CartService $cartService) // Khoi tao CartService, su dung dependency injection
     {
-        $this->cartService = $cartService;
+        $this->cartService = $cartService; // Gan doi tuong CartService vao thuoc tinh cartService
     }
 
     /**
@@ -25,11 +28,11 @@ class CartController extends Controller
      */
     public function index(CartRequest $request)
     {
-        $filters = $request->only(['user_id', 'product_id']);
-        $carts = $this->cartService->getCarts(
-            $request->user()->id,
-            $request->user()->isAdmin(),
-            $filters
+        $filters = $request->only(['user_id', 'product_id']); // ham only() lay cac tham so loc tu request, chi lay nhung tham so can thiet
+        $carts = $this->cartService->getCarts(  // $carts la danh sach gio hang duoc lay tu cartService qua ham getCarts voi cac tham so loc
+            $request->user()->id, // lay gio hang cua user hien tai
+            $request->user()->isAdmin(), // kiem tra neu user la admin
+            $filters // truyen cac tham so loc de lay gio hang theo yeu cau
         );
 
         // Calculate grand total
@@ -47,9 +50,7 @@ class CartController extends Controller
                     'grand_total' => $grandTotal,
                     'total_carts' => $carts->total(),
                 ],
-            ])
-            ->response()
-            ->setStatusCode(200);
+            ]);
     }
 
     /**
@@ -72,22 +73,11 @@ class CartController extends Controller
 
             DB::commit();
 
-            return (new CartResource($cart))
-                ->additional([
-                    'status' => true,
-                    'message' => 'Items added to cart successfully',
-                    'items_added' => count($itemsToAdd),
-                ])
-                ->response()
-                ->setStatusCode(201);
+            return CartResource::created($cart, ['items_added' => count($itemsToAdd)]);
         } catch (Exception $e) {
             DB::rollback();
 
-            return response()->json([
-                'status' => false,
-                'message' => 'Failed to add items to cart',
-                'error' => $e->getMessage(),
-            ], 500);
+            return ErrorResource::serverError('Failed to add items to cart: '.$e->getMessage());
         }
     }
 
@@ -99,19 +89,10 @@ class CartController extends Controller
         $cart = $this->cartService->getCartById($id);
 
         if (! $request->user()->isAdmin() && ! $this->cartService->userOwnsCart($cart, $request->user()->id)) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Access denied. You can only access your own cart.',
-            ], 403);
+            return ErrorResource::forbidden('Access denied. You can only access your own cart.');
         }
 
-        return (new CartResource($cart))
-            ->additional([
-                'status' => true,
-                'message' => 'Cart retrieved successfully',
-            ])
-            ->response()
-            ->setStatusCode(200);
+        return CartResource::retrieved($cart);
     }
 
     /**
@@ -127,10 +108,7 @@ class CartController extends Controller
             if (! $request->user()->isAdmin() && ! $this->cartService->userOwnsCart($cart, $request->user()->id)) {
                 DB::rollback();
 
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Access denied. You can only update your own cart.',
-                ], 403);
+                return ErrorResource::forbidden('Access denied. You can only update your own cart.');
             }
 
             $itemsToUpdate = $this->cartService->prepareItemsData($cartData);
@@ -138,21 +116,11 @@ class CartController extends Controller
 
             DB::commit();
 
-            return (new CartResource($cart))
-                ->additional([
-                    'status' => true,
-                    'message' => 'Cart updated successfully',
-                ])
-                ->response()
-                ->setStatusCode(200);
+            return CartResource::updated($cart);
         } catch (Exception $e) {
             DB::rollback();
 
-            return response()->json([
-                'status' => false,
-                'message' => 'Failed to update cart',
-                'error' => $e->getMessage(),
-            ], 500);
+            return ErrorResource::serverError('Failed to update cart: '.$e->getMessage());
         }
     }
 
@@ -164,18 +132,12 @@ class CartController extends Controller
         $cart = $this->cartService->getCartById($id);
 
         if (! $request->user()->isAdmin() && ! $this->cartService->userOwnsCart($cart, $request->user()->id)) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Access denied. You can only delete your own cart.',
-            ], 403);
+            return ErrorResource::forbidden('Access denied. You can only delete your own cart.');
         }
 
         $this->cartService->deleteCart($cart);
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Cart deleted successfully',
-        ], 200);
+        return SuccessResource::deleted('Cart deleted successfully');
     }
 
     /**
@@ -186,19 +148,9 @@ class CartController extends Controller
         try {
             $cart = $this->cartService->getOrCreateCart();
 
-            return (new CartResource($cart))
-                ->additional([
-                    'status' => true,
-                    'message' => 'Current cart retrieved successfully',
-                ])
-                ->response()
-                ->setStatusCode(200);
+            return CartResource::current($cart);
         } catch (Exception $e) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Failed to retrieve cart',
-                'error' => $e->getMessage(),
-            ], 500);
+            return ErrorResource::serverError('Failed to retrieve cart: '.$e->getMessage());
         }
     }
 
@@ -220,21 +172,11 @@ class CartController extends Controller
 
             DB::commit();
 
-            return (new CartResource($cart))
-                ->additional([
-                    'status' => true,
-                    'message' => 'Product added to cart successfully',
-                ])
-                ->response()
-                ->setStatusCode(200);
+            return CartResource::productAdded($cart);
         } catch (Exception $e) {
             DB::rollback();
 
-            return response()->json([
-                'status' => false,
-                'message' => 'Failed to add product to cart',
-                'error' => $e->getMessage(),
-            ], 500);
+            return ErrorResource::serverError('Failed to add product to cart: '.$e->getMessage());
         }
     }
 
@@ -255,21 +197,11 @@ class CartController extends Controller
 
             DB::commit();
 
-            return (new CartResource($cart))
-                ->additional([
-                    'status' => true,
-                    'message' => 'Cart item updated successfully',
-                ])
-                ->response()
-                ->setStatusCode(200);
+            return CartResource::itemUpdated($cart);
         } catch (Exception $e) {
             DB::rollback();
 
-            return response()->json([
-                'status' => false,
-                'message' => 'Failed to update cart item',
-                'error' => $e->getMessage(),
-            ], 400);
+            return ErrorResource::badRequest('Failed to update cart item: '.$e->getMessage());
         }
     }
 
@@ -286,21 +218,11 @@ class CartController extends Controller
 
             DB::commit();
 
-            return (new CartResource($cart))
-                ->additional([
-                    'status' => true,
-                    'message' => 'Item removed from cart successfully',
-                ])
-                ->response()
-                ->setStatusCode(200);
+            return CartResource::itemRemoved($cart);
         } catch (Exception $e) {
             DB::rollback();
 
-            return response()->json([
-                'status' => false,
-                'message' => 'Failed to remove item from cart',
-                'error' => $e->getMessage(),
-            ], 500);
+            return ErrorResource::serverError('Failed to remove item from cart: '.$e->getMessage());
         }
     }
 
@@ -312,16 +234,9 @@ class CartController extends Controller
         try {
             $this->cartService->clearCart();
 
-            return response()->json([
-                'status' => true,
-                'message' => 'Cart cleared successfully',
-            ], 200);
+            return SuccessResource::message('Cart cleared successfully');
         } catch (Exception $e) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Failed to clear cart',
-                'error' => $e->getMessage(),
-            ], 500);
+            return ErrorResource::serverError('Failed to clear cart: '.$e->getMessage());
         }
     }
 
@@ -338,10 +253,7 @@ class CartController extends Controller
             $cart = $this->cartService->getOrCreateCart();
 
             if (! $cart || $cart->items()->count() == 0) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Cart is empty',
-                ], 400);
+                return ErrorResource::badRequest('Cart is empty');
             }
 
             $totalAmount = $cart->totalPrice();
@@ -386,13 +298,9 @@ class CartController extends Controller
                     'final_amount' => $finalAmount,
                     'savings' => $discountAmount,
                 ],
-            ], 200);
+            ]);
         } catch (Exception $e) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Failed to validate coupon',
-                'error' => $e->getMessage(),
-            ], 500);
+            return ErrorResource::serverError('Failed to validate coupon: '.$e->getMessage());
         }
     }
 
@@ -437,11 +345,7 @@ class CartController extends Controller
         } catch (Exception $e) {
             DB::rollback();
 
-            return response()->json([
-                'status' => false,
-                'message' => 'Failed to process checkout',
-                'error' => $e->getMessage(),
-            ], 400);
+            return ErrorResource::badRequest('Failed to process checkout: '.$e->getMessage());
         }
     }
 }

@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\OrderItemRequest;
+use App\Http\Resources\ErrorResource;
 use App\Http\Resources\OrderItemCollection;
 use App\Http\Resources\OrderItemResource;
+use App\Http\Resources\SuccessResource;
 use App\Services\OrderService;
 use Illuminate\Http\Request;
 
@@ -50,10 +52,7 @@ class OrderItemController extends Controller
         $orderItem = $this->orderService->findOrderItem($id, true);
 
         if (! $orderItem) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Order item not found',
-            ], 404);
+            return ErrorResource::notFound('Order item not found');
         }
 
         return (new OrderItemResource($orderItem))->additional([
@@ -70,10 +69,7 @@ class OrderItemController extends Controller
         $orderItem = $this->orderService->findOrderItem($id, false);
 
         if (! $orderItem) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Order item not found',
-            ], 404);
+            return ErrorResource::notFound('Order item not found');
         }
 
         $orderItem = $this->orderService->updateOrderItem($id, $request->validated());
@@ -92,17 +88,11 @@ class OrderItemController extends Controller
         $orderItem = $this->orderService->findOrderItem($id, false);
 
         if (! $orderItem) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Order item not found',
-            ], 404);
+            return ErrorResource::notFound('Order item not found');
         }
 
         $this->orderService->deleteOrderItem($id);
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Order item deleted successfully',
-        ], 200);
+        return SuccessResource::deleted('Order item deleted successfully');
     }
 }

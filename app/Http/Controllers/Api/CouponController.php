@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CouponRequest;
 use App\Http\Resources\CouponResource;
+use App\Http\Resources\ErrorResource;
+use App\Http\Resources\SuccessResource;
 use App\Services\CouponService;
 use Illuminate\Http\Request;
 
@@ -53,10 +55,7 @@ class CouponController extends Controller
         $coupon = $this->couponService->findCoupon($id, true);
 
         if (! $coupon) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Coupon not found',
-            ], 404);
+            return ErrorResource::notFound('Coupon not found');
         }
 
         return (new CouponResource($coupon))->additional([
@@ -73,10 +72,7 @@ class CouponController extends Controller
         $coupon = $this->couponService->findCoupon($id, false);
 
         if (! $coupon) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Coupon not found',
-            ], 404);
+            return ErrorResource::notFound('Coupon not found');
         }
 
         $coupon = $this->couponService->updateCouponFull($id, $request->validated());
@@ -95,18 +91,12 @@ class CouponController extends Controller
         $coupon = $this->couponService->findCoupon($id, false);
 
         if (! $coupon) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Coupon not found',
-            ], 404);
+            return ErrorResource::notFound('Coupon not found');
         }
 
         $this->couponService->deleteCoupon($id);
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Coupon deleted successfully',
-        ], 200);
+        return SuccessResource::deleted('Coupon deleted successfully');
     }
 
     /**
@@ -117,10 +107,7 @@ class CouponController extends Controller
         $coupon = $this->couponService->findCoupon($id, false);
 
         if (! $coupon) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Coupon not found',
-            ], 404);
+            return ErrorResource::notFound('Coupon not found');
         }
 
         $coupon = $this->couponService->toggleCouponStatus($id);
@@ -146,14 +133,10 @@ class CouponController extends Controller
         $coupon = \App\Models\Coupon::where('code', strtoupper($request->code))->first();
 
         if (! $coupon) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Coupon not found',
-                'data' => [
-                    'valid' => false,
-                    'message' => 'Mã giảm giá không tồn tại',
-                ],
-            ], 404);
+            return ErrorResource::notFound('Coupon not found', [
+                'valid' => false,
+                'message' => 'Mã giảm giá không tồn tại',
+            ]);
         }
 
         $orderAmount = $request->input('order_amount', 0);
@@ -170,14 +153,10 @@ class CouponController extends Controller
             ]);
         }
 
-        return response()->json([
-            'status' => false,
+        return ErrorResource::badRequest($validation['message'], [
+            'valid' => false,
             'message' => $validation['message'],
-            'data' => [
-                'valid' => false,
-                'message' => $validation['message'],
-                'coupon' => new CouponResource($coupon),
-            ],
-        ], 400);
+            'coupon' => new CouponResource($coupon),
+        ]);
     }
 }

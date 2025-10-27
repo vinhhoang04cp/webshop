@@ -1,31 +1,43 @@
 <?php
 
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CartController;
+use App\Http\Controllers\Api\CartItemController;
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\CouponController;
+use App\Http\Controllers\Api\InventoryController;
+use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\OrderItemController;
+use App\Http\Controllers\Api\PasswordResetController;
+use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\ProductDetailController;
+use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\SocialAuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // Authentication Routes
-Route::post('/login', [\App\Http\Controllers\Api\AuthController::class, 'login']); // Route dang nhap
-Route::post('/register', [\App\Http\Controllers\Api\AuthController::class, 'register']); // Route dang ky
+Route::post('/login', [AuthController::class, 'login']); // Route dang nhap
+Route::post('/register', [AuthController::class, 'register']); // Route dang ky
 
 // Password Reset Routes
-Route::post('/forgot-password', [\App\Http\Controllers\Api\PasswordResetController::class, 'forgotPassword']);
-Route::post('/reset-password', [\App\Http\Controllers\Api\PasswordResetController::class, 'resetPassword']);
-Route::post('/validate-reset-token', [\App\Http\Controllers\Api\PasswordResetController::class, 'validateToken']);
+Route::post('/forgot-password', [PasswordResetController::class, 'forgotPassword']);
+Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']);
+Route::post('/validate-reset-token', [PasswordResetController::class, 'validateToken']);
 
 // Social Authentication Routes
-Route::get('/auth/{provider}/redirect', [\App\Http\Controllers\Api\SocialAuthController::class, 'redirect']);
-Route::get('/auth/{provider}/callback', [\App\Http\Controllers\Api\SocialAuthController::class, 'callback']);
-Route::post('/auth/social/token', [\App\Http\Controllers\Api\SocialAuthController::class, 'loginWithToken']); // For mobile/SPA
+Route::get('/auth/{provider}/redirect', [SocialAuthController::class, 'redirect']);
+Route::get('/auth/{provider}/callback', [SocialAuthController::class, 'callback']);
+Route::post('/auth/social/token', [SocialAuthController::class, 'loginWithToken']); // For mobile/SPA
 
 // Public product routes - Khách có thể xem sản phẩm mà không cần đăng nhập
 Route::prefix('products')->middleware('throttle:60,1')->group(function () {
-    Route::get('/', [\App\Http\Controllers\Api\ProductController::class, 'index']);
-    Route::get('/stats', [\App\Http\Controllers\Api\ProductController::class, 'stats']);
-    Route::get('/{id}', [\App\Http\Controllers\Api\ProductController::class, 'show']);
+    Route::get('/', [ProductController::class, 'index']);
+    Route::get('/stats', [ProductController::class, 'stats']);
+    Route::get('/{id}', [ProductController::class, 'show']);
 
     // Public rating routes - Khách có thể xem ratings
-    Route::get('/{id}/ratings', [\App\Http\Controllers\Api\ProductController::class, 'getRatings']);
+    Route::get('/{id}/ratings', [ProductController::class, 'getRatings']);
 });
 
 // Public category routes - Khách có thể xem danh mục
@@ -44,30 +56,30 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () { // boc
     });
 
     // Get user profile with additional info (alternative route)
-    Route::get('/profile', [\App\Http\Controllers\Api\AuthController::class, 'profile']);
+    Route::get('/profile', [AuthController::class, 'profile']);
 
     // Check authentication status
-    Route::get('/check-auth', [\App\Http\Controllers\Api\AuthController::class, 'checkAuth']);
+    Route::get('/check-auth', [AuthController::class, 'checkAuth']);
 
     // Dashboard data (Admin/Manager only)
-    Route::get('/dashboard', [\App\Http\Controllers\Api\AuthController::class, 'dashboard']);
+    Route::get('/dashboard', [AuthController::class, 'dashboard']);
 
     // Logout route
-    Route::post('/logout', [\App\Http\Controllers\Api\AuthController::class, 'logout']);
+    Route::post('/logout', [AuthController::class, 'logout']);
 
     // Profile Management Routes
     Route::prefix('profile')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Api\ProfileController::class, 'show']);
-        Route::put('/', [\App\Http\Controllers\Api\ProfileController::class, 'update']);
-        Route::put('/password', [\App\Http\Controllers\Api\ProfileController::class, 'changePassword']);
-        Route::delete('/avatar', [\App\Http\Controllers\Api\ProfileController::class, 'deleteAvatar']);
+        Route::get('/', [ProfileController::class, 'show']);
+        Route::put('/', [ProfileController::class, 'update']);
+        Route::put('/password', [ProfileController::class, 'changePassword']);
+        Route::delete('/avatar', [ProfileController::class, 'deleteAvatar']);
     });
 
     // Product Rating Routes (cần đăng nhập)
     Route::prefix('products/{id}')->group(function () {
-        Route::post('/ratings', [\App\Http\Controllers\Api\ProductController::class, 'addRating']);
-        Route::put('/ratings/{ratingId}', [\App\Http\Controllers\Api\ProductController::class, 'updateRating']);
-        Route::delete('/ratings/{ratingId}', [\App\Http\Controllers\Api\ProductController::class, 'deleteRating']);
+        Route::post('/ratings', [ProductController::class, 'addRating']);
+        Route::put('/ratings/{ratingId}', [ProductController::class, 'updateRating']);
+        Route::delete('/ratings/{ratingId}', [ProductController::class, 'deleteRating']);
     });
 
     // Category management (Admin only)
@@ -79,112 +91,112 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () { // boc
 
     // Product management (Admin only)
     Route::prefix('products')->middleware('admin')->group(function () {
-        Route::post('/', [\App\Http\Controllers\Api\ProductController::class, 'store']);
-        Route::put('/{id}', [\App\Http\Controllers\Api\ProductController::class, 'update']);
-        Route::delete('/{id}', [\App\Http\Controllers\Api\ProductController::class, 'destroy']);
+        Route::post('/', [ProductController::class, 'store']);
+        Route::put('/{id}', [ProductController::class, 'update']);
+        Route::delete('/{id}', [ProductController::class, 'destroy']);
     });
 
     // Order management (User có thể xem order của mình, Admin xem tất cả)
     Route::prefix('orders')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Api\OrderController::class, 'index']);
-        Route::post('/', [\App\Http\Controllers\Api\OrderController::class, 'store']);
-        Route::get('/statuses', [\App\Http\Controllers\Api\OrderController::class, 'getStatuses']);
-        Route::get('/stats', [\App\Http\Controllers\Api\OrderController::class, 'stats']);
-        Route::get('/{id}', [\App\Http\Controllers\Api\OrderController::class, 'show']);
-        Route::put('/{id}', [\App\Http\Controllers\Api\OrderController::class, 'update']);
-        Route::delete('/{id}', [\App\Http\Controllers\Api\OrderController::class, 'destroy']);
-        Route::post('/{id}/change-status', [\App\Http\Controllers\Api\OrderController::class, 'changeStatus'])->middleware('admin');
+        Route::get('/', [OrderController::class, 'index']);
+        Route::post('/', [OrderController::class, 'store']);
+        Route::get('/statuses', [OrderController::class, 'getStatuses']);
+        Route::get('/stats', [OrderController::class, 'stats']);
+        Route::get('/{id}', [OrderController::class, 'show']);
+        Route::put('/{id}', [OrderController::class, 'update']);
+        Route::delete('/{id}', [OrderController::class, 'destroy']);
+        Route::post('/{id}/change-status', [OrderController::class, 'changeStatus'])->middleware('admin');
     });
 
     // Order items management (Internal use)
     Route::prefix('order-items')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Api\OrderItemController::class, 'index']);
-        Route::post('/', [\App\Http\Controllers\Api\OrderItemController::class, 'store']);
-        Route::get('/{id}', [\App\Http\Controllers\Api\OrderItemController::class, 'show']);
-        Route::put('/{id}', [\App\Http\Controllers\Api\OrderItemController::class, 'update']);
-        Route::delete('/{id}', [\App\Http\Controllers\Api\OrderItemController::class, 'destroy']);
+        Route::get('/', [OrderItemController::class, 'index']);
+        Route::post('/', [OrderItemController::class, 'store']);
+        Route::get('/{id}', [OrderItemController::class, 'show']);
+        Route::put('/{id}', [OrderItemController::class, 'update']);
+        Route::delete('/{id}', [OrderItemController::class, 'destroy']);
     });
 
     // Product details management (Admin only)
     Route::prefix('product-details')->middleware('admin')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Api\ProductDetailController::class, 'index']);
-        Route::post('/', [\App\Http\Controllers\Api\ProductDetailController::class, 'store']);
-        Route::get('/{id}', [\App\Http\Controllers\Api\ProductDetailController::class, 'show']);
-        Route::put('/{id}', [\App\Http\Controllers\Api\ProductDetailController::class, 'update']);
-        Route::patch('/{id}', [\App\Http\Controllers\Api\ProductDetailController::class, 'update']);
-        Route::delete('/{id}', [\App\Http\Controllers\Api\ProductDetailController::class, 'destroy']);
+        Route::get('/', [ProductDetailController::class, 'index']);
+        Route::post('/', [ProductDetailController::class, 'store']);
+        Route::get('/{id}', [ProductDetailController::class, 'show']);
+        Route::put('/{id}', [ProductDetailController::class, 'update']);
+        Route::patch('/{id}', [ProductDetailController::class, 'update']);
+        Route::delete('/{id}', [ProductDetailController::class, 'destroy']);
     });
 
     // Cart management (User chỉ quản lý cart của mình)
     Route::prefix('cart')->group(function () {
         // Get current user's cart
-        Route::get('/', [\App\Http\Controllers\Api\CartController::class, 'current']);
+        Route::get('/', [CartController::class, 'current']);
 
         // Add product to cart (simple version)
-        Route::post('/add/{productId}', [\App\Http\Controllers\Api\CartController::class, 'addProduct']);
+        Route::post('/add/{productId}', [CartController::class, 'addProduct']);
 
         // Update cart item quantity
-        Route::put('/items/{cartItemId}', [\App\Http\Controllers\Api\CartController::class, 'updateItem']);
+        Route::put('/items/{cartItemId}', [CartController::class, 'updateItem']);
 
         // Remove item from cart
-        Route::delete('/items/{cartItemId}', [\App\Http\Controllers\Api\CartController::class, 'removeItem']);
+        Route::delete('/items/{cartItemId}', [CartController::class, 'removeItem']);
 
         // Clear entire cart
-        Route::delete('/clear', [\App\Http\Controllers\Api\CartController::class, 'clear']);
+        Route::delete('/clear', [CartController::class, 'clear']);
 
         // Validate coupon before checkout
-        Route::post('/validate-coupon', [\App\Http\Controllers\Api\CartController::class, 'validateCoupon']);
+        Route::post('/validate-coupon', [CartController::class, 'validateCoupon']);
 
         // Checkout
-        Route::post('/checkout', [\App\Http\Controllers\Api\CartController::class, 'checkout']);
+        Route::post('/checkout', [CartController::class, 'checkout']);
     });
 
     // Advanced cart management (Admin có thể xem tất cả)
     Route::prefix('carts')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Api\CartController::class, 'index']);
-        Route::post('/', [\App\Http\Controllers\Api\CartController::class, 'store']);
-        Route::get('/{id}', [\App\Http\Controllers\Api\CartController::class, 'show']);
-        Route::put('/{id}', [\App\Http\Controllers\Api\CartController::class, 'update']);
-        Route::delete('/{id}', [\App\Http\Controllers\Api\CartController::class, 'destroy']);
+        Route::get('/', [CartController::class, 'index']);
+        Route::post('/', [CartController::class, 'store']);
+        Route::get('/{id}', [CartController::class, 'show']);
+        Route::put('/{id}', [CartController::class, 'update']);
+        Route::delete('/{id}', [CartController::class, 'destroy']);
     });
 
     // Cart items management (User chỉ quản lý cart items của mình)
     Route::prefix('cart-items')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Api\CartItemController::class, 'index']);
-        Route::post('/', [\App\Http\Controllers\Api\CartItemController::class, 'store']);
-        Route::get('/{id}', [\App\Http\Controllers\Api\CartItemController::class, 'show']);
-        Route::put('/{id}', [\App\Http\Controllers\Api\CartItemController::class, 'update']);
-        Route::delete('/{id}', [\App\Http\Controllers\Api\CartItemController::class, 'destroy']);
+        Route::get('/', [CartItemController::class, 'index']);
+        Route::post('/', [CartItemController::class, 'store']);
+        Route::get('/{id}', [CartItemController::class, 'show']);
+        Route::put('/{id}', [CartItemController::class, 'update']);
+        Route::delete('/{id}', [CartItemController::class, 'destroy']);
     });
 
     // Inventory management (Admin only)
     Route::prefix('inventories')->middleware('admin')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Api\InventoryController::class, 'index']);
-        Route::post('/', [\App\Http\Controllers\Api\InventoryController::class, 'store']);
-        Route::get('/{id}', [\App\Http\Controllers\Api\InventoryController::class, 'show']);
-        Route::put('/{id}', [\App\Http\Controllers\Api\InventoryController::class, 'update']);
-        Route::delete('/{id}', [\App\Http\Controllers\Api\InventoryController::class, 'destroy']);
+        Route::get('/', [InventoryController::class, 'index']);
+        Route::post('/', [InventoryController::class, 'store']);
+        Route::get('/{id}', [InventoryController::class, 'show']);
+        Route::put('/{id}', [InventoryController::class, 'update']);
+        Route::delete('/{id}', [InventoryController::class, 'destroy']);
 
         // Additional inventory routes
-        Route::post('/upsert', [\App\Http\Controllers\Api\InventoryController::class, 'upsert']);
-        Route::put('/{id}/update-stock', [\App\Http\Controllers\Api\InventoryController::class, 'updateStock']);
-        Route::get('/low-stock/list', [\App\Http\Controllers\Api\InventoryController::class, 'lowStock']);
-        Route::get('/out-of-stock/list', [\App\Http\Controllers\Api\InventoryController::class, 'outOfStock']);
-        Route::get('/stats', [\App\Http\Controllers\Api\InventoryController::class, 'stats']);
+        Route::post('/upsert', [InventoryController::class, 'upsert']);
+        Route::put('/{id}/update-stock', [InventoryController::class, 'updateStock']);
+        Route::get('/low-stock/list', [InventoryController::class, 'lowStock']);
+        Route::get('/out-of-stock/list', [InventoryController::class, 'outOfStock']);
+        Route::get('/stats', [InventoryController::class, 'stats']);
     });
 
     // Coupon management (Admin only)
     Route::prefix('coupons')->middleware('admin')->group(function () {
-        Route::post('/', [\App\Http\Controllers\Api\CouponController::class, 'store']);
-        Route::put('/{id}', [\App\Http\Controllers\Api\CouponController::class, 'update']);
-        Route::delete('/{id}', [\App\Http\Controllers\Api\CouponController::class, 'destroy']);
-        Route::post('/{id}/toggle-status', [\App\Http\Controllers\Api\CouponController::class, 'toggleStatus']);
+        Route::post('/', [CouponController::class, 'store']);
+        Route::put('/{id}', [CouponController::class, 'update']);
+        Route::delete('/{id}', [CouponController::class, 'destroy']);
+        Route::post('/{id}/toggle-status', [CouponController::class, 'toggleStatus']);
     });
 });
 
 // Coupon routes - Public access to view and validate coupons
 Route::prefix('coupons')->middleware('throttle:60,1')->group(function () {
-    Route::get('/', [\App\Http\Controllers\Api\CouponController::class, 'index']);
-    Route::get('/{id}', [\App\Http\Controllers\Api\CouponController::class, 'show']);
-    Route::post('/validate', [\App\Http\Controllers\Api\CouponController::class, 'validate']);
+    Route::get('/', [CouponController::class, 'index']);
+    Route::get('/{id}', [CouponController::class, 'show']);
+    Route::post('/validate', [CouponController::class, 'validate']);
 });

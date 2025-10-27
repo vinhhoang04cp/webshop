@@ -6,7 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\CategoryRequest;
 use App\Http\Resources\CategoryCollection;
 use App\Http\Resources\CategoryResource;
+use App\Http\Resources\ErrorResource;
+use App\Http\Resources\SuccessResource;
 use App\Services\CategoryService;
+use Exception;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 
 class CategoryController extends Controller
@@ -36,13 +40,7 @@ class CategoryController extends Controller
     {
         $category = $this->categoryService->createCategoryWithFresh($request->validated());
 
-        return (new CategoryResource($category))
-            ->additional([
-                'status' => true,
-                'message' => 'Category created successfully',
-            ])
-            ->response()
-            ->setStatusCode(201);
+        return CategoryResource::created($category);
     }
 
     /**
@@ -51,23 +49,14 @@ class CategoryController extends Controller
      */
     public function show(Request $request, $id)
     {
-        $withProducts = $request->query('with_products', false);
-        $category = $this->categoryService->findCategory($id, $withProducts);
+        try {
+            $withProducts = $request->query('with_products', false);
+            $category = $this->categoryService->findCategoryOrFail($id, $withProducts);
 
-        if (! $category) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Category not found',
-            ], 404);
+            return CategoryResource::retrieved($category);
+        } catch (ModelNotFoundException $e) {
+            return ErrorResource::notFound('Category not found');
         }
-
-        return (new CategoryResource($category))
-            ->additional([
-                'status' => true,
-                'message' => 'Category retrieved successfully',
-            ])
-            ->response()
-            ->setStatusCode(200);
     }
 
     /**
@@ -75,22 +64,13 @@ class CategoryController extends Controller
      */
     public function update(CategoryRequest $request, $id)
     {
-        $category = $this->categoryService->findCategory($id);
+        try {
+            $category = $this->categoryService->updateCategoryWithFresh($id, $request->validated());
 
-        if (! $category) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Category not found',
-            ], 404);
+            return CategoryResource::updated($category);
+        } catch (ModelNotFoundException $e) {
+            return ErrorResource::notFound('Category not found');
         }
-
-        $category = $this->categoryService->updateCategoryWithFresh($id, $request->validated());
-
-        return (new CategoryResource($category))
-            ->additional([
-                'status' => true,
-                'message' => 'Category updated successfully',
-            ]);
     }
 
     /**
@@ -98,27 +78,14 @@ class CategoryController extends Controller
      */
     public function destroy($id)
     {
-        $category = $this->categoryService->findCategory($id);
+        try {
+            $this->categoryService->deleteCategoryWithValidation($id);
 
-        if (! $category) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Category not found',
-            ], 404);
+            return SuccessResource::deleted('Category deleted successfully');
+        } catch (ModelNotFoundException $e) {
+            return ErrorResource::notFound('Category not found');
+        } catch (Exception $e) {
+            return ErrorResource::badRequest($e->getMessage());
         }
-
-        if (! $this->categoryService->canDeleteCategory($category)) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Cannot delete category with associated products',
-            ], 400);
-        }
-
-        $this->categoryService->deleteCategory($id);
-
-        return response()->json([
-            'status' => true,
-            'message' => 'Category deleted successfully',
-        ]);
     }
 }
