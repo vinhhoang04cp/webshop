@@ -263,42 +263,30 @@ class CartController extends Controller
             $coupon = \App\Models\Coupon::where('code', $couponCode)->first();
 
             if (! $coupon) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Coupon not found',
-                    'valid' => false,
-                ], 404);
+                return ErrorResource::notFound('Coupon not found', ['valid' => false]);
             }
 
             // Validate coupon
             $validation = $coupon->isValid($totalAmount);
 
             if (! $validation['valid']) {
-                return response()->json([
-                    'status' => false,
-                    'message' => $validation['message'],
-                    'valid' => false,
-                ], 400);
+                return ErrorResource::badRequest($validation['message'], ['valid' => false]);
             }
 
             // Calculate discount
             $discountAmount = $coupon->calculateDiscount($totalAmount);
             $finalAmount = $totalAmount - $discountAmount;
 
-            return response()->json([
-                'status' => true,
-                'message' => 'Coupon is valid',
+            return SuccessResource::withData([
                 'valid' => true,
-                'data' => [
-                    'coupon_code' => $coupon->code,
-                    'discount_type' => $coupon->discount_type,
-                    'discount_value' => $coupon->discount_value,
-                    'original_amount' => $totalAmount,
-                    'discount_amount' => $discountAmount,
-                    'final_amount' => $finalAmount,
-                    'savings' => $discountAmount,
-                ],
-            ]);
+                'coupon_code' => $coupon->code,
+                'discount_type' => $coupon->discount_type,
+                'discount_value' => $coupon->discount_value,
+                'original_amount' => $totalAmount,
+                'discount_amount' => $discountAmount,
+                'final_amount' => $finalAmount,
+                'savings' => $discountAmount,
+            ], 'Coupon is valid');
         } catch (Exception $e) {
             return ErrorResource::serverError('Failed to validate coupon: '.$e->getMessage());
         }
@@ -315,33 +303,31 @@ class CartController extends Controller
 
             DB::commit();
 
-            $response = [
-                'status' => true,
-                'message' => 'Order placed successfully',
-                'data' => [
-                    'order' => [
-                        'order_id' => $result['order']->order_id,
-                        'total_amount' => $result['order']->total_amount,
-                        'status' => $result['order']->status,
-                        'shipping_name' => $result['order']->shipping_name,
-                        'shipping_phone' => $result['order']->shipping_phone,
-                        'shipping_address' => $result['order']->shipping_address,
-                        'note' => $result['order']->note,
-                        'order_date' => $result['order']->order_date,
-                    ],
-                    'discount_amount' => $result['discount_amount'],
-                    'payment_method' => $result['payment_method'],
+            $responseData = [
+                'order' => [
+                    'order_id' => $result['order']->order_id,
+                    'total_amount' => $result['order']->total_amount,
+                    'status' => $result['order']->status,
+                    'shipping_name' => $result['order']->shipping_name,
+                    'shipping_phone' => $result['order']->shipping_phone,
+                    'shipping_address' => $result['order']->shipping_address,
+                    'note' => $result['order']->note,
+                    'order_date' => $result['order']->order_date,
                 ],
+                'discount_amount' => $result['discount_amount'],
+                'payment_method' => $result['payment_method'],
             ];
+
+            $message = 'Order placed successfully';
 
             // Nếu là VNPAY, trả về thông tin để redirect
             if ($result['payment_method'] === 'vnpay') {
-                $response['data']['payment_redirect'] = true;
-                $response['data']['order_id_for_payment'] = $result['order']->order_id;
-                $response['message'] = 'Order created. Please proceed to payment.';
+                $responseData['payment_redirect'] = true;
+                $responseData['order_id_for_payment'] = $result['order']->order_id;
+                $message = 'Order created. Please proceed to payment.';
             }
 
-            return response()->json($response, 201);
+            return SuccessResource::withData($responseData, $message, 201);
         } catch (Exception $e) {
             DB::rollback();
 

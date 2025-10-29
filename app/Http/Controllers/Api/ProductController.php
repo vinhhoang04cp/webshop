@@ -45,7 +45,9 @@ class ProductController extends Controller
     public function store(ProductRequest $request)
     {
         try {
-            $product = $this->productService->createProductFull($request->validated());
+            $product = $this->productService->createProductFull($request->validated()); // $data = request->validated()
+            // $request->validated() lay du lieu tu request vao
+            // $request->validated() la mot mang chua du lieu tu request
 
             return ProductResource::created($product);
         } catch (\Exception $e) {

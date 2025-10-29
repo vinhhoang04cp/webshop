@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\InventoryController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\OrderItemController;
 use App\Http\Controllers\Api\PasswordResetController;
+use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ProductDetailController;
 use App\Http\Controllers\Api\ProfileController;
@@ -44,6 +45,12 @@ Route::prefix('products')->middleware('throttle:60,1')->group(function () {
 Route::prefix('categories')->middleware('throttle:60,1')->group(function () {
     Route::get('/', [CategoryController::class, 'index']);
     Route::get('/{id}', [CategoryController::class, 'show']);
+});
+
+// Payment callback routes - VNPay IPN (không cần auth)
+Route::prefix('payment')->middleware('throttle:60,1')->group(function () {
+    Route::get('/vnpay-return', [PaymentController::class, 'vnpayReturn']);
+    Route::post('/vnpay-ipn', [PaymentController::class, 'vnpayIPN']);
 });
 
 // Các route cần authentication
@@ -106,6 +113,14 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () { // boc
         Route::put('/{id}', [OrderController::class, 'update']);
         Route::delete('/{id}', [OrderController::class, 'destroy']);
         Route::post('/{id}/change-status', [OrderController::class, 'changeStatus'])->middleware('admin');
+    });
+
+    // Payment routes - Thanh toán (cần đăng nhập)
+    Route::prefix('payment')->group(function () {
+        Route::post('/create', [PaymentController::class, 'createPayment']);
+        Route::get('/status/{orderId}', [PaymentController::class, 'getPaymentStatus']);
+        Route::get('/success/{orderId}', [PaymentController::class, 'getPaymentSuccess']);
+        Route::get('/failed/{orderId}', [PaymentController::class, 'getPaymentFailed']);
     });
 
     // Order items management (Internal use)

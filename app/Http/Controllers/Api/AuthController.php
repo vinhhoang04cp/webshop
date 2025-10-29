@@ -5,10 +5,11 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
+use App\Http\Resources\ErrorResource;
+use App\Http\Resources\SuccessResource;
 use App\Http\Resources\UserResource;
 use App\Services\AuthService;
 use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
 
 /**
  * AuthController - xử lý xác thực user qua API
@@ -30,9 +31,7 @@ class AuthController extends Controller
         $user = $this->authService->authenticate($request->email, $request->password);
 
         if (! $user) {
-            throw ValidationException::withMessages([
-                'email' => ['The provided credentials are incorrect.'],
-            ]);
+            return ErrorResource::unauthorized('The provided credentials are incorrect.');
         }
 
         // Load roles
@@ -40,11 +39,7 @@ class AuthController extends Controller
 
         $token = $this->authService->createApiToken($user);
 
-        return (new UserResource($user))->additional([
-            'status' => true,
-            'message' => 'Login successful',
-            'token' => $token,
-        ]);
+        return UserResource::retrieved($user, 'Login successful', ['token' => $token]);
     }
 
     /**
@@ -61,17 +56,9 @@ class AuthController extends Controller
 
             $token = $this->authService->createApiToken($user);
 
-            return (new UserResource($user))->additional([
-                'status' => true,
-                'message' => 'Registration successful',
-                'token' => $token,
-            ])->response()->setStatusCode(201);
+            return UserResource::created($user, 'Registration successful', ['token' => $token]);
         } catch (\Exception $e) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Registration failed',
-                'error' => $e->getMessage(),
-            ], 500);
+            return ErrorResource::serverError('Registration failed: '.$e->getMessage());
         }
     }
 
@@ -82,10 +69,7 @@ class AuthController extends Controller
     {
         $this->authService->revokeCurrentToken($request->user());
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Logout successful',
-        ], 200);
+        return SuccessResource::message('Logout successful');
     }
 
     /**
@@ -95,10 +79,7 @@ class AuthController extends Controller
     {
         $user = $request->user()->load('roles');
 
-        return (new UserResource($user))->additional([
-            'status' => true,
-            'message' => 'Profile retrieved successfully',
-        ]);
+        return UserResource::retrieved($user, 'Profile retrieved successfully');
     }
 
     /**
@@ -111,19 +92,12 @@ class AuthController extends Controller
 
         // Kiểm tra quyền truy cập dashboard
         if (! $this->authService->canAccessDashboard($user)) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Unauthorized. Only admin or manager can access dashboard.',
-            ], 403);
+            return ErrorResource::forbidden('Unauthorized. Only admin or manager can access dashboard.');
         }
 
         $dashboardData = $this->authService->getDashboardData();
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Dashboard data retrieved successfully',
-            'data' => $dashboardData,
-        ], 200);
+        return SuccessResource::withData($dashboardData, 'Dashboard data retrieved successfully');
     }
 
     /**
@@ -134,19 +108,11 @@ class AuthController extends Controller
         $user = $request->user();
 
         if (! $this->authService->isAuthenticated($user)) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Not authenticated',
-                'authenticated' => false,
-            ], 401);
+            return ErrorResource::unauthorized('Not authenticated', ['authenticated' => false]);
         }
 
         $user->load('roles');
 
-        return (new UserResource($user))->additional([
-            'status' => true,
-            'message' => 'Authenticated',
-            'authenticated' => true,
-        ]);
+        return UserResource::retrieved($user, 'Authenticated', ['authenticated' => true]);
     }
 }

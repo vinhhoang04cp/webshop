@@ -56,4 +56,16 @@ class SuccessResource
     {
         return response()->json(null, 204);
     }
+
+    /**
+     * Create a success response with data
+     */
+    public static function withData($data, string $message = 'Operation successful', int $statusCode = 200): JsonResponse
+    {
+        return response()->json([
+            'status' => true,
+            'message' => $message,
+            'data' => $data,
+        ], $statusCode);
+    }
 }

@@ -208,7 +208,7 @@ class ProductService
     /**
      * Tạo sản phẩm mới
      */
-    public function createProduct(array $data)
+    public function createProduct(array $data) // $data = request->validated()
     {
         // Xử lý upload ảnh
         $imageUrl = $this->handleImageUpload($data);
