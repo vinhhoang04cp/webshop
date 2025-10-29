@@ -21,7 +21,7 @@ class ProductDetailController extends Controller
     }
 
     /**
-     * Display a listing of the resource.
+     * Hiển thị danh sách chi tiết sản phẩm
      */
     public function index(Request $request)
     {
@@ -40,7 +40,7 @@ class ProductDetailController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Lưu chi tiết sản phẩm mới được tạo
      */
     public function store(ProductDetailRequest $request)
     {
@@ -54,7 +54,7 @@ class ProductDetailController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * Hiển thị chi tiết sản phẩm theo ID
      */
     public function show($id)
     {
@@ -68,7 +68,7 @@ class ProductDetailController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Cập nhật chi tiết sản phẩm theo ID
      */
     public function update(ProductDetailRequest $request, $id)
     {
@@ -86,7 +86,7 @@ class ProductDetailController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Xóa chi tiết sản phẩm theo ID
      */
     public function destroy($id)
     {

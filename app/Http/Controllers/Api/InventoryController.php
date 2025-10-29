@@ -22,7 +22,7 @@ class InventoryController extends Controller
     }
 
     /**
-     * Display a listing of the resource.
+     * Hiển thị danh sách tồn kho
      */
     public function index(Request $request)
     {
@@ -34,7 +34,7 @@ class InventoryController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Lưu bản ghi tồn kho mới được tạo
      */
     public function store(InventoryRequest $request)
     {
@@ -55,7 +55,7 @@ class InventoryController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * Hiển thị bản ghi tồn kho theo ID
      */
     public function show(string $id)
     {
@@ -72,7 +72,7 @@ class InventoryController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Cập nhật bản ghi tồn kho theo ID
      */
     public function update(InventoryRequest $request, string $id)
     {
@@ -98,7 +98,7 @@ class InventoryController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Xóa bản ghi tồn kho theo ID
      */
     public function destroy(string $id)
     {
@@ -121,7 +121,7 @@ class InventoryController extends Controller
     }
 
     /**
-     * Update stock in/out and recalculate current stock
+     * Cập nhật tồn kho nhập/xuất và tính lại số lượng hiện tại
      */
     public function updateStock(InventoryAdjustmentRequest $request, string $id)
     {
@@ -143,7 +143,7 @@ class InventoryController extends Controller
     }
 
     /**
-     * Get low stock items
+     * Lấy danh sách sản phẩm tồn kho thấp
      */
     public function lowStock(Request $request)
     {
@@ -159,7 +159,7 @@ class InventoryController extends Controller
     }
 
     /**
-     * Create or update inventory (upsert)
+     * Tạo hoặc cập nhật tồn kho (upsert)
      */
     public function upsert(InventoryRequest $request)
     {
@@ -182,7 +182,7 @@ class InventoryController extends Controller
     }
 
     /**
-     * Get out of stock items
+     * Lấy danh sách sản phẩm hết hàng
      */
     public function outOfStock(Request $request)
     {
@@ -196,16 +196,12 @@ class InventoryController extends Controller
     }
 
     /**
-     * Get inventory statistics
+     * Lấy thống kê tồn kho
      */
     public function stats(Request $request)
     {
         $stats = $this->inventoryService->getInventoryStats();
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Inventory statistics retrieved successfully',
-            'data' => $stats,
-        ], 200);
+        return SuccessResource::withData($stats, 'Inventory statistics retrieved successfully');
     }
 }

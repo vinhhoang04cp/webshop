@@ -23,7 +23,7 @@ class CategoryController extends Controller
     }
 
     /**
-     * Display a listing of the categories.
+     * Hiển thị danh sách các danh mục
      */
     public function index(Request $request)
     {
@@ -34,7 +34,7 @@ class CategoryController extends Controller
     }
 
     /**
-     * Store a newly created category in storage.
+     * Lưu danh mục mới được tạo
      */
     public function store(CategoryRequest $request)
     {
@@ -44,8 +44,8 @@ class CategoryController extends Controller
     }
 
     /**
-     * Display the specified category.
-     * Query params: ?with_products=1 to include products
+     * Hiển thị danh mục theo ID
+     * Query params: ?with_products=1 để bao gồm sản phẩm
      */
     public function show(Request $request, $id)
     {
@@ -60,7 +60,7 @@ class CategoryController extends Controller
     }
 
     /**
-     * Update the specified category in storage.
+     * Cập nhật danh mục theo ID
      */
     public function update(CategoryRequest $request, $id)
     {
@@ -74,7 +74,7 @@ class CategoryController extends Controller
     }
 
     /**
-     * Remove the specified category from storage.
+     * Xóa danh mục theo ID
      */
     public function destroy($id)
     {

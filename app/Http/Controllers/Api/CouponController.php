@@ -20,7 +20,7 @@ class CouponController extends Controller
     }
 
     /**
-     * Display a listing of the resource.
+     * Hiển thị danh sách mã giảm giá
      */
     public function index(Request $request)
     {
@@ -35,7 +35,7 @@ class CouponController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Lưu mã giảm giá mới được tạo
      */
     public function store(CouponRequest $request)
     {
@@ -48,7 +48,7 @@ class CouponController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * Hiển thị mã giảm giá theo ID
      */
     public function show(string $id)
     {
@@ -65,7 +65,7 @@ class CouponController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Cập nhật mã giảm giá theo ID
      */
     public function update(CouponRequest $request, string $id)
     {
@@ -84,7 +84,7 @@ class CouponController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Xóa mã giảm giá theo ID
      */
     public function destroy(string $id)
     {
@@ -100,7 +100,7 @@ class CouponController extends Controller
     }
 
     /**
-     * Toggle coupon active status
+     * Bật/tắt trạng thái hoạt động của mã giảm giá
      */
     public function toggleStatus(string $id)
     {
@@ -121,7 +121,7 @@ class CouponController extends Controller
     }
 
     /**
-     * Validate a coupon code
+     * Kiểm tra tính hợp lệ của mã giảm giá
      */
     public function validate(Request $request)
     {

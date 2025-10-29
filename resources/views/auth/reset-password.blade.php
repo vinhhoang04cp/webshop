@@ -7,10 +7,13 @@
     <div class="row justify-content-center">
         <div class="col-md-6">
             <div class="card shadow">
+                {{-- Header --}}
                 <div class="card-header bg-primary text-white">
                     <h4 class="mb-0">Đặt lại mật khẩu</h4>
                 </div>
+
                 <div class="card-body">
+                    {{-- Errors --}}
                     @if($errors->any())
                         <div class="alert alert-danger">
                             <ul class="mb-0">
@@ -21,12 +24,15 @@
                         </div>
                     @endif
 
+                    {{-- Form --}}
                     <form action="{{ route('password.update') }}" method="POST">
                         @csrf
 
+                        {{-- Hidden Fields --}}
                         <input type="hidden" name="token" value="{{ $token }}">
                         <input type="hidden" name="email" value="{{ $email }}">
 
+                        {{-- Email (Read-only) --}}
                         <div class="mb-3">
                             <label for="email" class="form-label">Email</label>
                             <input type="email" 
@@ -36,6 +42,7 @@
                                    readonly>
                         </div>
 
+                        {{-- Mật khẩu mới --}}
                         <div class="mb-3">
                             <label for="password" class="form-label">Mật khẩu mới</label>
                             <input type="password" 
@@ -49,6 +56,7 @@
                             <small class="form-text text-muted">Mật khẩu phải có ít nhất 8 ký tự.</small>
                         </div>
 
+                        {{-- Xác nhận mật khẩu --}}
                         <div class="mb-3">
                             <label for="password_confirmation" class="form-label">Xác nhận mật khẩu</label>
                             <input type="password" 
@@ -58,6 +66,7 @@
                                    required>
                         </div>
 
+                        {{-- Submit Button --}}
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-primary">
                                 Đặt lại mật khẩu
@@ -65,6 +74,7 @@
                         </div>
                     </form>
 
+                    {{-- Back to Login --}}
                     <div class="mt-3 text-center">
                         <a href="{{ route('login') }}" class="text-decoration-none">
                             ← Quay lại đăng nhập

@@ -77,11 +77,7 @@ class PasswordResetController extends Controller
             );
 
             if ($isValid) {
-                return response()->json([
-                    'status' => true,
-                    'message' => 'Token hợp lệ',
-                    'valid' => true,
-                ], 200);
+                return SuccessResource::withData(['valid' => true], 'Token hợp lệ');
             }
 
             return ErrorResource::badRequest('Token không hợp lệ hoặc đã hết hạn', [

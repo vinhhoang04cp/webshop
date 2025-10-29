@@ -23,7 +23,7 @@ class OrderController extends Controller
     }
 
     /**
-     * Display a listing of the resource.
+     * Hiển thị danh sách đơn hàng
      */
     public function index(Request $request)
     {
@@ -46,7 +46,7 @@ class OrderController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Lưu đơn hàng mới được tạo
      */
     public function store(OrderRequest $request)
     {
@@ -75,7 +75,7 @@ class OrderController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * Hiển thị đơn hàng theo ID
      */
     public function show(Request $request, $id)
     {
@@ -96,7 +96,7 @@ class OrderController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Cập nhật đơn hàng theo ID
      */
     public function update(OrderRequest $request, string $id)
     {
@@ -162,7 +162,7 @@ class OrderController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Xóa đơn hàng theo ID
      */
     public function destroy(Request $request, $id)
     {
@@ -182,7 +182,7 @@ class OrderController extends Controller
     }
 
     /**
-     * Change order status (Admin only)
+     * Thay đổi trạng thái đơn hàng (Chỉ Admin)
      */
     public function changeStatus(Request $request, $id)
     {
@@ -230,21 +230,17 @@ class OrderController extends Controller
     }
 
     /**
-     * Get all available statuses
+     * Lấy tất cả các trạng thái có sẵn
      */
     public function getStatuses(Request $request)
     {
         $statuses = $this->orderService->getAllStatuses();
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Statuses retrieved successfully',
-            'data' => $statuses,
-        ], 200);
+        return SuccessResource::withData($statuses, 'Statuses retrieved successfully');
     }
 
     /**
-     * Get order statistics
+     * Lấy thống kê đơn hàng
      */
     public function stats(Request $request)
     {
@@ -253,10 +249,6 @@ class OrderController extends Controller
             $request->user()->isAdmin()
         );
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Order statistics retrieved successfully',
-            'data' => $stats,
-        ], 200);
+        return SuccessResource::withData($stats, 'Order statistics retrieved successfully');
     }
 }

@@ -20,7 +20,7 @@ class CartItemController extends Controller
     }
 
     /**
-     * Display a listing of the resource.
+     * Hiển thị danh sách các item trong giỏ hàng
      */
     public function index(Request $request)
     {
@@ -31,7 +31,7 @@ class CartItemController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Lưu cart item mới được tạo
      */
     public function store(CartItemRequest $request)
     {
@@ -41,7 +41,7 @@ class CartItemController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * Hiển thị cart item theo ID
      */
     public function show($id)
     {
@@ -51,7 +51,7 @@ class CartItemController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Cập nhật cart item theo ID
      */
     public function update(CartItemRequest $request, $id)
     {
@@ -61,7 +61,7 @@ class CartItemController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Xóa cart item theo ID
      */
     public function destroy(string $id)
     {

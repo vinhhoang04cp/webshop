@@ -24,7 +24,7 @@ class ProductController extends Controller
     }
 
     /**
-     * Display a listing of the resource.
+     * Hiển thị danh sách sản phẩm
      */
     public function index(Request $request)
     {
@@ -40,7 +40,7 @@ class ProductController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Lưu sản phẩm mới được tạo
      */
     public function store(ProductRequest $request)
     {
@@ -56,7 +56,7 @@ class ProductController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * Hiển thị sản phẩm theo ID
      */
     public function show($id)
     {
@@ -70,7 +70,7 @@ class ProductController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Cập nhật sản phẩm theo ID
      */
     public function update(ProductRequest $request, $id)
     {
@@ -88,7 +88,7 @@ class ProductController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Xóa sản phẩm theo ID
      */
     public function destroy($id)
     {
@@ -210,16 +210,12 @@ class ProductController extends Controller
     }
 
     /**
-     * Get product statistics
+     * Lấy thống kê sản phẩm
      */
     public function stats(Request $request)
     {
         $stats = $this->productService->getProductStats();
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Product statistics retrieved successfully',
-            'data' => $stats,
-        ]);
+        return SuccessResource::withData($stats, 'Product statistics retrieved successfully');
     }
 }

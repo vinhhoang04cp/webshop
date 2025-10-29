@@ -24,7 +24,7 @@ class CartController extends Controller
     }
 
     /**
-     * Display a listing of the resource.
+     * Hiển thị danh sách giỏ hàng
      */
     public function index(CartRequest $request)
     {
@@ -35,7 +35,7 @@ class CartController extends Controller
             $filters // truyen cac tham so loc de lay gio hang theo yeu cau
         );
 
-        // Calculate grand total
+        // Tính tổng giá trị tất cả giỏ hàng
         $grandTotal = $carts->sum(function ($cart) {
             return $cart->items->sum(function ($item) {
                 return $item->quantity * ($item->product->price ?? $item->price);
@@ -54,7 +54,7 @@ class CartController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Lưu giỏ hàng mới được tạo
      */
     public function store(CartRequest $request)
     {
@@ -82,7 +82,7 @@ class CartController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * Hiển thị giỏ hàng theo ID
      */
     public function show(CartRequest $request, $id)
     {
@@ -96,7 +96,7 @@ class CartController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Cập nhật giỏ hàng theo ID
      */
     public function update(CartRequest $request, $id)
     {
@@ -125,7 +125,7 @@ class CartController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Xóa giỏ hàng theo ID
      */
     public function destroy(CartRequest $request, $id)
     {

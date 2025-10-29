@@ -4,6 +4,7 @@
 
 @section('content')
 <div class="container">
+    {{-- Breadcrumb --}}
     <div class="row">
         <div class="col-12">
             <nav aria-label="breadcrumb">
@@ -16,62 +17,52 @@
     </div>
 
     <div class="row">
-        <!-- Sidebar Filter -->
+        {{-- Sidebar Filter --}}
         <div class="col-md-3">
             <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px;">
                 <div class="card-body">
                     <h5 class="mb-3"><i class="fas fa-filter"></i> Bộ lọc</h5>
                     
-                    <!-- Price Filter -->
+                    {{-- Price Filter --}}
                     <div class="mb-4">
                         <h6 class="fw-bold">Khoảng giá</h6>
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="price1">
-                            <label class="form-check-label" for="price1">
-                                Dưới 500,000₫
-                            </label>
+                            <label class="form-check-label" for="price1">Dưới 500,000₫</label>
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="price2">
-                            <label class="form-check-label" for="price2">
-                                500,000₫ - 1,000,000₫
-                            </label>
+                            <label class="form-check-label" for="price2">500,000₫ - 1,000,000₫</label>
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="price3">
-                            <label class="form-check-label" for="price3">
-                                1,000,000₫ - 5,000,000₫
-                            </label>
+                            <label class="form-check-label" for="price3">1,000,000₫ - 5,000,000₫</label>
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="price4">
-                            <label class="form-check-label" for="price4">
-                                Trên 5,000,000₫
-                            </label>
+                            <label class="form-check-label" for="price4">Trên 5,000,000₫</label>
                         </div>
                     </div>
 
-                    <!-- Category Filter -->
+                    {{-- Category Filter --}}
                     <div class="mb-4">
                         <h6 class="fw-bold">Danh mục</h6>
                         <div class="form-check">
                             <input class="form-check-input" type="radio" name="category" id="cat_all" value="" 
                                    {{ !request('category') ? 'checked' : '' }} 
                                    onchange="filterByCategory('')">
-                            <label class="form-check-label" for="cat_all">
-                                Tất cả
-                            </label>
+                            <label class="form-check-label" for="cat_all">Tất cả</label>
                         </div>
                         @foreach($categories as $category)
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="category" id="cat_{{ $category->category_id }}" 
-                                   value="{{ $category->category_id }}"
-                                   {{ request('category') == $category->category_id ? 'checked' : '' }}
-                                   onchange="filterByCategory({{ $category->category_id }})">
-                            <label class="form-check-label" for="cat_{{ $category->category_id }}">
-                                {{ $category->name }} ({{ $category->products_count }})
-                            </label>
-                        </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="category" id="cat_{{ $category->category_id }}" 
+                                       value="{{ $category->category_id }}"
+                                       {{ request('category') == $category->category_id ? 'checked' : '' }}
+                                       onchange="filterByCategory({{ $category->category_id }})">
+                                <label class="form-check-label" for="cat_{{ $category->category_id }}">
+                                    {{ $category->name }} ({{ $category->products_count }})
+                                </label>
+                            </div>
                         @endforeach
                     </div>
 
@@ -82,8 +73,9 @@
             </div>
         </div>
 
-        <!-- Products List -->
+        {{-- Products List --}}
         <div class="col-md-9">
+            {{-- Header with Sort --}}
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h3 class="mb-0">
                     @if(request('q'))
@@ -107,41 +99,50 @@
                 </div>
             </div>
 
+            {{-- Products Grid --}}
             <div class="row g-4">
                 @if($products->count() > 0)
                     @foreach($products as $product)
-                    <div class="col-md-4">
-                        <div class="product-card">
-                            <a href="{{ route('product.show', $product->product_id) }}">
-                                <img src="{{ $product->image_url ?? 'https://via.placeholder.com/300x250/667eea/ffffff?text=' . urlencode($product->name) }}" 
-                                     alt="{{ $product->name }}" 
-                                     class="product-image">
-                            </a>
-                            <div class="product-body">
-                                @if($product->category)
-                                    <span class="category-badge">{{ $product->category->name }}</span>
-                                @endif
-                                <a href="{{ route('product.show', $product->product_id) }}" class="text-decoration-none">
-                                    <h5 class="product-title">{{ $product->name }}</h5>
+                        <div class="col-md-4">
+                            <div class="product-card">
+                                {{-- Product Image --}}
+                                <a href="{{ route('product.show', $product->product_id) }}">
+                                    <img src="{{ $product->image_url ?? 'https://via.placeholder.com/300x250/667eea/ffffff?text=' . urlencode($product->name) }}" 
+                                         alt="{{ $product->name }}" 
+                                         class="product-image">
                                 </a>
-                                <div class="mb-2">
-                                    @include('components.product-price', ['product' => $product])
+
+                                {{-- Product Info --}}
+                                <div class="product-body">
+                                    @if($product->category)
+                                        <span class="category-badge">{{ $product->category->name }}</span>
+                                    @endif
+                                    <a href="{{ route('product.show', $product->product_id) }}" class="text-decoration-none">
+                                        <h5 class="product-title">{{ $product->name }}</h5>
+                                    </a>
+
+                                    {{-- Price --}}
+                                    <div class="mb-2">
+                                        @include('components.product-price', ['product' => $product])
+                                    </div>
+
+                                    {{-- Rating --}}
+                                    @include('components.rating-stars', ['rating' => $product->averageRating()])
+                                    
+                                    {{-- Add to Cart Form --}}
+                                    <form action="{{ route('cart.add', $product->product_id) }}" method="POST">
+                                        @csrf
+                                        <input type="hidden" name="quantity" value="1">
+                                        <button type="submit" class="btn-add-cart">
+                                            <i class="fas fa-cart-plus"></i> Thêm vào giỏ
+                                        </button>
+                                    </form>
                                 </div>
-                                @include('components.rating-stars', ['rating' => $product->averageRating()])
-                                
-                                <!-- Form thêm vào giỏ hàng -->
-                                <form action="{{ route('cart.add', $product->product_id) }}" method="POST">
-                                    @csrf
-                                    <input type="hidden" name="quantity" value="1">
-                                    <button type="submit" class="btn-add-cart">
-                                        <i class="fas fa-cart-plus"></i> Thêm vào giỏ
-                                    </button>
-                                </form>
                             </div>
                         </div>
-                    </div>
                     @endforeach
                 @else
+                    {{-- Empty State --}}
                     <div class="col-12 text-center py-5">
                         <i class="fas fa-box-open fa-4x text-muted mb-3"></i>
                         <h4 class="text-muted">Không tìm thấy sản phẩm nào</h4>
@@ -150,11 +151,11 @@
                 @endif
             </div>
 
-            <!-- Pagination -->
+            {{-- Pagination --}}
             @if($products->hasPages())
-            <div class="mt-5">
-                {{ $products->links() }}
-            </div>
+                <div class="mt-5">
+                    {{ $products->links() }}
+                </div>
             @endif
         </div>
     </div>
@@ -163,6 +164,7 @@
 
 @section('scripts')
 <script>
+// Filter by category
 function filterByCategory(categoryId) {
     const url = new URL(window.location.href);
     if(categoryId) {
@@ -173,6 +175,7 @@ function filterByCategory(categoryId) {
     window.location.href = url.toString();
 }
 
+// Sort products
 function sortProducts(sortValue) {
     const url = new URL(window.location.href);
     url.searchParams.set('sort', sortValue);

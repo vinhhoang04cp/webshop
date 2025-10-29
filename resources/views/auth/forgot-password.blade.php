@@ -7,16 +7,20 @@
     <div class="row justify-content-center">
         <div class="col-md-6">
             <div class="card shadow">
+                {{-- Header --}}
                 <div class="card-header bg-primary text-white">
                     <h4 class="mb-0">Quên mật khẩu</h4>
                 </div>
+
                 <div class="card-body">
+                    {{-- Success Message --}}
                     @if(session('success'))
                         <div class="alert alert-success">
                             {{ session('success') }}
                         </div>
                     @endif
 
+                    {{-- Errors --}}
                     @if($errors->any())
                         <div class="alert alert-danger">
                             <ul class="mb-0">
@@ -27,11 +31,14 @@
                         </div>
                     @endif
 
+                    {{-- Description --}}
                     <p class="text-muted">Nhập email của bạn để nhận link đặt lại mật khẩu.</p>
 
+                    {{-- Form --}}
                     <form action="{{ route('password.email') }}" method="POST">
                         @csrf
 
+                        {{-- Email --}}
                         <div class="mb-3">
                             <label for="email" class="form-label">Email</label>
                             <input type="email" 
@@ -46,6 +53,7 @@
                             @enderror
                         </div>
 
+                        {{-- Submit Button --}}
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-primary">
                                 Gửi link đặt lại mật khẩu
@@ -53,6 +61,7 @@
                         </div>
                     </form>
 
+                    {{-- Back to Login --}}
                     <div class="mt-3 text-center">
                         <a href="{{ route('login') }}" class="text-decoration-none">
                             ← Quay lại đăng nhập

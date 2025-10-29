@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\ErrorResource;
 use App\Http\Resources\PaymentResource;
+use App\Http\Resources\SuccessResource;
 use App\Services\OrderService;
 use App\Services\PaymentService;
 use Illuminate\Http\Request;
@@ -35,25 +37,18 @@ class PaymentController extends Controller
         ]);
 
         try {
-            // Sử dụng OrderService để lấy và validate order
+            // Sử dụng OrderService để lấy và xác thực đơn hàng
             $order = $this->orderService->getOrderForPayment($request->order_id, auth()->id());
 
             $paymentData = $this->paymentService->createVNPayPaymentUrl($request->order_id, $request->ip());
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Tạo URL thanh toán thành công',
-                'data' => [
-                    'payment_url' => $paymentData['url'],
-                    'txn_ref' => $paymentData['txn_ref'],
-                    'order_id' => $paymentData['order_id'],
-                ],
-            ], 200);
+            return SuccessResource::withData([
+                'payment_url' => $paymentData['url'],
+                'txn_ref' => $paymentData['txn_ref'],
+                'order_id' => $paymentData['order_id'],
+            ], 'Tạo URL thanh toán thành công');
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 400);
+            return ErrorResource::badRequest($e->getMessage());
         }
     }
 
@@ -66,41 +61,29 @@ class PaymentController extends Controller
     {
         $inputData = $request->all();
 
-        // Kiểm tra chữ ký
+        // Kiểm tra chữ ký từ VNPay
         if (! $this->paymentService->validateVNPayCallback($inputData)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Giao dịch không hợp lệ',
-            ], 400);
+            return ErrorResource::badRequest('Giao dịch không hợp lệ');
         }
 
         try {
             $result = $this->paymentService->processVNPayReturn($inputData, auth()->id());
 
             if ($result['success']) {
-                // Lấy thông tin order để trả về
+                // Lấy thông tin đơn hàng để trả về
                 $order = $this->orderService->getOrderWithItemsForDisplay($result['order_id']);
 
-                return response()->json([
-                    'success' => true,
+                return (new PaymentResource($order))->additional([
+                    'status' => true,
                     'message' => $result['message'],
-                    'data' => new PaymentResource($order),
-                ], 200);
+                ]);
             } else {
-                return response()->json([
-                    'success' => false,
-                    'message' => $result['message'],
-                    'data' => [
-                        'order_id' => $result['order_id'],
-                    ],
-                ], 400);
+                return ErrorResource::badRequest($result['message'], [
+                    'order_id' => $result['order_id'],
+                ]);
             }
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Có lỗi xảy ra khi xử lý thanh toán',
-                'error' => $e->getMessage(),
-            ], 500);
+            return ErrorResource::serverError('Có lỗi xảy ra khi xử lý thanh toán', $e->getMessage());
         }
     }
 
@@ -115,7 +98,7 @@ class PaymentController extends Controller
         $inputData = $request->all();
 
         try {
-            // Kiểm tra chữ ký
+            // Kiểm tra chữ ký từ VNPay
             if (! $this->paymentService->validateVNPayCallback($inputData)) {
                 return response()->json([
                     'RspCode' => '97',
@@ -147,28 +130,19 @@ class PaymentController extends Controller
 
             // Kiểm tra quyền truy cập
             if (! auth()->user()->hasRole('admin') && $order->user_id !== auth()->id()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Bạn không có quyền xem đơn hàng này',
-                ], 403);
+                return ErrorResource::forbidden('Bạn không có quyền xem đơn hàng này');
             }
 
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'order_id' => $order->order_id,
-                    'payment_status' => $order->payment_status,
-                    'payment_method' => $order->payment_method,
-                    'transaction_id' => $order->transaction_id,
-                    'total_amount' => $order->total_amount,
-                    'paid_at' => $order->paid_at?->format('Y-m-d H:i:s'),
-                ],
-            ], 200);
+            return SuccessResource::withData([
+                'order_id' => $order->order_id,
+                'payment_status' => $order->payment_status,
+                'payment_method' => $order->payment_method,
+                'transaction_id' => $order->transaction_id,
+                'total_amount' => $order->total_amount,
+                'paid_at' => $order->paid_at?->format('Y-m-d H:i:s'),
+            ], 'Payment status retrieved successfully');
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Không tìm thấy đơn hàng',
-            ], 404);
+            return ErrorResource::notFound('Không tìm thấy đơn hàng');
         }
     }
 
@@ -185,22 +159,15 @@ class PaymentController extends Controller
 
             // Kiểm tra quyền truy cập
             if (! auth()->user()->hasRole('admin') && $order->user_id !== auth()->id()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Bạn không có quyền xem đơn hàng này',
-                ], 403);
+                return ErrorResource::forbidden('Bạn không có quyền xem đơn hàng này');
             }
 
-            return response()->json([
-                'success' => true,
+            return (new PaymentResource($order))->additional([
+                'status' => true,
                 'message' => 'Thanh toán thành công',
-                'data' => new PaymentResource($order),
-            ], 200);
+            ]);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Không tìm thấy đơn hàng',
-            ], 404);
+            return ErrorResource::notFound('Không tìm thấy đơn hàng');
         }
     }
 
@@ -217,26 +184,16 @@ class PaymentController extends Controller
 
             // Kiểm tra quyền truy cập
             if (! auth()->user()->hasRole('admin') && $order->user_id !== auth()->id()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Bạn không có quyền xem đơn hàng này',
-                ], 403);
+                return ErrorResource::forbidden('Bạn không có quyền xem đơn hàng này');
             }
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Thanh toán thất bại',
-                'data' => [
-                    'order_id' => $order->order_id,
-                    'payment_status' => $order->payment_status,
-                    'total_amount' => $order->total_amount,
-                ],
-            ], 200);
+            return ErrorResource::badRequest('Thanh toán thất bại', [
+                'order_id' => $order->order_id,
+                'payment_status' => $order->payment_status,
+                'total_amount' => $order->total_amount,
+            ]);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Không tìm thấy đơn hàng',
-            ], 404);
+            return ErrorResource::notFound('Không tìm thấy đơn hàng');
         }
     }
 }

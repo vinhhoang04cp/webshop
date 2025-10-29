@@ -3,7 +3,7 @@
 @section('title', 'Về chúng tôi - WebShop')
 
 @section('content')
-<!-- Page Header -->
+{{-- Page Header --}}
 <section class="page-header">
     <div class="container">
         <h1><i class="fas fa-info-circle"></i> Về chúng tôi</h1>
@@ -16,8 +16,9 @@
     </div>
 </section>
 
-<!-- About Content -->
+{{-- About Content --}}
 <section class="container my-5">
+    {{-- Story Section --}}
     <div class="row align-items-center mb-5">
         <div class="col-md-6">
             <img src="https://m.yodycdn.com/blog/hinh-nen-thien-nhien-4k-yody-vn-11.jpg" 
@@ -38,12 +39,14 @@
         </div>
     </div>
 
-    <!-- Core Values -->
+    {{-- Core Values --}}
     <div class="row mb-5">
         <div class="col-12 text-center mb-4">
             <h2>Giá trị cốt lõi</h2>
             <p class="text-muted">Những giá trị mà chúng tôi luôn hướng tới</p>
         </div>
+
+        {{-- Uy tín --}}
         <div class="col-md-4 mb-4">
             <div class="card border-0 shadow-sm h-100" style="border-radius: 12px;">
                 <div class="card-body text-center p-4">
@@ -58,6 +61,8 @@
                 </div>
             </div>
         </div>
+
+        {{-- Tận tâm --}}
         <div class="col-md-4 mb-4">
             <div class="card border-0 shadow-sm h-100" style="border-radius: 12px;">
                 <div class="card-body text-center p-4">
@@ -66,12 +71,13 @@
                     </div>
                     <h4>Tận tâm</h4>
                     <p class="text-muted">
-                        Đội ngũ nhân viên nhiệt tình, chuyên nghiệp, luôn sẵn sàng hỗ trợ khách hàng 
-                        24/7.
+                        Đội ngũ nhân viên nhiệt tình, chuyên nghiệp, luôn sẵn sàng hỗ trợ khách hàng 24/7.
                     </p>
                 </div>
             </div>
         </div>
+
+        {{-- Đổi mới --}}
         <div class="col-md-4 mb-4">
             <div class="card border-0 shadow-sm h-100" style="border-radius: 12px;">
                 <div class="card-body text-center p-4">
@@ -80,15 +86,14 @@
                     </div>
                     <h4>Đổi mới</h4>
                     <p class="text-muted">
-                        Không ngừng cải tiến công nghệ và dịch vụ để mang đến trải nghiệm mua sắm 
-                        tốt nhất.
+                        Không ngừng cải tiến công nghệ và dịch vụ để mang đến trải nghiệm mua sắm tốt nhất.
                     </p>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Statistics -->
+    {{-- Statistics --}}
     <div class="row text-center mb-5 p-5" style="background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 16px;">
         <div class="col-md-3 mb-3">
             <h2 class="text-white mb-0"><i class="fas fa-users"></i> 10,000+</h2>
@@ -108,11 +113,13 @@
         </div>
     </div>
 
-    <!-- Why Choose Us -->
+    {{-- Why Choose Us --}}
     <div class="row">
         <div class="col-12 text-center mb-4">
             <h2>Tại sao chọn WebShop?</h2>
         </div>
+
+        {{-- Sản phẩm chính hãng --}}
         <div class="col-md-6 mb-4">
             <div class="d-flex">
                 <div class="me-3">
@@ -126,6 +133,8 @@
                 </div>
             </div>
         </div>
+
+        {{-- Giá cả cạnh tranh --}}
         <div class="col-md-6 mb-4">
             <div class="d-flex">
                 <div class="me-3">
@@ -139,6 +148,8 @@
                 </div>
             </div>
         </div>
+
+        {{-- Giao hàng nhanh chóng --}}
         <div class="col-md-6 mb-4">
             <div class="d-flex">
                 <div class="me-3">
@@ -152,6 +163,8 @@
                 </div>
             </div>
         </div>
+
+        {{-- Hỗ trợ 24/7 --}}
         <div class="col-md-6 mb-4">
             <div class="d-flex">
                 <div class="me-3">
@@ -168,7 +181,7 @@
     </div>
 </section>
 
-<!-- CTA Section -->
+{{-- CTA Section --}}
 <section class="container my-5">
     <div class="text-center p-5" style="background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 16px;">
         <h2 class="text-white mb-3">Bắt đầu mua sắm ngay hôm nay!</h2>

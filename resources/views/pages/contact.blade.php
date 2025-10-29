@@ -3,7 +3,7 @@
 @section('title', 'Liên hệ - WebShop')
 
 @section('content')
-<!-- Page Header -->
+{{-- Page Header --}}
 <section class="page-header">
     <div class="container">
         <h1><i class="fas fa-phone"></i> Liên hệ với chúng tôi</h1>
@@ -16,15 +16,16 @@
     </div>
 </section>
 
-<!-- Contact Content -->
+{{-- Contact Content --}}
 <section class="container my-5">
     <div class="row">
-        <!-- Contact Information -->
+        {{-- Contact Information --}}
         <div class="col-lg-4 mb-4">
             <div class="card border-0 shadow-sm h-100" style="border-radius: 12px;">
                 <div class="card-body p-4">
                     <h4 class="mb-4">Thông tin liên hệ</h4>
                     
+                    {{-- Địa chỉ --}}
                     <div class="contact-item mb-4">
                         <div class="d-flex">
                             <div class="me-3">
@@ -40,6 +41,7 @@
                         </div>
                     </div>
 
+                    {{-- Hotline --}}
                     <div class="contact-item mb-4">
                         <div class="d-flex">
                             <div class="me-3">
@@ -55,6 +57,7 @@
                         </div>
                     </div>
 
+                    {{-- Email --}}
                     <div class="contact-item mb-4">
                         <div class="d-flex">
                             <div class="me-3">
@@ -70,6 +73,7 @@
                         </div>
                     </div>
 
+                    {{-- Giờ làm việc --}}
                     <div class="contact-item">
                         <div class="d-flex">
                             <div class="me-3">
@@ -88,12 +92,13 @@
             </div>
         </div>
 
-        <!-- Contact Form -->
+        {{-- Contact Form --}}
         <div class="col-lg-8 mb-4">
             <div class="card border-0 shadow-sm" style="border-radius: 12px;">
                 <div class="card-body p-4">
                     <h4 class="mb-4">Gửi tin nhắn cho chúng tôi</h4>
 
+                    {{-- Success Message --}}
                     @if(session('success'))
                         <div class="alert alert-success alert-dismissible fade show" role="alert">
                             <i class="fas fa-check-circle"></i> {{ session('success') }}
@@ -101,9 +106,11 @@
                         </div>
                     @endif
 
+                    {{-- Form --}}
                     <form action="{{ route('contact.submit') }}" method="POST">
                         @csrf
                         <div class="row">
+                            {{-- Họ và tên --}}
                             <div class="col-md-6 mb-3">
                                 <label for="name" class="form-label">Họ và tên <span class="text-danger">*</span></label>
                                 <input type="text" 
@@ -118,6 +125,7 @@
                                 @enderror
                             </div>
 
+                            {{-- Email --}}
                             <div class="col-md-6 mb-3">
                                 <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
                                 <input type="email" 
@@ -132,6 +140,7 @@
                                 @enderror
                             </div>
 
+                            {{-- Số điện thoại --}}
                             <div class="col-md-6 mb-3">
                                 <label for="phone" class="form-label">Số điện thoại</label>
                                 <input type="tel" 
@@ -145,6 +154,7 @@
                                 @enderror
                             </div>
 
+                            {{-- Tiêu đề --}}
                             <div class="col-md-6 mb-3">
                                 <label for="subject" class="form-label">Tiêu đề <span class="text-danger">*</span></label>
                                 <input type="text" 
@@ -159,6 +169,7 @@
                                 @enderror
                             </div>
 
+                            {{-- Nội dung --}}
                             <div class="col-12 mb-3">
                                 <label for="message" class="form-label">Nội dung <span class="text-danger">*</span></label>
                                 <textarea class="form-control @error('message') is-invalid @enderror" 
@@ -172,6 +183,7 @@
                                 @enderror
                             </div>
 
+                            {{-- Submit Button --}}
                             <div class="col-12">
                                 <button type="submit" class="btn btn-primary btn-lg" style="border-radius: 25px;">
                                     <i class="fas fa-paper-plane"></i> Gửi tin nhắn
@@ -185,7 +197,7 @@
     </div>
 </section>
 
-<!-- Map Section -->
+{{-- Map Section --}}
 <section class="container my-5">
     <div class="card border-0 shadow-sm" style="border-radius: 12px; overflow: hidden;">
         <div class="card-body p-0">
@@ -201,7 +213,7 @@
     </div>
 </section>
 
-<!-- FAQ Section -->
+{{-- FAQ Section --}}
 <section class="container my-5">
     <div class="row">
         <div class="col-12 text-center mb-4">
@@ -210,6 +222,7 @@
         </div>
         <div class="col-lg-8 mx-auto">
             <div class="accordion" id="faqAccordion">
+                {{-- FAQ 1 --}}
                 <div class="accordion-item border-0 shadow-sm mb-3" style="border-radius: 8px; overflow: hidden;">
                     <h2 class="accordion-header">
                         <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
@@ -224,6 +237,7 @@
                     </div>
                 </div>
 
+                {{-- FAQ 2 --}}
                 <div class="accordion-item border-0 shadow-sm mb-3" style="border-radius: 8px; overflow: hidden;">
                     <h2 class="accordion-header">
                         <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
@@ -238,6 +252,7 @@
                     </div>
                 </div>
 
+                {{-- FAQ 3 --}}
                 <div class="accordion-item border-0 shadow-sm mb-3" style="border-radius: 8px; overflow: hidden;">
                     <h2 class="accordion-header">
                         <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
@@ -252,6 +267,7 @@
                     </div>
                 </div>
 
+                {{-- FAQ 4 --}}
                 <div class="accordion-item border-0 shadow-sm mb-3" style="border-radius: 8px; overflow: hidden;">
                     <h2 class="accordion-header">
                         <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">

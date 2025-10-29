@@ -5,11 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'WebShop - Cửa hàng trực tuyến')</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    
+    <!-- CSS Dependencies -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
     <link rel="stylesheet" href="{{ asset('css/auth.css') }}">
+    
     <style>
+        /* ===== Biến CSS ===== */
         :root {
             --primary: #00d4aa;
             --secondary: #26d0ce;
@@ -18,13 +22,14 @@
             --mint-text: #134e4a;
         }
         
+        /* ===== Layout Chính ===== */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             color: var(--mint-text);
             background: var(--light);
         }
 
-        /* Header Styles */
+        /* ===== Header Top ===== */
         .header-top {
             background: var(--dark);
             color: white;
@@ -72,6 +77,7 @@
             text-align: left;
         }
 
+        /* ===== Header Main ===== */
         .header-main {
             background: white;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -87,6 +93,7 @@
             text-decoration: none;
         }
 
+        /* ===== Search Bar ===== */
         .search-bar {
             max-width: 500px;
         }
@@ -109,6 +116,7 @@
             color: white;
         }
 
+        /* ===== Header Icons ===== */
         .header-icons a {
             color: var(--dark);
             font-size: 1.3rem;
@@ -137,7 +145,7 @@
             justify-content: center;
         }
 
-        /* Navigation */
+        /* ===== Navigation ===== */
         .navbar-main {
             background: linear-gradient(135deg, var(--primary), var(--secondary));
             padding: 0;
@@ -158,13 +166,13 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
-        /* Main Content */
+        /* ===== Main Content ===== */
         .main-content {
             min-height: 60vh;
             padding: 30px 0;
         }
 
-        /* Hero Section */
+        /* ===== Hero Section ===== */
         .hero-section {
             background: linear-gradient(135deg, var(--primary), var(--secondary));
             color: white;
@@ -199,7 +207,7 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
 
-        /* Product Card */
+        /* ===== Product Card ===== */
         .product-card {
             border: 1px solid #e5e7eb;
             border-radius: 12px;
@@ -258,7 +266,36 @@
             transform: scale(1.05);
         }
 
-        /* Footer */
+        /* ===== Category Badge ===== */
+        .category-badge {
+            background: var(--light);
+            color: var(--dark);
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            display: inline-block;
+        }
+
+        /* ===== Section Title ===== */
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 30px;
+            text-align: center;
+            color: var(--dark);
+        }
+
+        .section-title::after {
+            content: '';
+            display: block;
+            width: 80px;
+            height: 4px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            margin: 15px auto 0;
+            border-radius: 2px;
+        }
+
+        /* ===== Footer ===== */
         .footer {
             background: var(--dark);
             color: white;
@@ -309,36 +346,8 @@
             text-align: center;
             color: #9ca3af;
         }
-
-        /* Category Badge */
-        .category-badge {
-            background: var(--light);
-            color: var(--dark);
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 0.85rem;
-            display: inline-block;
-        }
-
-        /* Section Title */
-        .section-title {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 30px;
-            text-align: center;
-            color: var(--dark);
-        }
-
-        .section-title::after {
-            content: '';
-            display: block;
-            width: 80px;
-            height: 4px;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            margin: 15px auto 0;
-            border-radius: 2px;
-        }
     </style>
+    
     @yield('styles')
 </head>
 <body>
@@ -362,11 +371,11 @@
                                     </a>
                                 </li>
                                 @if(Auth::user()->hasRole('admin') || Auth::user()->hasRole('manager'))
-                                <li>
-                                    <a class="dropdown-item" href="{{ route('dashboard') }}">
-                                        <i class="fas fa-tachometer-alt"></i> Dashboard
-                                    </a>
-                                </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{{ route('dashboard') }}">
+                                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                                        </a>
+                                    </li>
                                 @endif
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
@@ -416,9 +425,9 @@
                 <div class="col-md-3">
                     <div class="header-icons text-end">
                         @auth
-                        <a href="{{ route('profile.index') }}" title="Tài khoản của tôi">
-                            <i class="fas fa-user-circle"></i>
-                        </a>
+                            <a href="{{ route('profile.index') }}" title="Tài khoản của tôi">
+                                <i class="fas fa-user-circle"></i>
+                            </a>
                         @endauth
                         <a href="{{ route('cart.index') }}" title="Giỏ hàng">
                             <i class="fas fa-shopping-cart"></i>
@@ -561,8 +570,10 @@
         </div>
     </footer>
 
+    <!-- JavaScript Dependencies -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ asset('js/cart.js') }}"></script>
+    
     @yield('scripts')
 </body>
 </html>

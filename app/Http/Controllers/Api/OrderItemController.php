@@ -21,7 +21,7 @@ class OrderItemController extends Controller
     }
 
     /**
-     * Display a listing of the resource.
+     * Hiển thị danh sách order item
      */
     public function index(Request $request)
     {
@@ -33,7 +33,7 @@ class OrderItemController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Lưu order item mới được tạo
      */
     public function store(OrderItemRequest $request)
     {
@@ -45,7 +45,7 @@ class OrderItemController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * Hiển thị order item theo ID
      */
     public function show($id)
     {
@@ -62,7 +62,7 @@ class OrderItemController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Cập nhật order item theo ID
      */
     public function update(OrderItemRequest $request, string $id)
     {
@@ -81,7 +81,7 @@ class OrderItemController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Xóa order item theo ID
      */
     public function destroy($id)
     {
