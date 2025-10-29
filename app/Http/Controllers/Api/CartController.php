@@ -102,17 +102,18 @@ class CartController extends Controller
     {
         DB::beginTransaction();
         try {
-            $cartData = $request->validated();
-            $cart = $this->cartService->getCartById($id);
+            $cartData = $request->validated(); // lay du lieu da duoc validate tu request
+            $cart = $this->cartService->getCartById($id); // lay gio hang theo id
 
             if (! $request->user()->isAdmin() && ! $this->cartService->userOwnsCart($cart, $request->user()->id)) {
+                // Neu user khong phai la admin va khong sở hữu cart, rollback giao dịch
                 DB::rollback();
 
-                return ErrorResource::forbidden('Access denied. You can only update your own cart.');
+                return ErrorResource::forbidden('Access denied. You can only update your own cart.'); // tra ve loi truy cap
             }
 
-            $itemsToUpdate = $this->cartService->prepareItemsData($cartData);
-            $cart = $this->cartService->updateCartItems($cart, $itemsToUpdate);
+            $itemsToUpdate = $this->cartService->prepareItemsData($cartData); // chuan bi du lieu item de cap nhat
+            $cart = $this->cartService->updateCartItems($cart, $itemsToUpdate); // cap nhat cac item trong cart
 
             DB::commit();
 

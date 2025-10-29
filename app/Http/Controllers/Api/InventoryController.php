@@ -39,15 +39,17 @@ class InventoryController extends Controller
     public function store(InventoryRequest $request)
     {
         try {
-            $result = $this->inventoryService->storeInventory($request->validated());
+            $result = $this->inventoryService->storeInventory($request->validated()); // luu ban ghi moi
             $message = $result['created'] ? 'Inventory created successfully' : 'Inventory updated successfully';
 
             return (new InventoryResource($result['inventory']))->additional([
-                'status' => true,
-                'message' => $message,
+                // tra ve ket qua, $result['inventory'] chua ban ghi moi duoc lay tu service
+                'status' => true, // trang thai thanh cong
+                'message' => $message, // thong diep phu hop, $message duoc xac dinh o tren
             ])->response()->setStatusCode($result['created'] ? 201 : 200);
-        } catch (\Exception $e) {
-            return ErrorResource::serverError(
+            // $result['created'] truy cap den key 'created' trong mang $result de xac dinh ma trang thai phu hop
+        } catch (\Exception $e) { // bat loi ngoai le neu co
+            return ErrorResource::serverError( // tra ve bang cach su dung ErrorResource, goi den ham serverError
                 'Failed to process inventory',
                 config('app.debug') ? $e->getMessage() : null
             );

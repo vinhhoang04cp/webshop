@@ -18,6 +18,7 @@ class AuthController extends Controller
 {
     protected $authService;
 
+    // khai báo AuthService trong constructor
     public function __construct(AuthService $authService)
     {
         $this->authService = $authService;
@@ -29,8 +30,9 @@ class AuthController extends Controller
     public function login(LoginRequest $request)
     {
         $user = $this->authService->authenticate($request->email, $request->password);
+        // goi den ham authenticate trong AuthService voi tham so email va password
 
-        if (! $user) {
+        if (! $user) { // neu khong co user tra ve loi
             return ErrorResource::unauthorized('The provided credentials are incorrect.');
         }
 
