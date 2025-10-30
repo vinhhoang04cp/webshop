@@ -17,14 +17,18 @@ use App\Http\Controllers\Api\SocialAuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-// Authentication Routes
-Route::post('/login', [AuthController::class, 'login']); // Route dang nhap
-Route::post('/register', [AuthController::class, 'register']); // Route dang ky
+// Authentication Routes với rate limiting nghiêm ngặt
+Route::middleware(['throttle:auth', 'login.attempts'])->group(function () {
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/register', [AuthController::class, 'register']);
+});
 
-// Password Reset Routes
-Route::post('/forgot-password', [PasswordResetController::class, 'forgotPassword']);
-Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']);
-Route::post('/validate-reset-token', [PasswordResetController::class, 'validateToken']);
+// Password Reset Routes với rate limiting
+Route::middleware(['throttle:sensitive'])->group(function () {
+    Route::post('/forgot-password', [PasswordResetController::class, 'forgotPassword']);
+    Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']);
+    Route::post('/validate-reset-token', [PasswordResetController::class, 'validateToken']);
+});
 
 // Social Authentication Routes
 Route::get('/auth/{provider}/redirect', [SocialAuthController::class, 'redirect']);
@@ -53,10 +57,9 @@ Route::prefix('payment')->middleware('throttle:60,1')->group(function () {
     Route::post('/vnpay-ipn', [PaymentController::class, 'vnpayIPN']);
 });
 
-// Các route cần authentication
+// Các route cần authentication với token expiration check và rate limiting cao hơn
 
-Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () { // boc cac route can authentication vao day
-    // 'throttle:60,1' gioi han 60 request/phut , gioi han nay co the thay doi theo yeu cau thuc te
+Route::middleware(['auth:sanctum', 'token.expiration', 'throttle:api-authenticated'])->group(function () { // boc cac route can authentication vao day
     // User profile
     Route::get('/user', function (Request $request) {
         return $request->user();
@@ -74,8 +77,8 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () { // boc
     // Logout route
     Route::post('/logout', [AuthController::class, 'logout']);
 
-    // Profile Management Routes
-    Route::prefix('profile')->group(function () {
+    // Profile Management Routes với rate limiting cho sensitive operations
+    Route::prefix('profile')->middleware('throttle:sensitive')->group(function () {
         Route::get('/', [ProfileController::class, 'show']);
         Route::put('/', [ProfileController::class, 'update']);
         Route::put('/password', [ProfileController::class, 'changePassword']);

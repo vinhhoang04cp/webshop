@@ -9,21 +9,74 @@ use App\Models\User;
 use App\Models\UserRole;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
 
 class AuthService
 {
     /**
-     * Xác thực thông tin đăng nhập
+     * Xác thực thông tin đăng nhập với rate limiting
      */
-    public function authenticate($email, $password)
+    public function authenticate($email, $password, $request = null)
     {
         $user = User::where('email', $email)->first();
 
         if (! $user || ! Hash::check($password, $user->password)) {
+            // Increment failed login attempts
+            if ($request) {
+                $this->incrementLoginAttempts($request, $email);
+            }
+
             return null;
         }
 
+        // Clear login attempts on successful login
+        if ($request) {
+            $this->clearLoginAttempts($request, $email);
+        }
+
         return $user;
+    }
+
+    /**
+     * Increment login attempts
+     */
+    protected function incrementLoginAttempts($request, $email)
+    {
+        $key = $this->throttleKey($request, $email);
+        RateLimiter::hit($key, 300); // Block for 5 minutes
+    }
+
+    /**
+     * Clear login attempts
+     */
+    public function clearLoginAttempts($request, $email)
+    {
+        $key = $this->throttleKey($request, $email);
+        RateLimiter::clear($key);
+    }
+
+    /**
+     * Get throttle key
+     */
+    protected function throttleKey($request, $email)
+    {
+        return 'login_attempts:'.strtolower($email).'|'.$request->ip();
+    }
+
+    /**
+     * Giới hạn số lượng tokens của user
+     */
+    protected function limitUserTokens($user, $maxTokens = 5)
+    {
+        $tokenCount = $user->tokens()->count();
+
+        if ($tokenCount >= $maxTokens) {
+            // Xóa token cũ nhất
+            $user->tokens()
+                ->orderBy('created_at', 'asc')
+                ->limit($tokenCount - $maxTokens + 1)
+                ->delete();
+        }
     }
 
     /**
@@ -122,12 +175,12 @@ class AuthService
     }
 
     /**
-     * Tạo token cho API
+     * Tạo token cho API với giới hạn số lượng
      */
     public function createApiToken($user, $tokenName = 'api-token')
     {
-        // Xóa tất cả token cũ
-        $user->tokens()->delete();
+        // Giới hạn tối đa 5 tokens cho mỗi user
+        $this->limitUserTokens($user, 5);
 
         // Tạo token mới
         return $user->createToken($tokenName)->plainTextToken;
