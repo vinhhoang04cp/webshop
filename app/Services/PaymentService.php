@@ -2,13 +2,14 @@
 
 namespace App\Services;
 
+use App\Contracts\PaymentServiceInterface;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Order;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-class PaymentService
+class PaymentService implements PaymentServiceInterface
 {
     /**
      * Tạo URL thanh toán VNPay

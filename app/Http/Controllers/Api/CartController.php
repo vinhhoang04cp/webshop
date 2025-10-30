@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Contracts\CartServiceInterface;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CartRequest;
 use App\Http\Requests\CheckoutRequest;
 use App\Http\Resources\CartResource;
 use App\Http\Resources\ErrorResource;
 use App\Http\Resources\SuccessResource;
-use App\Services\CartService;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -17,8 +17,8 @@ class CartController extends Controller
 {
     protected $cartService; // khai bao thuoc tinh cartService
 
-    // __contruct(CartService $cartService) : khoi tao doi tuong cartService khi tao doi tuong CartController
-    public function __construct(CartService $cartService) // Khoi tao CartService, su dung dependency injection
+    // __contruct(CartServiceInterface $cartService) : khoi tao doi tuong cartService khi tao doi tuong CartController
+    public function __construct(CartServiceInterface $cartService) // Khoi tao CartService, su dung dependency injection
     {
         $this->cartService = $cartService; // Gan doi tuong CartService vao thuoc tinh cartService
     }

@@ -2,16 +2,16 @@
 
 namespace App\Http\Controllers\Web;
 
+use App\Contracts\OrderServiceInterface;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\OrderRequest;
-use App\Services\OrderService;
 use Illuminate\Http\Request;
 
 class OrderController extends Controller
 {
     protected $orderService;
 
-    public function __construct(OrderService $orderService)
+    public function __construct(OrderServiceInterface $orderService)
     {
         $this->orderService = $orderService;
     }

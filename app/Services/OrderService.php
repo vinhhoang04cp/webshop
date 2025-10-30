@@ -2,12 +2,13 @@
 
 namespace App\Services;
 
+use App\Contracts\OrderServiceInterface;
 use App\Models\Inventory;
 use App\Models\Order;
 use App\Models\OrderItem;
 use Illuminate\Support\Facades\DB;
 
-class OrderService
+class OrderService implements OrderServiceInterface
 {
     /**
      * Lấy danh sách đơn hàng cho admin với filter

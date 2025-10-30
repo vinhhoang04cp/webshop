@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Contracts\CartServiceInterface;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Coupon;
@@ -12,7 +13,7 @@ use App\Models\Product;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
-class CartService
+class CartService implements CartServiceInterface
 {
     /**
      * Xử lý checkout đơn hàng (dùng chung cho Web và API)

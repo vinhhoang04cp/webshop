@@ -2,19 +2,19 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Contracts\CartServiceInterface;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CartItemRequest;
 use App\Http\Resources\CartItemCollection;
 use App\Http\Resources\CartItemResource;
 use App\Http\Resources\SuccessResource;
-use App\Services\CartService;
 use Illuminate\Http\Request;
 
 class CartItemController extends Controller
 {
     protected $cartService;
 
-    public function __construct(CartService $cartService)
+    public function __construct(CartServiceInterface $cartService)
     {
         $this->cartService = $cartService;
     }

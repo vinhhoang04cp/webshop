@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Contracts\OrderServiceInterface;
+use App\Contracts\PaymentServiceInterface;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ErrorResource;
 use App\Http\Resources\PaymentResource;
 use App\Http\Resources\SuccessResource;
-use App\Services\OrderService;
-use App\Services\PaymentService;
 use Illuminate\Http\Request;
 
 class PaymentController extends Controller
@@ -16,7 +16,7 @@ class PaymentController extends Controller
 
     protected $orderService;
 
-    public function __construct(PaymentService $paymentService, OrderService $orderService)
+    public function __construct(PaymentServiceInterface $paymentService, OrderServiceInterface $orderService)
     {
         $this->paymentService = $paymentService;
         $this->orderService = $orderService;

@@ -9,7 +9,7 @@ use App\Http\Resources\OrderCollection;
 use App\Http\Resources\OrderResource;
 use App\Http\Resources\SuccessResource;
 use App\Models\Order;
-use App\Services\OrderService;
+use App\Contracts\OrderServiceInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -17,7 +17,7 @@ class OrderController extends Controller
 {
     protected $orderService;
 
-    public function __construct(OrderService $orderService)
+    public function __construct(OrderServiceInterface $orderService)
     {
         $this->orderService = $orderService;
     }

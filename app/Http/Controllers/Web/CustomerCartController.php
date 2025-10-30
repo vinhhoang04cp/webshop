@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers\Web;
 
+use App\Contracts\CartServiceInterface;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CartRequest;
 use App\Http\Requests\CheckoutRequest;
-use App\Services\CartService;
 use Illuminate\Support\Facades\Auth;
 
 class CustomerCartController extends Controller
 {
     protected $cartService;
 
-    public function __construct(CartService $cartService)
+    public function __construct(CartServiceInterface $cartService)
     {
         $this->cartService = $cartService;
     }

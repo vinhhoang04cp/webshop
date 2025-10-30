@@ -2,20 +2,20 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Contracts\OrderServiceInterface;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\OrderItemRequest;
 use App\Http\Resources\ErrorResource;
 use App\Http\Resources\OrderItemCollection;
 use App\Http\Resources\OrderItemResource;
 use App\Http\Resources\SuccessResource;
-use App\Services\OrderService;
 use Illuminate\Http\Request;
 
 class OrderItemController extends Controller
 {
     protected $orderService;
 
-    public function __construct(OrderService $orderService)
+    public function __construct(OrderServiceInterface $orderService)
     {
         $this->orderService = $orderService;
     }
