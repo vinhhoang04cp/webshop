@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Contracts\PaymentServiceInterface;
+use App\Exceptions\Payment\InvalidPaymentSignatureException;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Order;
@@ -124,7 +125,7 @@ class PaymentService implements PaymentServiceInterface
                 'received' => $vnp_SecureHash,
             ]);
 
-            return false;
+            throw new InvalidPaymentSignatureException;
         }
 
         return true;
@@ -193,11 +194,12 @@ class PaymentService implements PaymentServiceInterface
                     'message' => $errorMessage,
                 ]);
 
-                return [
-                    'success' => false,
-                    'order_id' => $order->order_id,
-                    'message' => $errorMessage,
-                ];
+                // Throw specific exception based on response code
+                if ($vnp_ResponseCode == '24') {
+                    throw new PaymentCancelledException;
+                } else {
+                    throw new PaymentFailedException($errorMessage, $vnp_ResponseCode);
+                }
             }
         } catch (\Exception $e) {
             DB::rollBack();

@@ -687,4 +687,162 @@ class ProductService
 
         return true;
     }
+
+    /**
+     * ===================================================================
+     * BUSINESS LOGIC METHODS (Moved from Product Model)
+     * ===================================================================
+     */
+
+    /**
+     * Lấy coupon tốt nhất đang hoạt động cho sản phẩm
+     *
+     * @return \App\Models\Coupon|null
+     */
+    public function getBestCoupon(Product $product)
+    {
+        // Lấy tất cả coupon có thể áp dụng (coupon của sản phẩm này + coupon chung)
+        $allCoupons = \App\Models\Coupon::active()
+            ->valid()
+            ->forProduct($product->product_id)
+            ->get();
+
+        if ($allCoupons->isEmpty()) {
+            return null;
+        }
+
+        $couponService = app(\App\Services\CouponService::class);
+
+        // Tìm coupon giảm giá nhiều nhất
+        return $allCoupons->sortByDesc(function ($coupon) use ($product, $couponService) {
+            return $couponService->calculateDiscount($coupon, $product->price);
+        })->first();
+    }
+
+    /**
+     * Tính giá sau khi giảm (nếu có coupon)
+     *
+     * @return float
+     */
+    public function getDiscountedPrice(Product $product)
+    {
+        $bestCoupon = $this->getBestCoupon($product);
+
+        if ($bestCoupon) {
+            $couponService = app(\App\Services\CouponService::class);
+
+            return $product->price - $couponService->calculateDiscount($bestCoupon, $product->price);
+        }
+
+        return $product->price;
+    }
+
+    /**
+     * Kiểm tra sản phẩm có coupon không
+     *
+     * @return bool
+     */
+    public function hasCoupon(Product $product)
+    {
+        return \App\Models\Coupon::active()
+            ->valid()
+            ->forProduct($product->product_id)
+            ->exists();
+    }
+
+    /**
+     * Lấy phần trăm giảm giá của sản phẩm
+     *
+     * @return int
+     */
+    public function getDiscountPercentage(Product $product)
+    {
+        if (! $product->original_price || $product->original_price <= 0) {
+            return 0;
+        }
+
+        $discount = (($product->original_price - $product->price) / $product->original_price) * 100;
+
+        return (int) round($discount);
+    }
+
+    /**
+     * Kiểm tra sản phẩm có đang giảm giá không
+     *
+     * @return bool
+     */
+    public function hasDiscount(Product $product)
+    {
+        return $product->original_price && $product->original_price > $product->price;
+    }
+
+    /**
+     * Tính số tiền tiết kiệm được
+     *
+     * @return float
+     */
+    public function getSavings(Product $product)
+    {
+        if (! $this->hasDiscount($product)) {
+            return 0;
+        }
+
+        return $product->original_price - $product->price;
+    }
+
+    /**
+     * Kiểm tra sản phẩm còn hàng không
+     *
+     * @return bool
+     */
+    public function isInStock(Product $product)
+    {
+        return $product->stock_quantity > 0;
+    }
+
+    /**
+     * Kiểm tra sản phẩm sắp hết hàng (dưới ngưỡng)
+     *
+     * @param  int  $threshold
+     * @return bool
+     */
+    public function isLowStock(Product $product, $threshold = 10)
+    {
+        return $product->stock_quantity > 0 && $product->stock_quantity <= $threshold;
+    }
+
+    /**
+     * Lấy trạng thái tồn kho
+     *
+     * @return string 'in_stock', 'low_stock', 'out_of_stock'
+     */
+    public function getStockStatus(Product $product)
+    {
+        if ($product->stock_quantity <= 0) {
+            return 'out_of_stock';
+        }
+
+        if ($this->isLowStock($product)) {
+            return 'low_stock';
+        }
+
+        return 'in_stock';
+    }
+
+    /**
+     * Lấy label trạng thái tồn kho
+     *
+     * @return string
+     */
+    public function getStockStatusLabel(Product $product)
+    {
+        $status = $this->getStockStatus($product);
+
+        return match ($status) {
+            'out_of_stock' => 'Hết hàng',
+            'low_stock' => 'Sắp hết hàng',
+            'in_stock' => 'Còn hàng',
+            default => 'Không xác định',
+        };
+    }
 }

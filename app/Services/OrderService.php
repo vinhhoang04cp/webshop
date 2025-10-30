@@ -3,6 +3,10 @@
 namespace App\Services;
 
 use App\Contracts\OrderServiceInterface;
+use App\Exceptions\Order\InvalidOrderStatusTransitionException;
+use App\Exceptions\Order\OrderCannotBeDeletedException;
+use App\Exceptions\Order\UnauthorizedOrderAccessException;
+use App\Exceptions\Product\InsufficientStockException;
 use App\Models\Inventory;
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -65,7 +69,7 @@ class OrderService implements OrderServiceInterface
 
         // Kiểm tra có thể chuyển đổi trạng thái không
         if (! $order->canTransitionTo($newStatus)) {
-            throw new \Exception("Không thể chuyển đổi trạng thái đơn hàng từ \"{$this->getStatusLabel($oldStatus)}\" sang \"{$this->getStatusLabel($newStatus)}\"");
+            throw new InvalidOrderStatusTransitionException($oldStatus, $newStatus);
         }
 
         // Sử dụng transaction
@@ -95,7 +99,7 @@ class OrderService implements OrderServiceInterface
 
         // Chỉ cho phép xóa đơn đã hủy hoặc đã giao
         if (! in_array($order->status, [Order::STATUS_CANCELLED, Order::STATUS_DELIVERED])) {
-            throw new \Exception('Chỉ có thể xóa đơn hàng đã hủy hoặc đã giao!');
+            throw new OrderCannotBeDeletedException($order->status);
         }
 
         $order->delete();
@@ -369,11 +373,8 @@ class OrderService implements OrderServiceInterface
         $items = $data['items'];
         unset($data['items']);
 
-        // Validate stock
-        $stockValidation = $this->validateStock($items);
-        if (! $stockValidation['valid']) {
-            throw new \Exception(implode(', ', $stockValidation['errors']));
-        }
+        // Validate stock - now throws exceptions instead of returning array
+        $this->validateStock($items);
 
         $itemsWithPrices = $this->calculateItemPrices($items);
         $data['total_amount'] = $this->calculateTotalAmount($itemsWithPrices);
@@ -447,28 +448,19 @@ class OrderService implements OrderServiceInterface
      */
     protected function validateStock($items)
     {
-        $errors = [];
-        $valid = true;
-
         foreach ($items as $item) {
             $product = \App\Models\Product::where('product_id', $item['product_id'])
                 ->lockForUpdate()
                 ->first();
 
             if (! $product) {
-                $errors[] = "Product with ID {$item['product_id']} not found";
-                $valid = false;
-
-                continue;
+                throw new \App\Exceptions\Product\ProductNotFoundException($item['product_id']);
             }
 
             if ($product->stock_quantity < $item['quantity']) {
-                $errors[] = "Insufficient stock for product '{$product->name}'. Available: {$product->stock_quantity}, Requested: {$item['quantity']}";
-                $valid = false;
+                throw new InsufficientStockException($product->name, $product->stock_quantity, $item['quantity']);
             }
         }
-
-        return ['valid' => $valid, 'errors' => $errors];
     }
 
     /**
@@ -536,7 +528,7 @@ class OrderService implements OrderServiceInterface
         $order = Order::where('order_id', $orderId)->firstOrFail();
 
         if ($order->user_id !== $userId) {
-            throw new \Exception('Đơn hàng không thuộc về người dùng này');
+            throw new UnauthorizedOrderAccessException;
         }
 
         return $order;

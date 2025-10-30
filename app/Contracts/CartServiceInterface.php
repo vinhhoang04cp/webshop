@@ -104,7 +104,6 @@ interface CartServiceInterface
      * Add multiple items to cart
      *
      * @param  Cart  $cart
-     * @param  array  $items
      * @return Cart
      */
     public function addItemsToCart($cart, array $items);
@@ -113,7 +112,6 @@ interface CartServiceInterface
      * Update multiple items in cart
      *
      * @param  Cart  $cart
-     * @param  array  $items
      * @return Cart
      */
     public function updateCartItems($cart, array $items);
@@ -148,7 +146,6 @@ interface CartServiceInterface
     /**
      * Prepare items data from validated request
      *
-     * @param  array  $cartData
      * @return array
      */
     public function prepareItemsData(array $cartData);
@@ -156,7 +153,6 @@ interface CartServiceInterface
     /**
      * Get cart items with filters (for API)
      *
-     * @param  array  $filters
      * @return \Illuminate\Database\Eloquent\Collection
      */
     public function getCartItemsWithFilters(array $filters = []);
@@ -164,7 +160,6 @@ interface CartServiceInterface
     /**
      * Create cart item
      *
-     * @param  array  $data
      * @return \App\Models\CartItem
      */
     public function createCartItem(array $data);
@@ -183,7 +178,6 @@ interface CartServiceInterface
      * Update cart item by ID
      *
      * @param  int  $id
-     * @param  array  $data
      * @return \App\Models\CartItem
      *
      * @throws \Illuminate\Database\Eloquent\ModelNotFoundException

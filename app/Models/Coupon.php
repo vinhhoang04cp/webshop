@@ -41,76 +41,43 @@ class Coupon extends Model
         return $this->belongsTo(Product::class, 'product_id', 'product_id');
     }
 
+    /**
+     * ===================================================================
+     * DEPRECATED METHODS - Use CouponService instead
+     * ===================================================================
+     * These methods are kept for backward compatibility
+     * but should use CouponService for new code
+     */
+
+    /**
+     * @deprecated Use CouponService::isValid() instead
+     */
     public function isValid($orderAmount = 0)
     {
-        $now = Carbon::now();
-
-        // Kiểm tra trạng thái hoạt động
-        if (! $this->is_active) {
-            return ['valid' => false, 'message' => 'Mã giảm giá không còn hoạt động'];
-        }
-
-        // Kiểm tra thời gian
-        if ($now < $this->start_date) {
-            return ['valid' => false, 'message' => 'Mã giảm giá chưa có hiệu lực'];
-        }
-
-        if ($now > $this->end_date) {
-            return ['valid' => false, 'message' => 'Mã giảm giá đã hết hạn'];
-        }
-
-        // Kiểm tra số lần sử dụng
-        if ($this->usage_limit !== null && $this->used_count >= $this->usage_limit) {
-            return ['valid' => false, 'message' => 'Mã giảm giá đã hết lượt sử dụng'];
-        }
-
-        // Kiểm tra giá trị đơn hàng tối thiểu
-        if ($orderAmount > 0 && $orderAmount < $this->min_order_amount) {
-            return ['valid' => false, 'message' => 'Đơn hàng chưa đạt giá trị tối thiểu '.number_format($this->min_order_amount, 0, ',', '.').' VND'];
-        }
-
-        return ['valid' => true, 'message' => 'Mã giảm giá hợp lệ'];
+        return app(\App\Services\CouponService::class)->isValid($this, $orderAmount);
     }
 
     /**
-     * Tính toán số tiền giảm giá cho một giá trị
+     * @deprecated Use CouponService::calculateDiscount() instead
      */
     public function calculateDiscount($price)
     {
-        if (! $this->isValid($price)['valid']) {
-            return 0;
-        }
-
-        $discount = 0;
-
-        if ($this->discount_type === 'percentage') {
-            $discount = ($price * $this->discount_value) / 100;
-
-            // Áp dụng giảm giá tối đa nếu có
-            if ($this->max_discount_amount !== null) {
-                $discount = min($discount, $this->max_discount_amount);
-            }
-        } else {
-            $discount = $this->discount_value;
-        }
-
-        // Đảm bảo số tiền giảm không vượt quá giá trị đơn hàng
-        return min($discount, $price);
+        return app(\App\Services\CouponService::class)->calculateDiscount($this, $price);
     }
 
     /**
-     * Kiểm tra coupon có áp dụng cho sản phẩm cụ thể không
+     * @deprecated Use CouponService::appliesTo() instead
      */
     public function appliesTo($productId)
     {
-        // Nếu product_id null = áp dụng cho tất cả
-        if ($this->product_id === null) {
-            return true;
-        }
-
-        // Nếu có product_id = chỉ áp dụng cho sản phẩm đó
-        return $this->product_id == $productId;
+        return app(\App\Services\CouponService::class)->appliesTo($this, $productId);
     }
+
+    /**
+     * ===================================================================
+     * QUERY SCOPES (These are OK to keep in Model)
+     * ===================================================================
+     */
 
     /**
      * Scope để lấy coupon đang hoạt động

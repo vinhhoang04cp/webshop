@@ -30,11 +30,11 @@ class ServiceBindingProvider extends ServiceProvider
     {
         // Bindings are automatically registered via $bindings property
         // But we can also manually bind if needed:
-        
+
         // $this->app->bind(CartServiceInterface::class, CartService::class);
         // $this->app->bind(OrderServiceInterface::class, OrderService::class);
         // $this->app->bind(PaymentServiceInterface::class, PaymentService::class);
-        
+
         // Or use singleton for services that should be shared:
         // $this->app->singleton(CartServiceInterface::class, CartService::class);
     }

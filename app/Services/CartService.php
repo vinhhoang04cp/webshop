@@ -3,6 +3,12 @@
 namespace App\Services;
 
 use App\Contracts\CartServiceInterface;
+use App\Exceptions\Cart\CartNotFoundException;
+use App\Exceptions\Cart\EmptyCartException;
+use App\Exceptions\Cart\UnauthorizedCartAccessException;
+use App\Exceptions\Coupon\CouponNotFoundException;
+use App\Exceptions\Product\InsufficientStockException;
+use App\Exceptions\Product\ProductNotFoundException;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Coupon;
@@ -29,7 +35,7 @@ class CartService implements CartServiceInterface
         $cart = Cart::where('user_id', $userId)->first();
 
         if (! $cart || $cart->items()->count() == 0) {
-            throw new \Exception('Giỏ hàng trống!');
+            throw new EmptyCartException;
         }
 
         DB::beginTransaction();
@@ -86,11 +92,11 @@ class CartService implements CartServiceInterface
         foreach ($cart->items as $item) {
             $product = $item->product;
             if (! $product) {
-                throw new \Exception('Sản phẩm không tồn tại!');
+                throw new ProductNotFoundException($item->product_id);
             }
 
             if ($product->stock_quantity < $item->quantity) {
-                throw new \Exception("Sản phẩm '{$product->name}' chỉ còn {$product->stock_quantity} sản phẩm trong kho!");
+                throw new InsufficientStockException($product->name, $product->stock_quantity, $item->quantity);
             }
         }
     }
@@ -104,15 +110,16 @@ class CartService implements CartServiceInterface
         $coupon = Coupon::where('code', $couponCode)->first();
 
         if (! $coupon) {
-            throw new \Exception('Mã giảm giá không hợp lệ!');
+            throw new CouponNotFoundException($couponCode);
         }
 
-        $validation = $coupon->isValid($totalAmount);
-        if (! $validation['valid']) {
-            throw new \Exception($validation['message']);
-        }
+        // ✅ Use CouponService with exception-based validation
+        $couponService = app(\App\Services\CouponService::class);
 
-        $discountAmount = $coupon->calculateDiscount($totalAmount);
+        // This will throw specific exceptions if invalid
+        $couponService->validateCoupon($coupon, $totalAmount);
+
+        $discountAmount = $couponService->calculateDiscount($coupon, $totalAmount);
         $totalAmount = $totalAmount - $discountAmount;
 
         return [
@@ -266,7 +273,7 @@ class CartService implements CartServiceInterface
             $cartItem = CartItem::findOrFail($cartItemId);
 
             if ($cartItem->cart->user_id != Auth::id()) {
-                throw new \Exception('Không có quyền!');
+                throw new UnauthorizedCartAccessException;
             }
 
             $cartItem->quantity = $quantity;
@@ -291,7 +298,7 @@ class CartService implements CartServiceInterface
             $cartItem = CartItem::findOrFail($cartItemId);
 
             if ($cartItem->cart->user_id != Auth::id()) {
-                throw new \Exception('Không có quyền!');
+                throw new UnauthorizedCartAccessException;
             }
 
             $cartItem->delete();
@@ -360,7 +367,7 @@ class CartService implements CartServiceInterface
     }
 
     /**
-     * Find or create cart for user
+     * Find or create cart for a specific user
      */
     public function findOrCreateCartForUser($cartId, $userId)
     {
@@ -370,7 +377,7 @@ class CartService implements CartServiceInterface
                 ->first();
 
             if (! $cart) {
-                throw new \Exception("Cart with ID {$cartId} not found or does not belong to user");
+                throw new CartNotFoundException($cartId);
             }
         } else {
             $cart = Cart::where('user_id', $userId)->first();

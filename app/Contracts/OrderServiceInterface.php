@@ -9,8 +9,6 @@ interface OrderServiceInterface
     /**
      * Lấy danh sách đơn hàng cho admin với filter
      *
-     * @param  array  $filters
-     * @param  int  $perPage
      * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
      */
     public function getOrdersForAdmin(array $filters = [], int $perPage = 15);
@@ -82,8 +80,6 @@ interface OrderServiceInterface
     /**
      * Get order items with filters (for API and Web)
      *
-     * @param  array  $filters
-     * @param  int  $perPage
      * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
      */
     public function getOrderItems(array $filters = [], int $perPage = 10);
@@ -100,7 +96,6 @@ interface OrderServiceInterface
     /**
      * Create order item
      *
-     * @param  array  $data
      * @return \App\Models\OrderItem
      */
     public function createOrderItem(array $data);
@@ -109,7 +104,6 @@ interface OrderServiceInterface
      * Update order item
      *
      * @param  int  $orderItemId
-     * @param  array  $data
      * @return \App\Models\OrderItem
      *
      * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
@@ -131,8 +125,6 @@ interface OrderServiceInterface
      *
      * @param  int  $userId
      * @param  bool  $isAdmin
-     * @param  array  $filters
-     * @param  int  $perPage
      * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
      */
     public function getOrders($userId, $isAdmin, array $filters = [], int $perPage = 10);
@@ -149,7 +141,6 @@ interface OrderServiceInterface
     /**
      * Create order with items
      *
-     * @param  array  $data
      * @return Order
      *
      * @throws \Exception
@@ -160,7 +151,6 @@ interface OrderServiceInterface
      * Update order
      *
      * @param  int  $orderId
-     * @param  array  $data
      * @param  Order|null  $order
      * @return Order
      *

@@ -58,61 +58,57 @@ class Product extends Model
         return $this->hasMany(Coupon::class, 'product_id', 'product_id');
     }
 
-    // Hàm tính trung bình rating
+    /**
+     * ===================================================================
+     * ACCESSOR METHODS (These are OK to keep in Model)
+     * ===================================================================
+     */
+
+    /**
+     * Hàm tính trung bình rating
+     */
     public function averageRating()
     {
         return $this->ratings()->avg('rating') ?? 0;
     }
 
-    // Hàm đếm số lượng rating
+    /**
+     * Hàm đếm số lượng rating
+     */
     public function totalRatings()
     {
         return $this->ratings()->count();
     }
 
     /**
-     * Lấy coupon tốt nhất đang hoạt động cho sản phẩm này
+     * ===================================================================
+     * DEPRECATED METHODS - Use ProductService instead
+     * ===================================================================
+     * These methods are kept for backward compatibility
+     * but should use ProductService for new code
+     */
+
+    /**
+     * @deprecated Use ProductService::getBestCoupon() instead
      */
     public function getBestCoupon()
     {
-        // Lấy tất cả coupon có thể áp dụng (coupon của sản phẩm này + coupon chung)
-        $allCoupons = Coupon::active()
-            ->valid()
-            ->forProduct($this->product_id)
-            ->get();
-
-        if ($allCoupons->isEmpty()) {
-            return null;
-        }
-
-        // Tìm coupon giảm giá nhiều nhất
-        return $allCoupons->sortByDesc(function ($coupon) {
-            return $coupon->calculateDiscount($this->price);
-        })->first();
+        return app(\App\Services\ProductService::class)->getBestCoupon($this);
     }
 
     /**
-     * Tính giá sau khi giảm (nếu có coupon)
+     * @deprecated Use ProductService::getDiscountedPrice() instead
      */
     public function getDiscountedPrice()
     {
-        $bestCoupon = $this->getBestCoupon();
-
-        if ($bestCoupon) {
-            return $this->price - $bestCoupon->calculateDiscount($this->price);
-        }
-
-        return $this->price;
+        return app(\App\Services\ProductService::class)->getDiscountedPrice($this);
     }
 
     /**
-     * Kiểm tra sản phẩm có coupon không
+     * @deprecated Use ProductService::hasCoupon() instead
      */
     public function hasCoupon()
     {
-        return Coupon::active()
-            ->valid()
-            ->forProduct($this->product_id)
-            ->exists();
+        return app(\App\Services\ProductService::class)->hasCoupon($this);
     }
 }
