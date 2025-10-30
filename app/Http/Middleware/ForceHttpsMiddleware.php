@@ -17,27 +17,34 @@ use Symfony\Component\HttpFoundation\Response;
 class ForceHttpsMiddleware
 {
     /**
-     * Handle an incoming request.
+     * Xử lý request đến
+     *
+     * Đảm bảo tất cả request sử dụng HTTPS trong môi trường production
+     * để bảo vệ dữ liệu khi truyền tải
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Chỉ enforce HTTPS trong production
+        // Chỉ bắt buộc HTTPS trong production
+        // Môi trường local và testing được phép dùng HTTP
         if (! app()->environment('local', 'testing')) {
-            // Redirect HTTP to HTTPS
+            // Nếu request không dùng HTTPS thì redirect sang HTTPS
             if (! $request->secure()) {
+                // 301 = Permanent Redirect
                 return redirect()->secure($request->getRequestUri(), 301);
             }
         }
 
+        // Cho phép request đi tiếp
         $response = $next($request);
 
-        // Set HSTS header nếu đang dùng HTTPS
+        // Thêm HSTS header khi đang dùng HTTPS
+        // Header này yêu cầu browser luôn dùng HTTPS cho domain này
         if ($request->secure()) {
             $response->headers->set(
                 'Strict-Transport-Security',
-                'max-age=31536000; includeSubDomains; preload'
+                'max-age=31536000; includeSubDomains; preload' // 1 năm, bao gồm subdomain, cho phép preload
             );
         }
 

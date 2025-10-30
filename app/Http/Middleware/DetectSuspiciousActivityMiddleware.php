@@ -19,57 +19,65 @@ use Symfony\Component\HttpFoundation\Response;
 class DetectSuspiciousActivityMiddleware
 {
     /**
-     * SQL Injection patterns
+     * Các pattern để phát hiện SQL Injection
+     * Kiểm tra các từ khóa SQL nguy hiểm và cú pháp tấn công phổ biến
      */
     protected array $sqlPatterns = [
-        '/(\b(union|select|insert|update|delete|drop|create|alter|exec|execute)\b)/i',
-        '/(\bor\b\s*\d+\s*=\s*\d+)/i',
-        '/(--|\#|\/\*|\*\/)/i',
+        '/(\b(union|select|insert|update|delete|drop|create|alter|exec|execute)\b)/i', // Các lệnh SQL
+        '/(\bor\b\s*\d+\s*=\s*\d+)/i', // Pattern OR 1=1
+        '/(--|\#|\/\*|\*\/)/i', // SQL comments
     ];
 
     /**
-     * XSS patterns
+     * Các pattern để phát hiện XSS (Cross-Site Scripting)
+     * Kiểm tra các thẻ HTML và JavaScript nguy hiểm
      */
     protected array $xssPatterns = [
-        '/<script[^>]*>.*?<\/script>/is',
-        '/javascript:/i',
-        '/on\w+\s*=\s*["\'][^"\']*["\']/i',
-        '/<iframe/i',
-        '/<object/i',
-        '/<embed/i',
+        '/<script[^>]*>.*?<\/script>/is', // Thẻ script
+        '/javascript:/i', // JavaScript protocol
+        '/on\w+\s*=\s*["\'][^"\']*["\']/i', // Event handlers (onclick, onload, etc)
+        '/<iframe/i', // Thẻ iframe
+        '/<object/i', // Thẻ object
+        '/<embed/i', // Thẻ embed
     ];
 
     /**
-     * Path traversal patterns
+     * Các pattern để phát hiện Path Traversal
+     * Ngăn chặn việc truy cập file ngoài thư mục cho phép
      */
     protected array $pathTraversalPatterns = [
-        '/\.\.\//',
-        '/\.\.\\\\/',
-        '/%2e%2e%2f/i',
-        '/%2e%2e\\\\/i',
+        '/\.\.\//', // ../
+        '/\.\.\\\\/', // ..\
+        '/%2e%2e%2f/i', // URL encoded ../
+        '/%2e%2e\\\\/i', // URL encoded ..\
     ];
 
     /**
-     * Command injection patterns
+     * Các pattern để phát hiện Command Injection
+     * Ngăn chặn thực thi lệnh hệ thống không mong muốn
      */
     protected array $commandPatterns = [
-        '/;.*\b(ls|cat|wget|curl|chmod|rm|mv)\b/i',
-        '/\|\s*\b(ls|cat|wget|curl|chmod|rm|mv)\b/i',
-        '/&&\s*\b(ls|cat|wget|curl|chmod|rm|mv)\b/i',
+        '/;.*\b(ls|cat|wget|curl|chmod|rm|mv)\b/i', // Lệnh sau dấu ;
+        '/\|\s*\b(ls|cat|wget|curl|chmod|rm|mv)\b/i', // Lệnh sau pipe |
+        '/&&\s*\b(ls|cat|wget|curl|chmod|rm|mv)\b/i', // Lệnh sau &&
     ];
 
     /**
-     * Handle an incoming request.
+     * Xử lý request đến
+     *
+     * Kiểm tra tất cả input để phát hiện các loại tấn công phổ biến
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
     {
+        // Chuyển tất cả input thành chuỗi JSON để dễ kiểm tra
         $input = json_encode($request->all());
         $suspicious = false;
         $attackType = '';
 
         // Kiểm tra SQL Injection
+        // Duyệt qua tất cả pattern SQL để tìm dấu hiệu tấn công
         foreach ($this->sqlPatterns as $pattern) {
             if (preg_match($pattern, $input)) {
                 $suspicious = true;
@@ -79,6 +87,7 @@ class DetectSuspiciousActivityMiddleware
         }
 
         // Kiểm tra XSS
+        // Chỉ kiểm tra nếu chưa phát hiện tấn công khác
         if (! $suspicious) {
             foreach ($this->xssPatterns as $pattern) {
                 if (preg_match($pattern, $input)) {
@@ -90,6 +99,7 @@ class DetectSuspiciousActivityMiddleware
         }
 
         // Kiểm tra Path Traversal
+        // Tìm dấu hiệu cố gắng truy cập file ngoài thư mục
         if (! $suspicious) {
             foreach ($this->pathTraversalPatterns as $pattern) {
                 if (preg_match($pattern, $input)) {
@@ -101,6 +111,7 @@ class DetectSuspiciousActivityMiddleware
         }
 
         // Kiểm tra Command Injection
+        // Phát hiện cố gắng thực thi lệnh hệ thống
         if (! $suspicious) {
             foreach ($this->commandPatterns as $pattern) {
                 if (preg_match($pattern, $input)) {
@@ -111,8 +122,9 @@ class DetectSuspiciousActivityMiddleware
             }
         }
 
+        // Xử lý khi phát hiện hoạt động đáng ngờ
         if ($suspicious) {
-            // Log hoạt động đáng ngờ
+            // Log chi tiết về cuộc tấn công để phân tích
             Log::channel('security')->warning('Suspicious activity detected', [
                 'attack_type' => $attackType,
                 'ip' => $request->ip(),
@@ -123,14 +135,15 @@ class DetectSuspiciousActivityMiddleware
                 'timestamp' => now(),
             ]);
 
-            // Có thể block request hoặc chỉ log
-            // Uncomment để block:
+            // Có thể chặn request hoặc chỉ ghi log
+            // Mở comment dòng dưới để chặn request:
             // return response()->json([
             //     'status' => false,
             //     'message' => 'Suspicious activity detected.',
             // ], 403);
         }
 
+        // Cho phép request tiếp tục nếu không phát hiện vấn đề
         return $next($request);
     }
 }

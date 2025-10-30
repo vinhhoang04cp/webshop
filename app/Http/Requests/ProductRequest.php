@@ -58,6 +58,9 @@ class ProductRequest extends FormRequest
                 'errors' => $validator->errors(),
             ], 422));
         }
+
+        // For web requests, use default behavior (redirect with errors)
+        parent::failedValidation($validator);
     }
 
     public function messages()

@@ -18,18 +18,23 @@ use Symfony\Component\HttpFoundation\Response;
 class LoginAttemptMiddleware
 {
     /**
-     * Handle an incoming request.
+     * Xử lý request đến
+     *
+     * Giới hạn số lần đăng nhập thất bại để chống brute force attack
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
     {
+        // Tạo key duy nhất cho mỗi email + IP để track số lần thử
         $key = $this->throttleKey($request);
 
-        // Kiểm tra số lần thử
+        // Kiểm tra xem đã vượt quá giới hạn (5 lần) chưa
         if (RateLimiter::tooManyAttempts($key, 5)) {
+            // Lấy số giây còn lại phải chờ
             $seconds = RateLimiter::availableIn($key);
 
+            // Trả về lỗi 429 (Too Many Requests)
             return response()->json([
                 'status' => false,
                 'message' => "Quá nhiều lần đăng nhập thất bại. Vui lòng thử lại sau {$seconds} giây.",
@@ -37,14 +42,19 @@ class LoginAttemptMiddleware
             ], 429);
         }
 
+        // Cho phép request tiếp tục nếu chưa vượt quá giới hạn
         return $next($request);
     }
 
     /**
-     * Get the throttle key for the given request.
+     * Tạo throttle key cho request
+     *
+     * Kết hợp email và IP để tạo key duy nhất
+     * Ngăn chặn cùng một email bị brute force từ nhiều IP
      */
     protected function throttleKey(Request $request): string
     {
+        // Format: login_attempts:email@example.com|192.168.1.1
         return 'login_attempts:'.strtolower($request->input('email')).'|'.$request->ip();
     }
 }

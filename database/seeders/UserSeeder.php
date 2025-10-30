@@ -15,12 +15,12 @@ class UserSeeder extends Seeder
     {
         // Tạo admin user
         $adminUser = User::updateOrCreate(
-            ['email' => 'admin@webshop.com'],
+            ['email' => '20220647@eaut.edu.vn'],
             [
-                'name' => 'Admin User',
-                'password' => Hash::make('admin123'),
+                'name' => 'Hoang Quang Vinh',
+                'password' => Hash::make('admin@28012004'),
                 'phone' => '0987654321',
-                'address' => '123 Admin Street, Ha Noi',
+                'address' => 'Ha Noi, Viet Nam',
             ]
         );
 
