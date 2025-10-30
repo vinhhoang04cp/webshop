@@ -15,7 +15,12 @@ class PasswordResetRequest extends FormRequest
     {
         return [
             'email' => 'required|email|exists:users,email',
-            'password' => 'required|min:8|confirmed',
+            'password' => [
+                'required',
+                'min:12',
+                'confirmed',
+                'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()])[A-Za-z\d@$!%*?&#^()]+$/',
+            ],
             'token' => 'required',
         ];
     }
@@ -27,8 +32,9 @@ class PasswordResetRequest extends FormRequest
             'email.email' => 'Email không đúng định dạng',
             'email.exists' => 'Email không tồn tại trong hệ thống',
             'password.required' => 'Vui lòng nhập mật khẩu mới',
-            'password.min' => 'Mật khẩu phải có ít nhất 8 ký tự',
+            'password.min' => 'Mật khẩu phải có ít nhất 12 ký tự',
             'password.confirmed' => 'Mật khẩu xác nhận không khớp',
+            'password.regex' => 'Mật khẩu phải chứa ít nhất 1 chữ hoa, 1 chữ thường, 1 số và 1 ký tự đặc biệt (@$!%*?&#^())',
             'token.required' => 'Token là bắt buộc',
         ];
     }

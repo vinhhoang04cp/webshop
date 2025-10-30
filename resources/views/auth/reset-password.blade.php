@@ -53,7 +53,9 @@
                             @error('password')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
-                            <small class="form-text text-muted">Mật khẩu phải có ít nhất 8 ký tự.</small>
+                            <small class="form-text text-muted">
+                                Tối thiểu 12 ký tự, bao gồm: chữ hoa, chữ thường, số và ký tự đặc biệt (@$!%*?&#^())
+                            </small>
                         </div>
 
                         {{-- Xác nhận mật khẩu --}}

@@ -60,7 +60,9 @@
                        id="password" 
                        name="password" 
                        required>
-                <small class="form-text text-muted">Tối thiểu 8 ký tự</small>
+                <small class="form-text text-muted">
+                    Tối thiểu 12 ký tự, bao gồm: chữ hoa, chữ thường, số và ký tự đặc biệt (@$!%*?&#^())
+                </small>
                 @error('password')
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror

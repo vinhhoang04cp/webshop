@@ -197,7 +197,9 @@
                                     @error('new_password')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
-                                    <small class="text-muted">Mật khẩu phải có ít nhất 8 ký tự</small>
+                                    <small class="text-muted">
+                                        Tối thiểu 12 ký tự, bao gồm: chữ hoa, chữ thường, số và ký tự đặc biệt (@$!%*?&#^())
+                                    </small>
                                 </div>
 
                                 <div class="mb-3">
