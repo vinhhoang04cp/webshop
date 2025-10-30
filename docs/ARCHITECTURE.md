@@ -16,54 +16,78 @@
 
 ### Kiến trúc tổng thể
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                         TẦNG GIAO DIỆN                       │
-├──────────────────┬──────────────────┬──────────────────────┤
-│   Trình duyệt    │   Ứng dụng di    │   API bên thứ ba     │
-│   (Blade Views)  │   động (Client)  │   (Consumer)         │
-└────────┬─────────┴────────┬─────────┴──────────┬───────────┘
-         │                  │                     │
-         │ HTTP/HTTPS       │ HTTP/HTTPS         │ HTTP/HTTPS
-         │                  │ + Bearer Token     │ + API Token
-         │                  │                     │
-┌────────▼──────────────────▼─────────────────────▼───────────┐
-│                      TẦNG ỨNG DỤNG                          │
-│  ┌────────────────┐              ┌─────────────────────┐   │
-│  │  Định tuyến    │              │   Định tuyến API    │   │
-│  │  Web (routes)  │              │   (routes/api.php)  │   │
-│  └───────┬────────┘              └──────────┬──────────┘   │
-│          │                                   │               │
-│  ┌───────▼───────────────────────────────────▼──────────┐  │
-│  │              TẦNG MIDDLEWARE                         │  │
-│  │  • auth:sanctum  • admin  • throttle  • cors        │  │
-│  └───────┬───────────────────────────────────┬──────────┘  │
-│          │                                   │               │
-│  ┌───────▼──────────┐              ┌────────▼──────────┐   │
-│  │ Web Controllers  │              │ API Controllers   │   │
-│  │ • HomeController │              │ • AuthController  │   │
-│  │ • CartController │              │ • ProductCtrl     │   │
-│  └───────┬──────────┘              └────────┬──────────┘   │
-│          │                                   │               │
-│  ┌───────▼───────────────────────────────────▼──────────┐  │
-│  │                  TẦNG DỊCH VỤ                        │  │
-│  │  • Logic nghiệp vụ  • Xác thực  • Phần quyền       │  │
-│  └───────┬──────────────────────────────────┬──────────┘  │
-│          │                                   │               │
-│  ┌───────▼───────────────────────────────────▼──────────┐  │
-│  │              TẦNG MODEL (Eloquent ORM)              │  │
-│  │  User • Product • Order • Cart • Category • etc     │  │
-│  └───────┬──────────────────────────────────┬──────────┘  │
-└──────────┼──────────────────────────────────┼──────────────┘
-           │                                   │
-┌──────────▼───────────────────────────────────▼──────────────┐
-│                      TẦNG DỮ LIỆU                           │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
-│  │    MySQL     │  │    Redis     │  │  Lưu trữ     │     │
-│  │ (Cơ sở dữ    │  │ (Cache/Queue)│  │  tệp tin     │     │
-│  │  liệu)       │  │              │  │  (Hình ảnh)  │     │
-│  └──────────────┘  └──────────────┘  └──────────────┘     │
-└──────────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph PRESENTATION["🎨 TẦNG GIAO DIỆN (Presentation Layer)"]
+        Browser["🌐 Trình duyệt<br/>(Blade Views)"]
+        Mobile["📱 Ứng dụng di động<br/>(Client)"]
+        ThirdParty["🔌 API bên thứ ba<br/>(Consumer)"]
+    end
+
+    subgraph APPLICATION["⚙️ TẦNG ỨNG DỤNG (Application Layer)"]
+        subgraph ROUTING["📍 Định tuyến (Routing)"]
+            WebRoutes["🌐 Web Routes<br/>(routes/web.php)"]
+            ApiRoutes["🔗 API Routes<br/>(routes/api.php)"]
+        end
+
+        subgraph MIDDLEWARE["🛡️ TẦNG MIDDLEWARE"]
+            Auth["auth:sanctum"]
+            Admin["admin"]
+            Throttle["throttle"]
+            Cors["cors"]
+            Security["security headers"]
+        end
+
+        subgraph CONTROLLERS["🎮 CONTROLLERS"]
+            WebControllers["Web Controllers<br/>• HomeController<br/>• CartController<br/>• ProductController<br/>• AuthController"]
+            ApiControllers["API Controllers<br/>• AuthController<br/>• ProductController<br/>• OrderController"]
+        end
+
+        subgraph SERVICES["🔧 TẦNG DỊCH VỤ (Service Layer)"]
+            BusinessLogic["Logic nghiệp vụ<br/>• CartService<br/>• OrderService<br/>• PaymentService"]
+            Validation["Xác thực<br/>• Input Sanitization<br/>• Request Validation"]
+            Authorization["Phân quyền<br/>• Role Checking<br/>• Permission Control"]
+        end
+    end
+
+    subgraph DOMAIN["📦 TẦNG MODEL (Domain Layer)"]
+        Models["Eloquent ORM Models<br/>• User • Product • Order<br/>• Cart • Category • Coupon<br/>• Rating • Inventory"]
+    end
+
+    subgraph DATA["💾 TẦNG DỮ LIỆU (Data Layer)"]
+        MySQL["🗄️ MySQL<br/>(Cơ sở dữ liệu chính)"]
+        Redis["⚡ Redis<br/>(Cache/Queue/Session)"]
+        Storage["📁 File Storage<br/>(Hình ảnh sản phẩm)"]
+    end
+
+    Browser -->|"HTTP/HTTPS"| WebRoutes
+    Mobile -->|"HTTP/HTTPS<br/>+ Bearer Token"| ApiRoutes
+    ThirdParty -->|"HTTP/HTTPS<br/>+ API Token"| ApiRoutes
+
+    WebRoutes --> MIDDLEWARE
+    ApiRoutes --> MIDDLEWARE
+
+    MIDDLEWARE --> WebControllers
+    MIDDLEWARE --> ApiControllers
+
+    WebControllers --> SERVICES
+    ApiControllers --> SERVICES
+
+    SERVICES --> Models
+
+    Models --> MySQL
+    Models --> Redis
+    Models --> Storage
+
+    classDef presentationStyle fill:#e1f5ff,stroke:#01579b,stroke-width:2px,color:#000
+    classDef applicationStyle fill:#fff9c4,stroke:#f57f17,stroke-width:2px,color:#000
+    classDef domainStyle fill:#f3e5f5,stroke:#4a148c,stroke-width:2px,color:#000
+    classDef dataStyle fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px,color:#000
+
+    class Browser,Mobile,ThirdParty presentationStyle
+    class WebRoutes,ApiRoutes,Auth,Admin,Throttle,Cors,Security,WebControllers,ApiControllers,BusinessLogic,Validation,Authorization applicationStyle
+    class Models domainStyle
+    class MySQL,Redis,Storage dataStyle
 ```
 
 ---
