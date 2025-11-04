@@ -34,18 +34,18 @@ class Order extends Model
     ];
 
     // Định nghĩa các trạng thái hợp lệ
-    const STATUS_PENDING = 'pending'; // STATUS_PENDING trang thai cho don hang moi tao, 'pending' la trang thai goc trong CSDL
+    public const STATUS_PENDING = 'pending'; // STATUS_PENDING trang thai cho don hang moi tao, 'pending' la trang thai goc trong CSDL
 
-    const STATUS_PROCESSING = 'processing'; // STATUS_PROCESSING trang thai don hang dang duoc xu ly, 'processing' la trang thai goc trong CSDL
+    public const STATUS_PROCESSING = 'processing'; // STATUS_PROCESSING trang thai don hang dang duoc xu ly, 'processing' la trang thai goc trong CSDL
 
-    const STATUS_SHIPPED = 'shipped'; // STATUS_SHIPPED trang thai don hang da duoc gui, 'shipped' la trang thai goc trong CSDL
+    public const STATUS_SHIPPED = 'shipped'; // STATUS_SHIPPED trang thai don hang da duoc gui, 'shipped' la trang thai goc trong CSDL
 
-    const STATUS_DELIVERED = 'delivered'; // STATUS_DELIVERED trang thai don hang da duoc giao, 'delivered' la trang thai goc trong CSDL
+    public const STATUS_DELIVERED = 'delivered'; // STATUS_DELIVERED trang thai don hang da duoc giao, 'delivered' la trang thai goc trong CSDL
 
-    const STATUS_CANCELLED = 'cancelled'; // STATUS_CANCELLED trang thai don hang bi huy, 'cancelled' la trang thai goc trong CSDL
+    public const STATUS_CANCELLED = 'cancelled'; // STATUS_CANCELLED trang thai don hang bi huy, 'cancelled' la trang thai goc trong CSDL
 
     // Hang so dinh nghia cac chuyen doi trang thai hop le,tuan tu trang thai hien tai sang cac trang thai moi
-    const STATUS_TRANSITIONS = [
+    public const STATUS_TRANSITIONS = [
         self::STATUS_PENDING => [self::STATUS_PROCESSING, self::STATUS_CANCELLED], // self::STATUS_PENDING la trang thai hien tai , co the chuyen sang trang thai self::STATUS_PROCESSING hoac self::STATUS_CANCELLED
         self::STATUS_PROCESSING => [self::STATUS_SHIPPED, self::STATUS_CANCELLED], // self::STATUS_PROCESSING la trang thai hien tai , co the chuyen sang trang thai self::STATUS_SHIPPED hoac self::STATUS_CANCELLED
         self::STATUS_SHIPPED => [self::STATUS_DELIVERED], // self::STATUS_SHIPPED la trang thai hien tai , co the chuyen sang trang thai self::STATUS_DELIVERED

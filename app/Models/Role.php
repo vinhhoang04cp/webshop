@@ -13,9 +13,9 @@ class Role extends Model
 
     protected $primaryKey = 'role_id';
 
-    const CREATED_AT = 'role_created_at';
+    public const CREATED_AT = 'role_created_at';
 
-    const UPDATED_AT = 'role_updated_at';
+    public const UPDATED_AT = 'role_updated_at';
 
     protected $fillable = [
         'role_name',

@@ -13,9 +13,9 @@ class Inventory extends Model
 
     protected $primaryKey = 'inventory_id'; // Su dung khoa chinh la 'inventory_id'
 
-    const UPDATED_AT = 'updated_at'; // Su dung cot 'updated_at' de theo doi thoi gian cap nhat
+    public const UPDATED_AT = 'updated_at'; // Su dung cot 'updated_at' de theo doi thoi gian cap nhat
 
-    const CREATED_AT = null; // Khong su dung cot 'created_at'
+    public const CREATED_AT = null; // Khong su dung cot 'created_at'
 
     protected $fillable = [ // Cac cot co the gan gia tri hang loat
         'product_id',

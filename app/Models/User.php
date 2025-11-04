@@ -11,7 +11,10 @@ use Laravel\Sanctum\HasApiTokens; // Thêm dòng này để sử dụng Laravel 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable; // Thêm HasApiTokens để hỗ trợ Laravel Sanctum
+    use HasApiTokens;
+
+    use HasFactory;
+    use Notifiable; // Thêm HasApiTokens để hỗ trợ Laravel Sanctum
 
     /**
      * The attributes that are mass assignable.

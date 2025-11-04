@@ -125,7 +125,7 @@ class PaymentService implements PaymentServiceInterface
                 'received' => $vnp_SecureHash,
             ]);
 
-            throw new InvalidPaymentSignatureException;
+            throw new InvalidPaymentSignatureException();
         }
 
         return true;
@@ -196,7 +196,7 @@ class PaymentService implements PaymentServiceInterface
 
                 // Throw specific exception based on response code
                 if ($vnp_ResponseCode == '24') {
-                    throw new PaymentCancelledException;
+                    throw new PaymentCancelledException();
                 } else {
                     throw new PaymentFailedException($errorMessage, $vnp_ResponseCode);
                 }

@@ -18,7 +18,8 @@ use Tests\Traits\WebTestHelpers;
  */
 class OrderControllerTest extends TestCase
 {
-    use RefreshDatabase, WebTestHelpers;
+    use RefreshDatabase;
+    use WebTestHelpers;
 
     protected function setUp(): void
     {

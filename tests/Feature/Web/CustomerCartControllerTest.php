@@ -24,7 +24,8 @@ use Tests\Traits\WebTestHelpers;
  */
 class CustomerCartControllerTest extends TestCase
 {
-    use RefreshDatabase, WebTestHelpers;
+    use RefreshDatabase;
+    use WebTestHelpers;
 
     protected function setUp(): void
     {
