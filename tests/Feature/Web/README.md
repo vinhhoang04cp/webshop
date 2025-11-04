@@ -4,7 +4,7 @@ Tài liệu hướng dẫn sử dụng test suite cho Web Controllers.
 
 ## 📋 Tổng quan
 
-Test suite này bao gồm các test cases cho tất cả Web Controllers trong ứng dụng WebShop, được xây dựng trên Laravel 12 với Laravel Sail và MySQL trên Docker.
+Test suite này bao gồm các test cases cho tất cả Web Controllers trong ứng dụng WebShop, được xây dựng trên Laravel 12 với Docker, Nginx, PHP-FPM và MySQL.
 
 ## 🗂️ Cấu trúc Tests
 
@@ -28,27 +28,27 @@ tests/
 
 ### Chạy tất cả tests
 ```bash
-./vendor/bin/sail artisan test
+docker-compose -f docker-compose.dev.yml exec app php artisan test
 ```
 
 ### Chạy tests cho một file cụ thể
 ```bash
-./vendor/bin/sail artisan test tests/Feature/Web/AuthControllerTest.php
+docker-compose -f docker-compose.dev.yml exec app php artisan test tests/Feature/Web/AuthControllerTest.php
 ```
 
 ### Chạy một test method cụ thể
 ```bash
-./vendor/bin/sail artisan test --filter it_can_login_with_valid_credentials
+docker-compose -f docker-compose.dev.yml exec app php artisan test --filter it_can_login_with_valid_credentials
 ```
 
 ### Chạy tests với coverage
 ```bash
-./vendor/bin/sail artisan test --coverage
+docker-compose -f docker-compose.dev.yml exec app php artisan test --coverage
 ```
 
 ### Chạy tests song song (nhanh hơn)
 ```bash
-./vendor/bin/sail artisan test --parallel
+docker-compose -f docker-compose.dev.yml exec app php artisan test --parallel
 ```
 
 ## 📝 Chi tiết từng Test File
@@ -292,20 +292,20 @@ public function it_cannot_login_with_invalid_credentials() { }
 ### Tests chạy chậm
 ```bash
 # Sử dụng parallel testing
-./vendor/bin/sail artisan test --parallel
+docker-compose -f docker-compose.dev.yml exec app php artisan test --parallel
 
 # Hoặc cache configurations
-./vendor/bin/sail artisan config:cache
+docker-compose -f docker-compose.dev.yml exec app php artisan config:cache
 ```
 
 ### Database errors
 ```bash
 # Clear cache
-./vendor/bin/sail artisan config:clear
-./vendor/bin/sail artisan cache:clear
+docker-compose -f docker-compose.dev.yml exec app php artisan config:clear
+docker-compose -f docker-compose.dev.yml exec app php artisan cache:clear
 
 # Migrate fresh
-./vendor/bin/sail artisan migrate:fresh --env=testing
+docker-compose -f docker-compose.dev.yml exec app php artisan migrate:fresh --env=testing
 ```
 
 ### Factory errors
@@ -318,7 +318,7 @@ php artisan make:factory ProductFactory --model=Product
 
 - [Laravel Testing Documentation](https://laravel.com/docs/12.x/testing)
 - [PHPUnit Documentation](https://phpunit.de/documentation.html)
-- [Laravel Sail Documentation](https://laravel.com/docs/12.x/sail)
+- [Docker Documentation](https://docs.docker.com/)
 
 ## 🎯 TODO
 

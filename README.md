@@ -23,7 +23,7 @@ WebShop là một nền tảng thương mại điện tử (e-commerce) được
 - **Frontend**: Blade Templates + Tailwind CSS 4.0 + Vite 7.0
 - **Database**: MySQL 8.0
 - **Cache/Queue**: Redis Alpine
-- **Development**: Docker + Laravel Sail
+- **Development**: Docker + Nginx + PHP-FPM
 
 ---
 
@@ -265,13 +265,13 @@ npm install
 
 # Setup environment
 cp .env.example .env
-./vendor/bin/sail artisan key:generate
+php artisan key:generate
 
 # Start Docker services
-./vendor/bin/sail up -d
+docker-compose -f docker-compose.dev.yml up -d --build
 
-# Run migrations & seeders
-./vendor/bin/sail artisan migrate:fresh --seed
+# Run migrations & seeders (inside container)
+docker-compose -f docker-compose.dev.yml exec app php artisan migrate:fresh --seed
 
 # Build frontend
 npm run dev

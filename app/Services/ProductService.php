@@ -138,7 +138,7 @@ class ProductService
         }
 
         // Tạo đánh giá mới
-        $rating = new Rating();
+        $rating = new Rating;
         $rating->user_id = $userId;
         $rating->product_id = $productId;
         $rating->rating = $data['rating'];

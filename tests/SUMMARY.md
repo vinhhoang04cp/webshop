@@ -204,11 +204,11 @@ $this->assertHasValidationError($response, 'field');
 ./run-web-tests.sh --coverage   # With coverage
 ```
 
-### Chạy trực tiếp với Sail
+### Chạy trực tiếp với Docker
 ```bash
-./vendor/bin/sail artisan test
-./vendor/bin/sail artisan test --parallel
-./vendor/bin/sail artisan test --coverage
+docker-compose -f docker-compose.dev.yml exec app php artisan test
+docker-compose -f docker-compose.dev.yml exec app php artisan test --parallel
+docker-compose -f docker-compose.dev.yml exec app php artisan test --coverage
 ```
 
 ---

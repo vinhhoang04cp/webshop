@@ -544,7 +544,7 @@ class OrderService implements OrderServiceInterface
         $order = Order::where('order_id', $orderId)->firstOrFail();
 
         if ($order->user_id !== $userId) {
-            throw new UnauthorizedOrderAccessException();
+            throw new UnauthorizedOrderAccessException;
         }
 
         return $order;

@@ -35,7 +35,7 @@ class CartService implements CartServiceInterface
         $cart = Cart::where('user_id', $userId)->first();
 
         if (! $cart || $cart->items()->count() == 0) {
-            throw new EmptyCartException();
+            throw new EmptyCartException;
         }
 
         DB::beginTransaction();
@@ -134,7 +134,7 @@ class CartService implements CartServiceInterface
      */
     protected function createOrder(array $data, $totalAmount, $userId = null)
     {
-        $order = new Order();
+        $order = new Order;
         $order->user_id = $userId ?? Auth::id();
         $order->total_amount = $totalAmount;
         $order->status = 'pending';
@@ -157,7 +157,7 @@ class CartService implements CartServiceInterface
             $product = $item->product;
 
             // Tạo order item
-            $orderItem = new OrderItem();
+            $orderItem = new OrderItem;
             $orderItem->order_id = $order->order_id;
             $orderItem->product_id = $item->product_id;
             $orderItem->quantity = $item->quantity;
@@ -273,7 +273,7 @@ class CartService implements CartServiceInterface
             $cartItem = CartItem::findOrFail($cartItemId);
 
             if ($cartItem->cart->user_id != Auth::id()) {
-                throw new UnauthorizedCartAccessException();
+                throw new UnauthorizedCartAccessException;
             }
 
             $cartItem->quantity = $quantity;
@@ -298,7 +298,7 @@ class CartService implements CartServiceInterface
             $cartItem = CartItem::findOrFail($cartItemId);
 
             if ($cartItem->cart->user_id != Auth::id()) {
-                throw new UnauthorizedCartAccessException();
+                throw new UnauthorizedCartAccessException;
             }
 
             $cartItem->delete();
