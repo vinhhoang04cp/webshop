@@ -31,9 +31,14 @@ class OrderService implements OrderServiceInterface
                 });
         }
 
-        // Filter theo trạng thái
+        // Filter theo trạng thái đơn hàng
         if (! empty($filters['status'])) {
             $query->where('status', $filters['status']);
+        }
+
+        // Filter theo trạng thái thanh toán
+        if (! empty($filters['payment_status'])) {
+            $query->where('payment_status', $filters['payment_status']);
         }
 
         // Sắp xếp theo ngày mới nhất
@@ -168,6 +173,17 @@ class OrderService implements OrderServiceInterface
         // Tồn kho đã được giảm khi checkout
         // Chỉ cần log hoặc tracking
         \Log::info("Order #{$order->order_id} delivered successfully. Stock was already deducted at checkout.");
+
+        // Tự động cập nhật trạng thái thanh toán sang "paid" khi giao hàng thành công
+        // Đặc biệt quan trọng cho đơn hàng COD (thanh toán khi nhận hàng)
+        if ($order->payment_status !== 'paid') {
+            $order->update([
+                'payment_status' => 'paid',
+                'paid_at' => now(),
+            ]);
+
+            \Log::info("Order #{$order->order_id} payment status updated to 'paid' on delivery.");
+        }
     }
 
     /**

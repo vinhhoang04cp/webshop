@@ -14,6 +14,7 @@ WebShop là một nền tảng thương mại điện tử (e-commerce) được
 - 🛒 **Giỏ hàng & Đặt hàng**: Quy trình checkout hoàn chỉnh với quản lý tồn kho
 - 👥 **Phân quyền**: RBAC với 4 roles (Admin, Manager, Customer, Guest)
 - 🔐 **API Authentication**: Laravel Sanctum token-based authentication
+- 📧 **Đặt lại mật khẩu**: Reset password qua email với token bảo mật
 - 📊 **Dashboard**: Giao diện quản trị cho Admin/Manager
 - 📦 **Inventory Management**: Quản lý tồn kho với điều chỉnh thủ công
 
@@ -229,6 +230,24 @@ Tài liệu được tổ chức thành 7 file chính, mỗi file phục vụ m�
 - Debug OAuth integration
 - Deploy social login lên production
 - Thêm provider mới (Twitter, LinkedIn, etc.)
+
+---
+
+### 🔟 [PASSWORD_RESET.md](./PASSWORD_RESET.md) 🔑
+**Hướng dẫn hoàn chỉnh chức năng Đặt lại mật khẩu qua Email**
+
+- 🎯 Quick Start (3 bước - 5 phút)
+- ⚙️ Cấu hình email (Gmail/Mailtrap/Log)
+- 🌐 URLs & Routes (Web + API)
+- � Bảo mật & Validation
+- 🧪 Testing & Troubleshooting
+- 📊 API Examples & Commands
+
+**Đọc khi**:
+- Setup chức năng quên mật khẩu
+- Cấu hình email provider
+- Test reset password
+- Tích hợp với mobile app
 
 ---
 
@@ -491,14 +510,17 @@ docs/
 ├── BUSINESS_LOGIC.md              # 💼 Business workflows & use cases
 ├── DATABASE.md                    # 🗄️ Database schema
 ├── CODING_CONVENTIONS.md          # 📝 Code standards
-└── SOCIALITE_COMPLETE_GUIDE.md    # 🔐 Laravel Socialite - Social Login
+├── SOCIALITE_COMPLETE_GUIDE.md    # 🔐 Laravel Socialite - Social Login
+└── EMAIL_CONFIGURATION.md         # 📧 Email Setup Guide
 
-Current Version: 3.1 (23/10/2025) ✨
-- Thêm tích hợp Laravel Socialite (Google/Facebook/GitHub OAuth)
-- Hướng dẫn chi tiết từng bước setup OAuth providers
-- Thêm hệ thống coupon/mã giảm giá hoàn chỉnh
-- Cập nhật tất cả tài liệu phản ánh tính năng mới
-- API endpoints cho quản lý coupon
+📁 **Root level:**
+├── PASSWORD_RESET.md              # 🔑 Password Reset via Email (Unified Guide)
+
+Current Version: 3.3 (04/11/2025) ✨
+- Hợp nhất tất cả tài liệu password reset thành 1 file duy nhất
+- Rút gọn và tối ưu nội dung
+- Giữ lại thông tin quan trọng nhất
+- Dễ đọc và theo dõi hơn
 
 Legacy files (sẽ xóa trong future updates):
 ├── Api-Document.md                # ⚠️ Merged into AUTHENTICATION + API_REFERENCE
@@ -510,17 +532,30 @@ Legacy files (sẽ xóa trong future updates):
 
 ---
 
-**Cập nhật lần cuối**: 23/10/2025  
-**Version**: 3.1  
+**Cập nhật lần cuối**: 03/11/2025  
+**Version**: 3.2  
 **Author**: Hoàng Quang Vinh
 
 ---
 
 **💡 Tip**: Bookmark file README.md này để dễ dàng điều hướng đến các tài liệu khác!
 
-## 🆕 Tính năng mới (v3.1)
+## 🆕 Tính năng mới (v3.2)
 
-### Laravel Socialite - Social Login
+### 🔑 Đặt lại mật khẩu qua Email
+- ✅ Reset password với token bảo mật (hashed)
+- ✅ Token hết hạn sau 24 giờ
+- ✅ Gửi email với link reset đẹp mắt
+- ✅ Support cả Web và API endpoints
+- ✅ Custom reset URL cho SPA/Mobile apps
+- ✅ Rate limiting để chống brute force
+- ✅ Password validation mạnh mẽ (12+ ký tự, chữ hoa, thường, số, ký tự đặc biệt)
+- ✅ Cấu hình email linh hoạt (Gmail/Mailtrap/Log)
+- ✅ Tài liệu chi tiết và demo hoàn chỉnh
+
+👉 **Xem hướng dẫn**: [PASSWORD_RESET.md](./PASSWORD_RESET.md) - Tài liệu thống nhất
+
+### 🔐 Laravel Socialite - Social Login (v3.1)
 - ✅ Đăng nhập/đăng ký qua Google OAuth 2.0
 - ✅ Đăng nhập/đăng ký qua Facebook Login
 - ✅ Đăng nhập/đăng ký qua GitHub OAuth

@@ -39,7 +39,7 @@
                         </div>
                     </div>
                     <div class="row mt-3">
-                        <div class="col-md-5">
+                        <div class="col-md-4">
                             <form method="GET" action="{{ route('dashboard.orders.index') }}" class="search-box">
                                 <input name="search" class="form-control form-control-sm" 
                                        placeholder="Tìm kiếm theo mã đơn, tên hoặc email..." 
@@ -47,17 +47,20 @@
                                 <button type="submit" class="btn btn-sm btn-outline-primary">
                                     <i class="fas fa-search"></i> Tìm
                                 </button>
-                                @if(request('search') || request('status'))
+                                @if(request('search') || request('status') || request('payment_status'))
                                     <a href="{{ route('dashboard.orders.index') }}" class="btn btn-sm btn-outline-secondary">
                                         <i class="fas fa-times"></i> Xóa
                                     </a>
                                 @endif
                             </form>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <form method="GET" action="{{ route('dashboard.orders.index') }}">
                                 @if(request('search'))
                                     <input type="hidden" name="search" value="{{ request('search') }}">
+                                @endif
+                                @if(request('payment_status'))
+                                    <input type="hidden" name="payment_status" value="{{ request('payment_status') }}">
                                 @endif
                                 <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
                                     <option value="">Tất cả trạng thái</option>
@@ -69,7 +72,24 @@
                                 </select>
                             </form>
                         </div>
-                        <div class="col-md-3 text-end">
+                        <div class="col-md-3">
+                            <form method="GET" action="{{ route('dashboard.orders.index') }}">
+                                @if(request('search'))
+                                    <input type="hidden" name="search" value="{{ request('search') }}">
+                                @endif
+                                @if(request('status'))
+                                    <input type="hidden" name="status" value="{{ request('status') }}">
+                                @endif
+                                <select name="payment_status" class="form-select form-select-sm" onchange="this.form.submit()">
+                                    <option value="">Tất cả thanh toán</option>
+                                    <option value="pending" {{ request('payment_status') == 'pending' ? 'selected' : '' }}>Chưa thanh toán</option>
+                                    <option value="paid" {{ request('payment_status') == 'paid' ? 'selected' : '' }}>Đã thanh toán</option>
+                                    <option value="failed" {{ request('payment_status') == 'failed' ? 'selected' : '' }}>Thất bại</option>
+                                    <option value="refunded" {{ request('payment_status') == 'refunded' ? 'selected' : '' }}>Đã hoàn tiền</option>
+                                </select>
+                            </form>
+                        </div>
+                        <div class="col-md-2 text-end">
                             <small class="text-muted">
                                 Tổng: {{ $orders->total() }} đơn hàng
                             </small>
@@ -87,6 +107,8 @@
                                         <th>Ngày đặt</th>
                                         <th>Tổng tiền</th>
                                         <th>Trạng thái</th>
+                                        <th>Thanh toán</th>
+                                        <th>PT Thanh toán</th>
                                         <th class="text-center">Thao tác</th>
                                     </tr>
                                 </thead>
@@ -145,6 +167,67 @@
                                                 <span class="badge bg-{{ $color }}">
                                                     {{ $statuses[$order->status] ?? $order->status }}
                                                 </span>
+                                            </td>
+                                            <td>
+                                                @php
+                                                    $paymentStatusColors = [
+                                                        'pending' => 'warning',
+                                                        'paid' => 'success',
+                                                        'failed' => 'danger',
+                                                        'refunded' => 'secondary',
+                                                    ];
+                                                    $paymentStatusLabels = [
+                                                        'pending' => 'Chưa thanh toán',
+                                                        'paid' => 'Đã thanh toán',
+                                                        'failed' => 'Thất bại',
+                                                        'refunded' => 'Đã hoàn tiền',
+                                                    ];
+                                                    $paymentColor = $paymentStatusColors[$order->payment_status] ?? 'secondary';
+                                                    $paymentLabel = $paymentStatusLabels[$order->payment_status] ?? $order->payment_status;
+                                                @endphp
+                                                <span class="badge bg-{{ $paymentColor }}">
+                                                    {{ $paymentLabel }}
+                                                </span>
+                                                @if($order->paid_at)
+                                                    <br>
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-clock me-1"></i>{{ $order->paid_at->format('d/m/Y H:i') }}
+                                                    </small>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @php
+                                                    $paymentMethodLabels = [
+                                                        'cod' => 'COD',
+                                                        'vnpay' => 'VNPay',
+                                                        'bank_transfer' => 'Chuyển khoản',
+                                                        'momo' => 'MoMo',
+                                                    ];
+                                                    $methodLabel = $paymentMethodLabels[$order->payment_method] ?? ($order->payment_method ?: 'COD');
+                                                @endphp
+                                                @if($order->payment_method == 'cod' || !$order->payment_method)
+                                                    <span class="badge bg-secondary">
+                                                        <i class="fas fa-money-bill-wave me-1"></i>{{ $methodLabel }}
+                                                    </span>
+                                                @elseif($order->payment_method == 'vnpay')
+                                                    <span class="badge bg-primary">
+                                                        <i class="fas fa-credit-card me-1"></i>{{ $methodLabel }}
+                                                    </span>
+                                                @elseif($order->payment_method == 'momo')
+                                                    <span class="badge bg-danger">
+                                                        <i class="fas fa-mobile-alt me-1"></i>{{ $methodLabel }}
+                                                    </span>
+                                                @else
+                                                    <span class="badge bg-info">
+                                                        <i class="fas fa-university me-1"></i>{{ $methodLabel }}
+                                                    </span>
+                                                @endif
+                                                @if($order->transaction_id)
+                                                    <br>
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-hashtag me-1"></i>{{ Str::limit($order->transaction_id, 15) }}
+                                                    </small>
+                                                @endif
                                             </td>
                                             <td class="text-center">
                                                 <div class="btn-group btn-group-sm" role="group">
@@ -255,6 +338,29 @@ document.addEventListener('DOMContentLoaded', function() {
     
     .badge.bg-info {
         background-color: #3b82f6 !important;
+    }
+    
+    /* Styling cho cột thanh toán */
+    table th:nth-child(6),
+    table th:nth-child(7) {
+        min-width: 130px;
+    }
+    
+    table td:nth-child(6) small,
+    table td:nth-child(7) small {
+        font-size: 0.75rem;
+        margin-top: 4px;
+    }
+    
+    /* Badges trong payment */
+    .badge {
+        font-size: 0.75rem;
+        padding: 0.35rem 0.65rem;
+        font-weight: 500;
+    }
+    
+    .badge i {
+        font-size: 0.7rem;
     }
 </style>
             </div>

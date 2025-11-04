@@ -22,7 +22,7 @@ class OrderController extends Controller
     public function index(Request $request)
     {
         try {
-            $filters = $request->only(['search', 'status']);
+            $filters = $request->only(['search', 'status', 'payment_status']);
             $orders = $this->orderService->getOrdersForAdmin($filters, 15);
             $statuses = $this->orderService->getAllStatuses();
 
