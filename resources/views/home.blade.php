@@ -31,18 +31,7 @@
         @if(isset($categories) && $categories->count() > 0)
             @foreach($categories->take(6) as $category)
                 <div class="col-md-4 col-lg-2">
-                    <a href="{{ route('category.show', $category->category_id) }}" class="text-decoration-none">
-                        <div class="card text-center border-0 shadow-sm" 
-                             style="border-radius: 12px; transition: transform 0.3s;" 
-                             onmouseover="this.style.transform='scale(1.05)'" 
-                             onmouseout="this.style.transform='scale(1)'">
-                            <div class="card-body">
-                                <i class="fas fa-box fa-3x mb-3" style="color: #667eea;"></i>
-                                <h6 class="card-title mb-0">{{ $category->name }}</h6>
-                                <small class="text-muted">{{ $category->products_count ?? 0 }} sản phẩm</small>
-                            </div>
-                        </div>
-                    </a>
+                    @include('components.category-card', ['category' => $category])
                 </div>
             @endforeach
         @else
@@ -60,39 +49,7 @@
         @if(isset($featuredProducts) && $featuredProducts->count() > 0)
             @foreach($featuredProducts as $product)
                 <div class="col-md-6 col-lg-3">
-                    <div class="product-card">
-                        {{-- Product Image --}}
-                        <a href="{{ route('product.show', $product->product_id) }}">
-                            <img src="{{ $product->image_url ?? 'https://via.placeholder.com/300x250/667eea/ffffff?text=Product' }}"  
-                                 alt="{{ $product->name }}"
-                                 class="product-image">
-                        </a>
-
-                        {{-- Product Info --}}
-                        <div class="product-body">
-                            <span class="category-badge">{{ $product->category->name ?? 'Danh mục' }}</span>
-                            <a href="{{ route('product.show', $product->product_id) }}" class="text-decoration-none">
-                                <h5 class="product-title">{{ $product->name }}</h5>
-                            </a>
-
-                            {{-- Price --}}
-                            <div class="mb-2">
-                                @include('components.product-price', ['product' => $product])
-                            </div>
-
-                            {{-- Rating --}}
-                            @include('components.rating-stars', ['rating' => $product->averageRating()])
-                            
-                            {{-- Add to Cart Form --}}
-                            <form action="{{ route('cart.add', $product->product_id) }}" method="POST">
-                                @csrf
-                                <input type="hidden" name="quantity" value="1">
-                                <button type="submit" class="btn-add-cart">
-                                    <i class="fas fa-cart-plus"></i> Thêm vào giỏ
-                                </button>
-                            </form>
-                        </div>
-                    </div>
+                    @include('components.product-card', ['product' => $product])
                 </div>
             @endforeach
         @else
@@ -118,43 +75,8 @@
     <div class="row g-4">
         @if(isset($newProducts) && $newProducts->count() > 0)
             @foreach($newProducts as $product)
-                <div class="col-md-6 col-lg-3"> 
-                    <div class="product-card">
-                        {{-- Product Image with Badge --}}
-                        <div style="position: relative;">
-                            <a href="{{ route('product.show', $product->product_id) }}">
-                                <img src="{{ $product->image_url ?? 'https://via.placeholder.com/300x250/764ba2/ffffff?text=New+Product' }}"
-                                     alt="{{ $product->name }}"
-                                     class="product-image">
-                            </a>
-                            <span class="badge bg-danger" style="position: absolute; top: 10px; right: 10px;">Mới</span>
-                        </div>
-
-                        {{-- Product Info --}}
-                        <div class="product-body">
-                            <span class="category-badge">{{ $product->category->name ?? 'Danh mục' }}</span>
-                            <a href="{{ route('product.show', $product->product_id) }}" class="text-decoration-none">
-                                <h5 class="product-title">{{ $product->name }}</h5>
-                            </a>
-
-                            {{-- Price --}}
-                            <div class="mb-2">
-                                @include('components.product-price', ['product' => $product])
-                            </div>
-
-                            {{-- Created Time --}}
-                            <small class="text-muted">{{ $product->created_at->diffForHumans() }}</small>
-                            
-                            {{-- Add to Cart Form --}}
-                            <form action="{{ route('cart.add', $product->product_id) }}" method="POST">
-                                @csrf
-                                <input type="hidden" name="quantity" value="1">
-                                <button type="submit" class="btn-add-cart">
-                                    <i class="fas fa-cart-plus"></i> Thêm vào giỏ
-                                </button>
-                            </form>
-                        </div>
-                    </div>
+                <div class="col-md-6 col-lg-3">
+                    @include('components.product-card', ['product' => $product, 'showBadge' => true])
                 </div>
             @endforeach
         @else
@@ -168,48 +90,33 @@
 {{-- Features Section --}}
 <section class="container mb-5">
     <div class="row g-4">
-        {{-- Giao hàng nhanh --}}
         <div class="col-md-3">
-            <div class="text-center p-4">
-                <div class="mb-3">
-                    <i class="fas fa-shipping-fast fa-3x" style="color: #667eea;"></i>
-                </div>
-                <h5>Giao hàng nhanh</h5>
-                <p class="text-muted">Miễn phí vận chuyển cho đơn hàng trên 500k</p>
-            </div>
+            @include('components.feature-card', [
+                'icon' => 'fas fa-shipping-fast',
+                'title' => 'Giao hàng nhanh',
+                'description' => 'Miễn phí vận chuyển cho đơn hàng trên 500k'
+            ])
         </div>
-
-        {{-- Thanh toán an toàn --}}
         <div class="col-md-3">
-            <div class="text-center p-4">
-                <div class="mb-3">
-                    <i class="fas fa-shield-alt fa-3x" style="color: #667eea;"></i>
-                </div>
-                <h5>Thanh toán an toàn</h5>
-                <p class="text-muted">Hỗ trợ đa dạng phương thức thanh toán</p>
-            </div>
+            @include('components.feature-card', [
+                'icon' => 'fas fa-shield-alt',
+                'title' => 'Thanh toán an toàn',
+                'description' => 'Hỗ trợ đa dạng phương thức thanh toán'
+            ])
         </div>
-
-        {{-- Đổi trả dễ dàng --}}
         <div class="col-md-3">
-            <div class="text-center p-4">
-                <div class="mb-3">
-                    <i class="fas fa-undo-alt fa-3x" style="color: #667eea;"></i>
-                </div>
-                <h5>Đổi trả dễ dàng</h5>
-                <p class="text-muted">Chính sách đổi trả trong vòng 7 ngày</p>
-            </div>
+            @include('components.feature-card', [
+                'icon' => 'fas fa-undo-alt',
+                'title' => 'Đổi trả dễ dàng',
+                'description' => 'Chính sách đổi trả trong vòng 7 ngày'
+            ])
         </div>
-
-        {{-- Hỗ trợ 24/7 --}}
         <div class="col-md-3">
-            <div class="text-center p-4">
-                <div class="mb-3">
-                    <i class="fas fa-headset fa-3x" style="color: #667eea;"></i>
-                </div>
-                <h5>Hỗ trợ 24/7</h5>
-                <p class="text-muted">Đội ngũ CSKH luôn sẵn sàng hỗ trợ bạn</p>
-            </div>
+            @include('components.feature-card', [
+                'icon' => 'fas fa-headset',
+                'title' => 'Hỗ trợ 24/7',
+                'description' => 'Đội ngũ CSKH luôn sẵn sàng hỗ trợ bạn'
+            ])
         </div>
     </div>
 </section>

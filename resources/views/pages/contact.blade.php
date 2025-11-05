@@ -3,18 +3,11 @@
 @section('title', 'Liên hệ - WebShop')
 
 @section('content')
-{{-- Page Header --}}
-<section class="page-header">
-    <div class="container">
-        <h1><i class="fas fa-phone"></i> Liên hệ với chúng tôi</h1>
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{{ route('home') }}">Trang chủ</a></li>
-                <li class="breadcrumb-item active">Liên hệ</li>
-            </ol>
-        </nav>
-    </div>
-</section>
+@include('components.page-header', [
+    'title' => 'Liên hệ với chúng tôi',
+    'icon' => 'fas fa-phone',
+    'breadcrumbs' => [['text' => 'Liên hệ']]
+])
 
 {{-- Contact Content --}}
 <section class="container my-5">
@@ -286,42 +279,6 @@
 </section>
 
 <style>
-    .page-header {
-        background: linear-gradient(135deg, var(--primary), var(--secondary));
-        color: white;
-        padding: 60px 0 40px;
-        margin-bottom: 40px;
-    }
-
-    .page-header h1 {
-        font-size: 2.5rem;
-        font-weight: 700;
-        margin-bottom: 15px;
-    }
-
-    .breadcrumb {
-        background: transparent;
-        margin-bottom: 0;
-        padding: 0;
-    }
-
-    .breadcrumb-item a {
-        color: rgba(255,255,255,0.8);
-        text-decoration: none;
-    }
-
-    .breadcrumb-item a:hover {
-        color: white;
-    }
-
-    .breadcrumb-item.active {
-        color: white;
-    }
-
-    .breadcrumb-item + .breadcrumb-item::before {
-        color: rgba(255,255,255,0.6);
-    }
-
     .contact-item a {
         color: var(--mint-text);
     }
@@ -351,7 +308,7 @@
 
     .btn-primary:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     }
 
     .accordion-button {

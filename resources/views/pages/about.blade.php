@@ -3,18 +3,11 @@
 @section('title', 'Về chúng tôi - WebShop')
 
 @section('content')
-{{-- Page Header --}}
-<section class="page-header">
-    <div class="container">
-        <h1><i class="fas fa-info-circle"></i> Về chúng tôi</h1>
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{{ route('home') }}">Trang chủ</a></li>
-                <li class="breadcrumb-item active">Về chúng tôi</li>
-            </ol>
-        </nav>
-    </div>
-</section>
+@include('components.page-header', [
+    'title' => 'Về chúng tôi',
+    'icon' => 'fas fa-info-circle',
+    'breadcrumbs' => [['text' => 'Về chúng tôi']]
+])
 
 {{-- About Content --}}
 <section class="container my-5">
@@ -192,41 +185,4 @@
     </div>
 </section>
 
-<style>
-    .page-header {
-        background: linear-gradient(135deg, var(--primary), var(--secondary));
-        color: white;
-        padding: 60px 0 40px;
-        margin-bottom: 40px;
-    }
-
-    .page-header h1 {
-        font-size: 2.5rem;
-        font-weight: 700;
-        margin-bottom: 15px;
-    }
-
-    .breadcrumb {
-        background: transparent;
-        margin-bottom: 0;
-        padding: 0;
-    }
-
-    .breadcrumb-item a {
-        color: rgba(255,255,255,0.8);
-        text-decoration: none;
-    }
-
-    .breadcrumb-item a:hover {
-        color: white;
-    }
-
-    .breadcrumb-item.active {
-        color: white;
-    }
-
-    .breadcrumb-item + .breadcrumb-item::before {
-        color: rgba(255,255,255,0.6);
-    }
-</style>
 @endsection
