@@ -20,6 +20,11 @@ services:
     environment:
       APP_ENV: ${APP_ENV:-production}
       APP_DEBUG: ${APP_DEBUG:-false}
+    # DNS servers to resolve external APIs (Google, Facebook, etc.)
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
     volumes:
       # Production: only mount storage and cache
       - ./storage:/var/www/html/storage
