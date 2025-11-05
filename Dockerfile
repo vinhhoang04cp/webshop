@@ -70,6 +70,12 @@ RUN composer install --no-interaction --no-dev --optimize-autoloader
 # Install Node.js dependencies and build assets
 RUN npm install && npm run build
 
+# Clear all Laravel caches to prevent stale config issues
+RUN php artisan config:clear || true \
+    && php artisan cache:clear || true \
+    && php artisan route:clear || true \
+    && php artisan view:clear || true
+
 # Copy configuration files
 COPY docker/nginx/nginx.conf /etc/nginx/nginx.conf
 COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf

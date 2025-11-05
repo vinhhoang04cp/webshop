@@ -49,6 +49,12 @@ class SessionSecurityMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
+        // Bỏ qua kiểm tra cho OAuth callback routes
+        // Để tránh false positive khi redirect từ OAuth provider
+        if ($this->isOAuthCallback($request)) {
+            return $next($request);
+        }
+
         // Chỉ áp dụng security checks cho user đã đăng nhập
         // Guest users không cần kiểm tra session security
         if (! $request->user()) {
@@ -75,6 +81,34 @@ class SessionSecurityMiddleware
 
         // Cho phép request tiếp tục
         return $next($request);
+    }
+
+    /**
+     * Kiểm tra xem request có phải từ OAuth callback không
+     */
+    protected function isOAuthCallback(Request $request): bool
+    {
+        // Danh sách các route OAuth callback
+        $oauthRoutes = [
+            'auth/*/callback',
+            'auth/google/callback',
+            'auth/facebook/callback',
+            'auth/github/callback',
+        ];
+
+        $path = $request->path();
+
+        foreach ($oauthRoutes as $route) {
+            // Chuyển wildcard route thành regex pattern
+            $pattern = str_replace('*', '[^/]+', $route);
+            $pattern = '#^'.$pattern.'$#';
+
+            if (preg_match($pattern, $path)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
