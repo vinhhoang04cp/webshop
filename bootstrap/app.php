@@ -12,6 +12,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Trust proxies - IMPORTANT for HTTPS detection behind nginx/cloudflare
+        $middleware->trustProxies(at: '*');
+
         // Thêm global middleware để sanitize input và security headers
         $middleware->append(\App\Http\Middleware\SanitizeInputMiddleware::class);
         $middleware->append(\App\Http\Middleware\SecurityHeadersMiddleware::class);
