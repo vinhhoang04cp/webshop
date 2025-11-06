@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Contracts\OrderServiceInterface;
 use App\Contracts\PaymentServiceInterface;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\CreatePaymentRequest;
 use App\Http\Resources\ErrorResource;
 use App\Http\Resources\PaymentResource;
 use App\Http\Resources\SuccessResource;
@@ -12,10 +13,11 @@ use Illuminate\Http\Request;
 
 class PaymentController extends Controller
 {
-    protected $paymentService;
+    protected $paymentService; // Dich vu thanh toan
 
-    protected $orderService;
+    protected $orderService; // Dich vu don hang
 
+    // injection service vao controller
     public function __construct(PaymentServiceInterface $paymentService, OrderServiceInterface $orderService)
     {
         $this->paymentService = $paymentService;
@@ -27,15 +29,8 @@ class PaymentController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function createPayment(Request $request)
+    public function createPayment(CreatePaymentRequest $request) // Tao url thanh toan
     {
-        $request->validate([
-            'order_id' => 'required|exists:orders,order_id',
-        ], [
-            'order_id.required' => 'Vui lòng cung cấp mã đơn hàng',
-            'order_id.exists' => 'Đơn hàng không tồn tại',
-        ]);
-
         try {
             // Sử dụng OrderService để lấy và xác thực đơn hàng
             $order = $this->orderService->getOrderForPayment($request->order_id, auth()->id());

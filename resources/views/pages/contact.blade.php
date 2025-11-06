@@ -11,12 +11,12 @@
 
 {{-- Contact Content --}}
 <section class="container my-5">
-    <div class="row">
+    <div class="row justify-content-center">
         {{-- Contact Information --}}
-        <div class="col-lg-4 mb-4">
+        <div class="col-lg-6 mb-4">
             <div class="card border-0 shadow-sm h-100" style="border-radius: 12px;">
-                <div class="card-body p-4">
-                    <h4 class="mb-4">Thông tin liên hệ</h4>
+                <div class="card-body p-5">
+                    <h4 class="mb-4 text-center">Thông tin liên hệ</h4>
                     
                     {{-- Địa chỉ --}}
                     <div class="contact-item mb-4">
@@ -81,109 +81,6 @@
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        {{-- Contact Form --}}
-        <div class="col-lg-8 mb-4">
-            <div class="card border-0 shadow-sm" style="border-radius: 12px;">
-                <div class="card-body p-4">
-                    <h4 class="mb-4">Gửi tin nhắn cho chúng tôi</h4>
-
-                    {{-- Success Message --}}
-                    @if(session('success'))
-                        <div class="alert alert-success alert-dismissible fade show" role="alert">
-                            <i class="fas fa-check-circle"></i> {{ session('success') }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    @endif
-
-                    {{-- Form --}}
-                    <form action="{{ route('contact.submit') }}" method="POST">
-                        @csrf
-                        <div class="row">
-                            {{-- Họ và tên --}}
-                            <div class="col-md-6 mb-3">
-                                <label for="name" class="form-label">Họ và tên <span class="text-danger">*</span></label>
-                                <input type="text" 
-                                       class="form-control @error('name') is-invalid @enderror" 
-                                       id="name" 
-                                       name="name" 
-                                       value="{{ old('name') }}"
-                                       placeholder="Nhập họ tên của bạn"
-                                       required>
-                                @error('name')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            {{-- Email --}}
-                            <div class="col-md-6 mb-3">
-                                <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
-                                <input type="email" 
-                                       class="form-control @error('email') is-invalid @enderror" 
-                                       id="email" 
-                                       name="email" 
-                                       value="{{ old('email') }}"
-                                       placeholder="email@example.com"
-                                       required>
-                                @error('email')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            {{-- Số điện thoại --}}
-                            <div class="col-md-6 mb-3">
-                                <label for="phone" class="form-label">Số điện thoại</label>
-                                <input type="tel" 
-                                       class="form-control @error('phone') is-invalid @enderror" 
-                                       id="phone" 
-                                       name="phone" 
-                                       value="{{ old('phone') }}"
-                                       placeholder="0123456789">
-                                @error('phone')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            {{-- Tiêu đề --}}
-                            <div class="col-md-6 mb-3">
-                                <label for="subject" class="form-label">Tiêu đề <span class="text-danger">*</span></label>
-                                <input type="text" 
-                                       class="form-control @error('subject') is-invalid @enderror" 
-                                       id="subject" 
-                                       name="subject" 
-                                       value="{{ old('subject') }}"
-                                       placeholder="Tiêu đề tin nhắn"
-                                       required>
-                                @error('subject')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            {{-- Nội dung --}}
-                            <div class="col-12 mb-3">
-                                <label for="message" class="form-label">Nội dung <span class="text-danger">*</span></label>
-                                <textarea class="form-control @error('message') is-invalid @enderror" 
-                                          id="message" 
-                                          name="message" 
-                                          rows="6" 
-                                          placeholder="Nhập nội dung tin nhắn của bạn..."
-                                          required>{{ old('message') }}</textarea>
-                                @error('message')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            {{-- Submit Button --}}
-                            <div class="col-12">
-                                <button type="submit" class="btn btn-primary btn-lg" style="border-radius: 25px;">
-                                    <i class="fas fa-paper-plane"></i> Gửi tin nhắn
-                                </button>
-                            </div>
-                        </div>
-                    </form>
                 </div>
             </div>
         </div>

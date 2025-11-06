@@ -22,7 +22,7 @@ class PasswordResetController extends Controller
      *
      * @return \Illuminate\View\View
      */
-    public function showForgotForm()
+    public function showForgotForm() // Hiển thị form yêu cầu reset password
     {
         return view('auth.forgot-password');
     }
@@ -32,10 +32,11 @@ class PasswordResetController extends Controller
      *
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function sendResetLink(PasswordResetLinkRequest $request)
+    public function sendResetLink(PasswordResetLinkRequest $request) // Xử lý yêu cầu gửi email reset password
     {
         try {
-            $this->passwordResetService->sendResetLink($request->email);
+            // thu gọi service để gửi link reset password
+            $this->passwordResetService->sendResetLink($request->email); // thuc hien gui email
 
             return back()->with('success', 'Link đặt lại mật khẩu đã được gửi đến email của bạn!');
         } catch (\Exception $e) {
