@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
     <link rel="stylesheet" href="{{ asset('css/auth.css') }}">
     <link rel="stylesheet" href="{{ asset('css/customer.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/responsive-utilities.css') }}">
     
     @yield('styles')
 </head>
@@ -70,12 +71,12 @@
     <div class="header-main">
         <div class="container">
             <div class="row align-items-center">
-                <div class="col-md-3">
+                <div class="col-6 col-md-3">
                     <a href="{{ route('home') }}" class="logo">
-                        <i class="fas fa-shopping-bag"></i> WebShop
+                        <i class="fas fa-shopping-bag"></i> <span class="d-none d-sm-inline">WebShop</span>
                     </a>
                 </div>
-                <div class="col-md-6">
+                <div class="col-12 col-md-6 order-3 order-md-2 mt-3 mt-md-0">
                     <div class="search-bar">
                         <form action="{{ route('products.search') }}" method="GET">
                             <div class="input-group">
@@ -87,10 +88,10 @@
                         </form>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-6 col-md-3 order-2 order-md-3">
                     <div class="header-icons text-end">
                         @auth
-                            <a href="{{ route('profile.index') }}" title="Tài khoản của tôi">
+                            <a href="{{ route('profile.index') }}" title="Tài khoản của tôi" class="d-none d-sm-inline">
                                 <i class="fas fa-user-circle"></i>
                             </a>
                         @endauth
@@ -100,7 +101,7 @@
                                 <span class="badge-cart">{{ $cartCount }}</span>
                             @endif
                         </a>
-                        <a href="#" title="Yêu thích">
+                        <a href="#" title="Yêu thích" class="d-none d-lg-inline">
                             <i class="fas fa-heart"></i>
                         </a>
                     </div>
@@ -190,18 +191,18 @@
     <!-- Footer -->
     <footer class="footer">
         <div class="container">
-            <div class="row">
-                <div class="col-md-4">
+            <div class="row g-4">
+                <div class="col-12 col-md-6 col-lg-4">
                     <h5><i class="fas fa-shopping-bag"></i> WebShop</h5>
-                    <p>Chúng tôi cung cấp các sản phẩm chất lượng cao với giá cả hợp lý. Mua sắm trực tuyến an toàn và tiện lợi.</p>
+                    <p class="pe-0 pe-lg-3">Chúng tôi cung cấp các sản phẩm chất lượng cao với giá cả hợp lý. Mua sắm trực tuyến an toàn và tiện lợi.</p>
                     <div class="footer-social">
-                        <a href="#"><i class="fab fa-facebook"></i></a>
-                        <a href="#"><i class="fab fa-instagram"></i></a>
-                        <a href="#"><i class="fab fa-twitter"></i></a>
-                        <a href="#"><i class="fab fa-youtube"></i></a>
+                        <a href="#" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
+                        <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                        <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                        <a href="#" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
                     </div>
                 </div>
-                <div class="col-md-2">
+                <div class="col-6 col-md-6 col-lg-2">
                     <h5>Về chúng tôi</h5>
                     <ul>
                         <li><a href="{{ route('about') }}">Giới thiệu</a></li>
@@ -210,7 +211,7 @@
                         <li><a href="{{ route('contact') }}">Liên hệ</a></li>
                     </ul>
                 </div>
-                <div class="col-md-3">
+                <div class="col-6 col-md-6 col-lg-3">
                     <h5>Hỗ trợ khách hàng</h5>
                     <ul>
                         <li><a href="#">Chính sách đổi trả</a></li>
@@ -219,18 +220,18 @@
                         <li><a href="#">Hướng dẫn đặt hàng</a></li>
                     </ul>
                 </div>
-                <div class="col-md-3">
+                <div class="col-12 col-md-6 col-lg-3">
                     <h5>Thông tin liên hệ</h5>
                     <ul>
-                        <li><i class="fas fa-map-marker-alt"></i> 123 Đường ABC, TP.HCM</li>
-                        <li><i class="fas fa-phone"></i> 1900-1234</li>
-                        <li><i class="fas fa-envelope"></i> support@webshop.vn</li>
-                        <li><i class="fas fa-clock"></i> 8:00 - 22:00 (Hàng ngày)</li>
+                        <li><i class="fas fa-map-marker-alt me-2"></i> 123 Đường ABC, TP.HCM</li>
+                        <li><i class="fas fa-phone me-2"></i> 1900-1234</li>
+                        <li><i class="fas fa-envelope me-2"></i> support@webshop.vn</li>
+                        <li><i class="fas fa-clock me-2"></i> 8:00 - 22:00 (Hàng ngày)</li>
                     </ul>
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; {{ date('Y') }} WebShop. All rights reserved. Designed with <i class="fas fa-heart text-danger"></i></p>
+                <p class="mb-0">&copy; {{ date('Y') }} WebShop. All rights reserved. Designed with <i class="fas fa-heart text-danger"></i></p>
             </div>
         </div>
     </footer>

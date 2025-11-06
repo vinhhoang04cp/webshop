@@ -18,14 +18,22 @@
 
     <div class="row">
         {{-- Sidebar Filter --}}
-        <div class="col-md-3">
-            @include('components.filter-sidebar', ['categories' => $categories])
+        <div class="col-lg-3 mb-4 mb-lg-0">
+            <!-- Mobile Filter Toggle Button -->
+            <button class="btn btn-primary w-100 d-lg-none mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#filterSidebar" aria-expanded="false">
+                <i class="fas fa-filter"></i> Bộ lọc sản phẩm
+            </button>
+            
+            <!-- Filter Sidebar -->
+            <div class="collapse d-lg-block" id="filterSidebar">
+                @include('components.filter-sidebar', ['categories' => $categories])
+            </div>
         </div>
 
         {{-- Products List --}}
-        <div class="col-md-9">
+        <div class="col-lg-9">
             {{-- Header with Sort --}}
-            <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
                 <h3 class="mb-0">
                     @if(request('q'))
                         Kết quả tìm kiếm: "{{ request('q') }}"
@@ -34,11 +42,11 @@
                     @else
                         Tất cả sản phẩm
                     @endif
-                    <small class="text-muted">({{ $products->total() }} sản phẩm)</small>
+                    <small class="text-muted d-block d-md-inline">({{ $products->total() }} sản phẩm)</small>
                 </h3>
-                <div class="d-flex align-items-center">
-                    <label class="me-2">Sắp xếp:</label>
-                    <select class="form-select" style="width: auto; border-radius: 20px;" onchange="sortProducts(this.value)">
+                <div class="d-flex align-items-center w-100 w-md-auto">
+                    <label class="me-2 text-nowrap">Sắp xếp:</label>
+                    <select class="form-select" style="border-radius: 20px;" onchange="sortProducts(this.value)">
                         <option value="latest" {{ request('sort') == 'latest' ? 'selected' : '' }}>Mới nhất</option>
                         <option value="price_asc" {{ request('sort') == 'price_asc' ? 'selected' : '' }}>Giá thấp đến cao</option>
                         <option value="price_desc" {{ request('sort') == 'price_desc' ? 'selected' : '' }}>Giá cao đến thấp</option>
@@ -49,10 +57,10 @@
             </div>
 
             {{-- Products Grid --}}
-            <div class="row g-4">
+            <div class="row g-3 g-md-4">
                 @if($products->count() > 0)
                     @foreach($products as $product)
-                        <div class="col-md-4">
+                        <div class="col-6 col-md-4">
                             @include('components.product-card', ['product' => $product])
                         </div>
                     @endforeach

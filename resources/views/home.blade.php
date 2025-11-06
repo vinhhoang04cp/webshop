@@ -7,18 +7,18 @@
 <section class="hero-section">
     <div class="container">
         <div class="row align-items-center">
-            <div class="col-md-6">
-                <h1>Chào mừng đến WebShop</h1>
-                <p>Khám phá hàng ngàn sản phẩm chất lượng với giá tốt nhất. Mua sắm thật dễ dàng, giao hàng nhanh chóng!</p>
+            <div class="col-md-6 text-center text-md-start mb-4 mb-md-0">
+                <h1 class="display-5 display-md-4">Chào mừng đến WebShop</h1>
+                <p class="lead">Khám phá hàng ngàn sản phẩm chất lượng với giá tốt nhất. Mua sắm thật dễ dàng, giao hàng nhanh chóng!</p>
                 <a href="{{ route('products.index') }}" class="btn-hero">
                     <i class="fas fa-shopping-bag"></i> Mua sắm ngay
                 </a>
             </div>
-            <div class="col-md-6 text-center">
+            <div class="col-md-6 text-center d-none d-md-block">
                 <img src="https://m.yodycdn.com/blog/hinh-nen-thien-nhien-4k-yody-vn-11.jpg" 
                      alt="Shopping" 
                      class="img-fluid" 
-                     style="border-radius: 20px;">
+                     style="border-radius: 20px; max-height: 400px; object-fit: cover;">
             </div>
         </div>
     </div>
@@ -27,10 +27,10 @@
 {{-- Featured Categories --}}
 <section class="container mb-5">
     <h2 class="section-title">Danh mục nổi bật</h2>
-    <div class="row g-4">
+    <div class="row g-3 g-md-4">
         @if(isset($categories) && $categories->count() > 0)
             @foreach($categories->take(6) as $category)
-                <div class="col-md-4 col-lg-2">
+                <div class="col-6 col-md-4 col-lg-2">
                     @include('components.category-card', ['category' => $category])
                 </div>
             @endforeach
@@ -45,10 +45,10 @@
 {{-- Featured Products --}}
 <section class="container mb-5">
     <h2 class="section-title">Sản phẩm nổi bật</h2>
-    <div class="row g-4">
+    <div class="row g-3 g-md-4">
         @if(isset($featuredProducts) && $featuredProducts->count() > 0)
             @foreach($featuredProducts as $product)
-                <div class="col-md-6 col-lg-3">
+                <div class="col-6 col-md-4 col-lg-3">
                     @include('components.product-card', ['product' => $product])
                 </div>
             @endforeach
@@ -72,10 +72,10 @@
 {{-- New Products --}}
 <section class="container mb-5" style="background: #f9fafb; padding: 40px 20px; border-radius: 20px;">
     <h2 class="section-title">Sản phẩm mới nhất</h2>
-    <div class="row g-4">
+    <div class="row g-3 g-md-4">
         @if(isset($newProducts) && $newProducts->count() > 0)
             @foreach($newProducts as $product)
-                <div class="col-md-6 col-lg-3">
+                <div class="col-6 col-md-4 col-lg-3">
                     @include('components.product-card', ['product' => $product, 'showBadge' => true])
                 </div>
             @endforeach
@@ -89,29 +89,29 @@
 
 {{-- Features Section --}}
 <section class="container mb-5">
-    <div class="row g-4">
-        <div class="col-md-3">
+    <div class="row g-3 g-md-4">
+        <div class="col-6 col-md-3">
             @include('components.feature-card', [
                 'icon' => 'fas fa-shipping-fast',
                 'title' => 'Giao hàng nhanh',
                 'description' => 'Miễn phí vận chuyển cho đơn hàng trên 500k'
             ])
         </div>
-        <div class="col-md-3">
+        <div class="col-6 col-md-3">
             @include('components.feature-card', [
                 'icon' => 'fas fa-shield-alt',
                 'title' => 'Thanh toán an toàn',
                 'description' => 'Hỗ trợ đa dạng phương thức thanh toán'
             ])
         </div>
-        <div class="col-md-3">
+        <div class="col-6 col-md-3">
             @include('components.feature-card', [
                 'icon' => 'fas fa-undo-alt',
                 'title' => 'Đổi trả dễ dàng',
                 'description' => 'Chính sách đổi trả trong vòng 7 ngày'
             ])
         </div>
-        <div class="col-md-3">
+        <div class="col-6 col-md-3">
             @include('components.feature-card', [
                 'icon' => 'fas fa-headset',
                 'title' => 'Hỗ trợ 24/7',

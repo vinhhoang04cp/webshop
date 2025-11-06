@@ -22,12 +22,12 @@
     @endif
 
     <div class="row">
-        <div class="col-md-8">
+        <div class="col-lg-8 mb-4 mb-lg-0">
             <div class="card border-0 shadow-sm" style="border-radius: 12px;">
                 <div class="card-body">
                     <!-- Cart Items -->
                     <div class="table-responsive">
-                        <table class="table">
+                        <table class="table align-middle d-none d-md-table">
                             <thead>
                                 <tr>
                                     <th>Sản phẩm</th>
@@ -55,6 +55,50 @@
                                 @endif
                             </tbody>
                         </table>
+                        
+                        <!-- Mobile Cart Items -->
+                        <div class="d-md-none">
+                            @if($cartItems->count() > 0)
+                                @foreach($cartItems as $item)
+                                    <div class="card mb-3 border">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex gap-3">
+                                                <img src="{{ $item->product->image_url ?? 'https://via.placeholder.com/80' }}" 
+                                                     alt="{{ $item->product->name }}" 
+                                                     class="rounded" 
+                                                     style="width: 80px; height: 80px; object-fit: cover;">
+                                                <div class="flex-grow-1">
+                                                    <h6 class="mb-1">{{ $item->product->name }}</h6>
+                                                    <p class="text-primary mb-2 fw-bold">{{ number_format($item->price, 0, ',', '.') }}₫</p>
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <div class="input-group" style="width: 100px;">
+                                                            <button class="btn btn-outline-secondary btn-sm" type="button">-</button>
+                                                            <input type="text" class="form-control form-control-sm text-center" value="{{ $item->quantity }}">
+                                                            <button class="btn btn-outline-secondary btn-sm" type="button">+</button>
+                                                        </div>
+                                                        <form action="{{ route('cart.remove', $item->cart_item_id) }}" method="POST">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="btn btn-sm btn-danger">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            @else
+                                <div class="text-center py-5">
+                                    <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
+                                    <h5 class="text-muted">Giỏ hàng trống</h5>
+                                    <a href="{{ route('products.index') }}" class="btn btn-primary mt-3">
+                                        <i class="fas fa-shopping-bag"></i> Tiếp tục mua sắm
+                                    </a>
+                                </div>
+                            @endif
+                        </div>
                     </div>
 
                     <div class="mt-3">
@@ -66,7 +110,7 @@
             </div>
         </div>
 
-        <div class="col-md-4">
+        <div class="col-lg-4">
             <div class="card border-0 shadow-sm" style="border-radius: 12px;">
                 <div class="card-body">
                     <h5 class="mb-4">Tóm tắt đơn hàng</h5>
