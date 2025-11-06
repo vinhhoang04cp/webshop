@@ -1,6 +1,7 @@
 # 🚀 Quick Start Guide - Docker Setup
 
 ## Khởi động nhanh
+## Khởi tạo SSL Cert trước
 
 ### Development (khuyến nghị cho dev)
 ```bash

@@ -25,6 +25,7 @@ class OrderController extends Controller
             $filters = $request->only(['search', 'status', 'payment_status']);
             $orders = $this->orderService->getOrdersForAdmin($filters, 15);
             $statuses = $this->orderService->getAllStatuses();
+            // dd($orders);
 
             return view('dashboard.orders.index', compact('orders', 'statuses'));
         } catch (\Exception $e) {
