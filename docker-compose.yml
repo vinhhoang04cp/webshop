@@ -16,13 +16,13 @@ services:
     ports:
       # CHANGED: Don't expose 80/443 directly to host anymore
       # Nginx Proxy Manager will handle this
-      # - "80:80"
-      # - "443:443"
+      - "80:80"
+      - "443:443"
       - "${VITE_PORT:-5173}:5173"  # Vite dev server
     # Expose ports to other containers (for NPM to access)
-    expose:
-      - "80"
-      - "443"
+    # expose:
+      # - "80"
+      # - "443"
     environment:
       APP_ENV: ${APP_ENV:-production}
       APP_DEBUG: ${APP_DEBUG:-false}
