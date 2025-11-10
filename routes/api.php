@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\SocialAuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\ChatController; // <--- CÓ "Api"
 
 // Authentication Routes với rate limiting nghiêm ngặt
 Route::middleware(['throttle:auth', 'login.attempts'])->group(function () {
@@ -60,6 +61,9 @@ Route::prefix('payment')->middleware('throttle:60,1')->group(function () {
 // Các route cần authentication với token expiration check và rate limiting cao hơn
 
 Route::middleware(['auth:sanctum', 'token.expiration', 'throttle:api-authenticated'])->group(function () { // boc cac route can authentication vao day
+    Route::get('/chat/user/{userId}/history', [ChatController::class, 'getHistory']);
+    Route::post('/chat/user/{userId}/message', [ChatController::class, 'sendMessage']);
+
     // User profile
     Route::get('/user', function (Request $request) {
         return $request->user();

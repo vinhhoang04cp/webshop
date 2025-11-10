@@ -218,4 +218,20 @@ class User extends Authenticatable
 
         return array_unique($allPermissions);
     }
+
+    /**
+     * Lấy các tin nhắn trong cuộc trò chuyện của user này (là customer).
+     */
+    public function chatMessages()
+    {
+        return $this->hasMany(ChatMessage::class, 'user_id');
+    }
+
+    /**
+     * Lấy các tin nhắn mà user này đã gửi (có thể là admin hoặc customer).
+     */
+    public function sentMessages()
+    {
+        return $this->hasMany(ChatMessage::class, 'sender_id');
+    }
 }
