@@ -23,6 +23,14 @@ class NewChatMessage implements ShouldBroadcast // Quan trọng
         $this->message = $message; // Gán tin nhắn mới cho thuộc tính
     }
 
+    /**
+     * Đặt tên event khi broadcast để client lắng nghe đơn giản với '.NewChatMessage'
+     */
+    public function broadcastAs(): string
+    {
+        return 'NewChatMessage';
+    }
+
     public function broadcastOn(): array
     {
         // Phát sóng trên kênh riêng của customer

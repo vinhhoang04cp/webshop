@@ -7,6 +7,7 @@ use App\Http\Controllers\Web\CustomerCartController;
 use App\Http\Controllers\Web\CustomerProductController;
 use App\Http\Controllers\Web\HomeController;
 use App\Http\Controllers\Web\InventoryController;
+use App\Http\Controllers\Web\ChatViewController;
 use App\Http\Controllers\Web\OrderController;
 use App\Http\Controllers\Web\PageController;
 use App\Http\Controllers\Web\PasswordResetController;
@@ -223,6 +224,13 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/dashboard/reports/export', [ReportController::class, 'export'])
             ->name('dashboard.reports.export');
     });
+
+    // Chat UI - Trang chat (Customer/Admin/Manager)
+    // - Customer: /chat -> phòng của chính mình
+    // - Admin/Manager: /chat/{userId} hoặc /chat?user_id={id} để mở phòng của customer cụ thể
+    Route::get('/chat/{userId?}', [ChatViewController::class, 'show'])
+        ->where('userId', '[0-9]+')
+        ->name('chat.show');
 });
 
 // Rating routes - Đánh giá sản phẩm (cần đăng nhập)

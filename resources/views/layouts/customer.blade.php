@@ -252,5 +252,8 @@
     </script>
     
     @yield('scripts')
+    
+    <!-- Chat Widget (Floating) -->
+    @include('components.chat-widget')
 </body>
 </html>

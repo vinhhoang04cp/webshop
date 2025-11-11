@@ -46,6 +46,11 @@
             <a class="nav-link {{ request()->routeIs('dashboard.reports.*') ? 'active' : '' }}" href="{{ route('dashboard.reports.index') }}">
                 <i class="fas fa-chart-bar"></i> Báo cáo
             </a>
+            
+            {{-- Chat hỗ trợ khách hàng --}}
+            <a class="nav-link {{ request()->is('chat*') ? 'active' : '' }}" href="{{ route('chat.show') }}">
+                <i class="fas fa-comments"></i> Chat khách hàng
+            </a>
         @endif
         
         {{-- Người dùng (Admin only) --}}
