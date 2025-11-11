@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CartItemController;
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\ChatController;
 use App\Http\Controllers\Api\CouponController;
 use App\Http\Controllers\Api\InventoryController;
 use App\Http\Controllers\Api\OrderController;
@@ -15,8 +16,7 @@ use App\Http\Controllers\Api\ProductDetailController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\SocialAuthController;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\ChatController; // <--- CÓ "Api"
+use Illuminate\Support\Facades\Route; // <--- CÓ "Api"
 
 // Authentication Routes với rate limiting nghiêm ngặt
 Route::middleware(['throttle:auth', 'login.attempts'])->group(function () {
@@ -61,8 +61,20 @@ Route::prefix('payment')->middleware('throttle:60,1')->group(function () {
 // Các route cần authentication với token expiration check và rate limiting cao hơn
 
 Route::middleware(['auth:sanctum', 'token.expiration', 'throttle:api-authenticated'])->group(function () { // boc cac route can authentication vao day
-    Route::get('/chat/user/{userId}/history', [ChatController::class, 'getHistory']);
-    Route::post('/chat/user/{userId}/message', [ChatController::class, 'sendMessage']);
+    // Chat routes
+    Route::prefix('chat')->group(function () {
+        // Lấy lịch sử chat của một user
+        Route::get('/user/{userId}/history', [ChatController::class, 'getHistory']);
+
+        // Gửi tin nhắn
+        Route::post('/user/{userId}/message', [ChatController::class, 'sendMessage']);
+
+        // Đếm tin nhắn chưa đọc
+        Route::get('/user/{userId}/unread', [ChatController::class, 'countUnread']);
+
+        // Lấy danh sách cuộc hội thoại (Admin only)
+        Route::get('/conversations', [ChatController::class, 'getConversationList']);
+    });
 
     // User profile
     Route::get('/user', function (Request $request) {

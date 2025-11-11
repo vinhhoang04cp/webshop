@@ -3,60 +3,126 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Http\Requests\GetChatHistoryRequest;
+use App\Http\Requests\SendChatMessageRequest;
+use App\Services\ChatService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
-use App\Models\ChatMessage;
-use App\Events\NewChatMessage;
 
 class ChatController extends Controller
 {
+    protected ChatService $chatService;
+
+    /**
+     * Constructor - Inject ChatService
+     */
+    public function __construct(ChatService $chatService)
+    {
+        $this->chatService = $chatService;
+    }
+
     /**
      * Lấy lịch sử tin nhắn cho một user
      */
-    public function getHistory(Request $request, $userId)
+    public function getHistory(GetChatHistoryRequest $request, int $userId): JsonResponse
     {
-        $user = Auth::user();
+        // Authorization đã được xử lý trong GetChatHistoryRequest::authorize()
 
-        // SỬA DÒNG NÀY:
-        // if (!$user->isAdminOrManager() && $user->id != $userId) { // <--- DÒNG CŨ
-        if (!$user->canAccessDashboard() && $user->id != $userId) { // <--- DÒNG MỚI
+        // Lấy validated data với defaults
+        $params = $request->validatedWithDefaults();
 
-            return response()->json(['message' => 'Forbidden'], 403);
+        try {
+            // Gọi service để lấy lịch sử chat
+            $messages = $this->chatService->getChatHistory(
+                $userId,
+                $params['limit'],
+                $params['offset']
+            );
+
+            return response()->json($messages, 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Không thể lấy lịch sử chat.',
+                'error' => config('app.debug') ? $e->getMessage() : null,
+            ], 500);
         }
-
-        // ... code còn lại
     }
 
     /**
      * Gửi tin nhắn mới
      */
-    public function sendMessage(Request $request, $userId)
+    public function sendMessage(SendChatMessageRequest $request, int $userId): JsonResponse
     {
-        $user = Auth::user(); // $user là người đang gửi
+        // Authorization đã được xử lý trong SendChatMessageRequest::authorize()
+        // Validation đã được xử lý trong SendChatMessageRequest::rules()
 
-        // SỬA DÒNG NÀY:
-        // if (!$user->isAdminOrManager() && $user->id != $userId) { // <--- DÒNG CŨ
-        if (!$user->canAccessDashboard() && $user->id != $userId) { // <--- DÒNG MỚI
+        $user = Auth::user();
 
+        try {
+            // Gọi service để gửi tin nhắn
+            $message = $this->chatService->sendMessage(
+                $userId,
+                $user->id,
+                $request->input('message')
+            );
+
+            return response()->json($message, 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Không thể gửi tin nhắn.',
+                'error' => config('app.debug') ? $e->getMessage() : null,
+            ], 500);
+        }
+    }
+
+    /**
+     * Đếm tin nhắn chưa đọc (Bonus feature)
+     */
+    public function countUnread(int $userId): JsonResponse
+    {
+        $user = Auth::user();
+
+        // Chỉ cho phép user xem số tin nhắn chưa đọc của chính mình
+        if (! $user->canAccessDashboard() && $user->id != $userId) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
-        $request->validate([
-            'message' => 'required|string',
-        ]);
 
-        $message = ChatMessage::create([
-            'user_id' => $userId, // ID của customer (chủ phòng)
-            'sender_id' => $user->id, // ID của người gửi (admin hoặc customer)
-            'message' => $request->input('message'),
-        ]);
+        try {
+            $lastReadMessageId = request()->input('last_read_message_id', 0);
+            $unreadCount = $this->chatService->countUnreadMessages($userId, $lastReadMessageId);
 
-        // Load thông tin người gửi để gửi qua event
-        $message->load('sender');
+            return response()->json([
+                'unread_count' => $unreadCount,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Không thể đếm tin nhắn chưa đọc.',
+                'error' => config('app.debug') ? $e->getMessage() : null,
+            ], 500);
+        }
+    }
 
-        // Phát sóng event cho người khác
-        broadcast(new NewChatMessage($message))->toOthers();
+    /**
+     * Lấy danh sách các cuộc hội thoại (Admin only)
+     */
+    public function getConversationList(): JsonResponse
+    {
+        $user = Auth::user();
 
-        // Trả về tin nhắn đã tạo (cho người gửi)
-        return response()->json($message, 201);
+        // Chỉ admin/manager mới có thể xem danh sách cuộc hội thoại
+        if (! $user->canAccessDashboard()) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        try {
+            $conversations = $this->chatService->getConversationList();
+
+            return response()->json($conversations, 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Không thể lấy danh sách cuộc hội thoại.',
+                'error' => config('app.debug') ? $e->getMessage() : null,
+            ], 500);
+        }
     }
 }

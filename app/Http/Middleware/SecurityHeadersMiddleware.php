@@ -50,11 +50,11 @@ class SecurityHeadersMiddleware
         // Định nghĩa nguồn tài nguyên nào được phép load
         $csp = implode('; ', [
             "default-src 'self'", // Mặc định chỉ cho phép từ cùng origin
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com", // Nguồn script
-            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com", // Nguồn CSS
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com", // Nguồn script
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com https://unpkg.com", // Nguồn CSS
             "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com", // Nguồn font
             "img-src 'self' data: https: blob:", // Nguồn hình ảnh
-            "connect-src 'self'", // API endpoints cho AJAX/fetch
+            "connect-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com", // API endpoints + CDN
             "frame-ancestors 'none'", // Không cho phép nhúng trong iframe
         ]);
         $response->headers->set('Content-Security-Policy', $csp);

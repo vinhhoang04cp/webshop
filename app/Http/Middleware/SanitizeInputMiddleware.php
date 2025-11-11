@@ -29,7 +29,6 @@ class SanitizeInputMiddleware
         // Lấy tất cả input từ request
         $input = $request->all();
 
-
         // Danh sách các field không nên sanitize
         // Các field này cần giữ nguyên giá trị gốc
         $excludedFields = ['password', 'password_confirmation', 'current_password', 'new_password', 'token'];

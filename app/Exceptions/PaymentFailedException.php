@@ -11,12 +11,13 @@ use Illuminate\Support\Facades\Log;
 class PaymentFailedException extends Exception
 {
     protected $responseCode;
+
     protected $vnpayData;
 
     /**
      * Constructor
      */
-    public function __construct($message = "Giao dịch thanh toán thất bại", $responseCode = null, $vnpayData = [], $code = 0, Exception $previous = null)
+    public function __construct($message = 'Giao dịch thanh toán thất bại', $responseCode = null, $vnpayData = [], $code = 0, ?Exception $previous = null)
     {
         parent::__construct($message, $code, $previous);
         $this->responseCode = $responseCode;
@@ -51,7 +52,7 @@ class PaymentFailedException extends Exception
                 'message' => $this->getMessage(),
                 'error_code' => 'PAYMENT_FAILED',
                 'vnpay_response_code' => $this->responseCode,
-                'data' => null
+                'data' => null,
             ], 400);
         }
 
@@ -74,7 +75,7 @@ class PaymentFailedException extends Exception
             'user_agent' => request()->userAgent(),
             'ip' => request()->ip(),
             'user_id' => auth()->id(),
-            'timestamp' => now()->toDateTimeString()
+            'timestamp' => now()->toDateTimeString(),
         ]);
 
         // Gửi lên error tracking (Sentry) để monitor

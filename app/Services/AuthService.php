@@ -16,25 +16,25 @@ class AuthService
     /**
      * Xác thực thông tin đăng nhập với rate limiting
      */
-    public function authenticate($email, $password, $request = null)
+    public function authenticate($email, $password, $request = null) // cac tham so truyen vao la email, password va request (mac dinh la null)
     {
-        $user = User::where('email', $email)->first();
+        $user = User::where('email', $email)->first(); // tim user theo email
 
-        if (! $user || ! Hash::check($password, $user->password)) {
+        if (! $user || ! Hash::check($password, $user->password)) { // user khong ton tai hoac password khong dung
             // Increment failed login attempts
-            if ($request) {
-                $this->incrementLoginAttempts($request, $email);
+            if ($request) { // neu co request thi tang so lan dang nhap that bai
+                $this->incrementLoginAttempts($request, $email); // tang so lan dang nhap that bai
             }
 
             return null;
         }
 
         // Clear login attempts on successful login
-        if ($request) {
-            $this->clearLoginAttempts($request, $email);
+        if ($request) { // neu co request thi xoa so lan dang nhap that bai
+            $this->clearLoginAttempts($request, $email); // xoa so lan dang nhap that bai
         }
 
-        return $user;
+        return $user; // tra ve user neu dang nhap thanh cong
     }
 
     /**

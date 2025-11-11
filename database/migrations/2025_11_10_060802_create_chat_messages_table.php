@@ -11,18 +11,18 @@ return new class () extends Migration {
     public function up(): void
     {
         Schema::create('chat_messages', function (Blueprint $table) {
-            $table->id();
+            $table->id(); // ID của tin nhắn
 
             // Đây là ID của Customer (người sở hữu cuộc trò chuyện)
             // Kể cả khi Admin gửi, nó vẫn trỏ tới Customer
-            $table->foreignId('user_id')
-                  ->constrained('users')
-                  ->cascadeOnDelete(); // Xóa tin nhắn nếu user bị xóa
+            $table->foreignId('user_id') // ID của Customer (người sở hữu cuộc trò chuyện)
+                ->constrained('users') // Liên kết với bảng users
+                ->cascadeOnDelete(); // Xóa tin nhắn nếu user bị xóa
 
             // Đây là ID của người GỬI (có thể là Customer hoặc Admin)
-            $table->foreignId('sender_id')
-                  ->constrained('users')
-                  ->cascadeOnDelete();
+            $table->foreignId('sender_id') // ID của người GỬI (có thể là Customer hoặc Admin)
+                ->constrained('users') // Liên kết với bảng users
+                ->cascadeOnDelete(); // Xóa tin nhắn nếu user bị xóa
 
             $table->text('message'); // Nội dung tin nhắn
             $table->timestamps(); // created_at

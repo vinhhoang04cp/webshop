@@ -13,7 +13,7 @@ class PaymentCancelledException extends Exception
     /**
      * Constructor
      */
-    public function __construct($message = "Giao dịch thanh toán đã bị hủy bởi người dùng", $code = 0, Exception $previous = null)
+    public function __construct($message = 'Giao dịch thanh toán đã bị hủy bởi người dùng', $code = 0, ?Exception $previous = null)
     {
         parent::__construct($message, $code, $previous);
     }
@@ -29,7 +29,7 @@ class PaymentCancelledException extends Exception
                 'success' => false,
                 'message' => $this->getMessage(),
                 'error_code' => 'PAYMENT_CANCELLED',
-                'data' => null
+                'data' => null,
             ], 400);
         }
 
@@ -48,7 +48,7 @@ class PaymentCancelledException extends Exception
             'message' => $this->getMessage(),
             'user_agent' => request()->userAgent(),
             'ip' => request()->ip(),
-            'timestamp' => now()->toDateTimeString()
+            'timestamp' => now()->toDateTimeString(),
         ]);
 
         // Không gửi lên error tracking (Sentry) vì đây là user action
