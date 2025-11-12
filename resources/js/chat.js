@@ -21,6 +21,9 @@ class ChatManager {
         this.reconnectAttempts = 0;
         this.maxReconnectAttempts = 5;
         this.reconnectDelay = 3000;
+        this.conversations = [];
+        this.currentConversationId = null;
+        this.adminChannel = null; // Channel để lắng nghe tất cả tin nhắn mới (cho admin)
         
         // DOM elements
         this.chatBody = document.getElementById('chatBody');
@@ -31,12 +34,26 @@ class ChatManager {
         this.targetUserIdEl = document.getElementById('targetUserId');
         this.connectionStatus = document.getElementById('connectionStatus');
         
+        // Admin-only elements
+        this.conversationsList = document.getElementById('conversationsList');
+        this.refreshConversationsBtn = document.getElementById('refreshConversationsBtn');
+        this.conversationsSearch = document.getElementById('conversationsSearch');
+        this.selectedConversationInfo = document.getElementById('selectedConversationInfo');
+        
         this.init();
     }
 
     init() {
         this.setupEventListeners();
         this.updateSendState();
+        
+        // Load conversations list for admin
+        if (this.config.mode === 'admin') {
+            this.loadConversations().then(() => {
+                // Initialize admin channel to listen for all new messages
+                this.initAdminChannel();
+            });
+        }
         
         if (this.chatUserId) {
             this.loadHistory().then(() => this.initEcho());
@@ -53,13 +70,22 @@ class ChatManager {
             }
         });
 
-        // Open room (Admin only)
+        // Open room (Admin only - old method)
         this.openRoomBtn?.addEventListener('click', () => this.openRoom());
         this.targetUserIdEl?.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 this.openRoom();
             }
         });
+        
+        // Conversations list (Admin only)
+        if (this.refreshConversationsBtn) {
+            this.refreshConversationsBtn.addEventListener('click', () => this.loadConversations());
+        }
+        
+        if (this.conversationsSearch) {
+            this.conversationsSearch.addEventListener('input', (e) => this.filterConversations(e.target.value));
+        }
     }
 
     updateSendState() {
@@ -198,18 +224,47 @@ class ChatManager {
         this.disconnectEcho();
         
         try {
-            // Merge config with env variables for Vite
+            // Ưu tiên sử dụng config từ server (đã được truyền từ blade template)
+            // Không fallback về env variables để tránh dùng localhost
             const mergedConfig = {
                 ...this.config,
                 pusher: {
                     ...this.config.pusher,
-                    key: this.config.pusher?.key || import.meta.env.VITE_REVERB_APP_KEY,
-                    ws_host: this.config.pusher?.ws_host || import.meta.env.VITE_REVERB_HOST,
-                    ws_port: this.config.pusher?.ws_port || import.meta.env.VITE_REVERB_PORT || 80,
-                    wss_port: this.config.pusher?.wss_port || import.meta.env.VITE_REVERB_PORT || 443,
-                    use_tls: this.config.pusher?.use_tls ?? (import.meta.env.VITE_REVERB_SCHEME ?? 'https') === 'https'
+                    // Chỉ dùng env nếu config từ server không có
+                    key: this.config.pusher?.key || '',
+                    ws_host: this.config.pusher?.ws_host || '',
+                    ws_port: this.config.pusher?.ws_port || 80,
+                    wss_port: this.config.pusher?.wss_port || 443,
+                    use_tls: this.config.pusher?.use_tls ?? (window.location.protocol === 'https:')
                 }
             };
+            
+            // Validate config
+            if (!mergedConfig.pusher.key || !mergedConfig.pusher.ws_host) {
+                console.error('Missing Reverb configuration:', {
+                    key: mergedConfig.pusher.key ? 'Present' : 'Missing',
+                    ws_host: mergedConfig.pusher.ws_host || 'Missing'
+                });
+                this.updateConnectionStatus('error');
+                this.showAlert('Cấu hình WebSocket chưa đúng. Vui lòng kiểm tra lại.', 'danger');
+                return;
+            }
+            
+            console.log('Initializing Echo with config from server:', {
+                wsHost: mergedConfig.pusher.ws_host,
+                wsPort: mergedConfig.pusher.ws_port,
+                wssPort: mergedConfig.pusher.wss_port,
+                useTLS: mergedConfig.pusher.use_tls
+            });
+            
+            // Disconnect existing Echo instance if any
+            if (this.echoInstance) {
+                try {
+                    this.disconnectEcho();
+                } catch (e) {
+                    console.warn('Error disconnecting existing Echo:', e);
+                }
+            }
             
             // Initialize Echo using utility function
             this.echoInstance = initializeEcho(mergedConfig, Pusher, Echo);
@@ -227,8 +282,22 @@ class ChatManager {
             this.channel.listen('.NewChatMessage', (event) => {
                 if (event?.message) {
                     this.renderMessage(event.message);
+                    
+                    // For admin: show notification if message is from customer
+                    if (this.config.mode === 'admin' && event.message.sender_id !== this.config.currentUserId) {
+                        const senderName = event.message.sender?.name || 'Khách hàng';
+                        this.showNotification(event.message, this.chatUserId, senderName);
+                        this.updateConversationUnread(this.chatUserId, true);
+                    }
                 }
             });
+            
+            // For admin: also listen to all chat channels to detect new messages from any customer
+            if (this.config.mode === 'admin') {
+                // Subscribe to a presence channel that includes all chat rooms
+                // We'll update conversations list when any new message arrives
+                // This is handled by listening to all individual channels
+            }
             
             // Setup connection event handlers
             this.setupEchoEvents();
@@ -328,6 +397,262 @@ class ChatManager {
         setTimeout(() => {
             alertDiv.remove();
         }, 5000);
+    }
+
+    // ============================================================================
+    // Admin-only methods: Conversations List
+    // ============================================================================
+
+    async loadConversations() {
+        if (!this.conversationsList || this.config.mode !== 'admin') {
+            console.log('loadConversations: Skipped - not admin mode or conversationsList not found');
+            return;
+        }
+        
+        this.conversationsList.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin text-muted"></i><p class="text-muted small mt-2">Đang tải...</p></div>';
+        
+        try {
+            console.log('Loading conversations from:', `${this.config.apiBase}/chat/conversations`);
+            console.log('API Token:', this.config.apiToken ? 'Present' : 'Missing');
+            
+            const response = await axios.get(
+                `${this.config.apiBase}/chat/conversations`,
+                {
+                    headers: { 
+                        'Authorization': `Bearer ${this.config.apiToken}`,
+                        'Accept': 'application/json'
+                    }
+                }
+            );
+            
+            console.log('Conversations response:', response.data);
+            
+            this.conversations = Array.isArray(response.data) ? response.data : [];
+            console.log('Loaded conversations:', this.conversations.length);
+            
+            if (this.conversations.length === 0) {
+                this.conversationsList.innerHTML = '<div class="text-center py-4"><i class="fas fa-comments text-muted"></i><p class="text-muted small mt-2">Chưa có cuộc hội thoại nào</p></div>';
+            } else {
+                this.renderConversations();
+            }
+        } catch (error) {
+            console.error('Error loading conversations:', error);
+            console.error('Error details:', {
+                message: error.message,
+                response: error.response?.data,
+                status: error.response?.status
+            });
+            
+            let errorMessage = 'Không thể tải danh sách cuộc hội thoại.';
+            if (error.response?.status === 401) {
+                errorMessage = 'Phiên đăng nhập đã hết hạn. Vui lòng tải lại trang.';
+            } else if (error.response?.status === 403) {
+                errorMessage = 'Bạn không có quyền xem danh sách cuộc hội thoại.';
+            } else if (error.response?.data?.message) {
+                errorMessage = error.response.data.message;
+            }
+            
+            this.conversationsList.innerHTML = `<div class="alert alert-danger m-2">${errorMessage}</div>`;
+        }
+    }
+
+    renderConversations(conversations = null) {
+        if (!this.conversationsList) {
+            console.warn('renderConversations: conversationsList element not found');
+            return;
+        }
+        
+        const convs = conversations || this.conversations;
+        
+        console.log('Rendering conversations:', convs.length);
+        
+        if (!Array.isArray(convs) || convs.length === 0) {
+            this.conversationsList.innerHTML = '<div class="text-center py-4"><i class="fas fa-comments text-muted"></i><p class="text-muted small mt-2">Chưa có cuộc hội thoại nào</p></div>';
+            return;
+        }
+        
+        try {
+            this.conversationsList.innerHTML = convs.map(conv => {
+                const userId = conv.user_id || conv.userId;
+                const user = conv.user || {};
+                const lastMessage = conv.last_message || {};
+                const unreadCount = conv.unread_count || conv.unreadCount || 0;
+                const isActive = this.currentConversationId === userId;
+                const isUnread = unreadCount > 0;
+                
+                // Avatar
+                let avatarHtml = '';
+                if (user.avatar) {
+                    const avatarUrl = user.avatar.startsWith('http') 
+                        ? user.avatar 
+                        : `${this.config.appUrl || ''}/storage/${user.avatar}`;
+                    avatarHtml = `<img src="${avatarUrl}" alt="${escapeHtml(user.name || '')}" class="conversation-item-avatar" onerror="this.parentElement.innerHTML='<div class=\\'conversation-item-avatar-placeholder\\'><i class=\\'fas fa-user\\'></i></div>'">`;
+                } else {
+                    avatarHtml = `<div class="conversation-item-avatar-placeholder"><i class="fas fa-user"></i></div>`;
+                }
+                
+                // Time ago
+                const timeAgo = lastMessage.created_at ? formatTime(lastMessage.created_at) : '';
+                
+                // Preview message
+                let preview = 'Chưa có tin nhắn';
+                if (lastMessage.message) {
+                    preview = escapeHtml(lastMessage.message);
+                    if (preview.length > 50) {
+                        preview = preview.substring(0, 50) + '...';
+                    }
+                }
+                
+                // User name
+                const userName = user.name || `User #${userId}`;
+                
+                return `
+                    <div class="conversation-item ${isActive ? 'active' : ''} ${isUnread ? 'unread' : ''}" 
+                         data-user-id="${userId}" 
+                         onclick="window.chatManager.selectConversation(${userId})">
+                        <div class="conversation-item-header">
+                            <div class="conversation-item-user">
+                                ${avatarHtml}
+                                <div class="conversation-item-info">
+                                    <div class="conversation-item-name">${escapeHtml(userName)}</div>
+                                    ${timeAgo ? `<div class="conversation-item-time">${timeAgo}</div>` : ''}
+                                </div>
+                            </div>
+                            ${unreadCount > 0 ? `<span class="unread-badge">${unreadCount > 99 ? '99+' : unreadCount}</span>` : ''}
+                        </div>
+                        <div class="conversation-item-preview">${preview}</div>
+                    </div>
+                `;
+            }).join('');
+        } catch (error) {
+            console.error('Error rendering conversations:', error);
+            this.conversationsList.innerHTML = '<div class="alert alert-danger m-2">Lỗi khi hiển thị danh sách cuộc hội thoại.</div>';
+        }
+    }
+
+    selectConversation(userId) {
+        if (!userId) return;
+        
+        this.currentConversationId = userId;
+        this.chatUserId = userId;
+        
+        // Reset unread count for this conversation
+        this.updateConversationUnread(userId, false);
+        
+        // Update UI
+        this.renderConversations();
+        this.updateSelectedConversationInfo(userId);
+        
+        // Disconnect old channel
+        this.disconnectEcho();
+        
+        // Load history and reconnect
+        this.loadHistory().then(() => {
+            this.initEcho();
+        });
+        
+        // Enable input
+        if (this.messageInput) {
+            this.messageInput.disabled = false;
+            this.messageInput.placeholder = 'Nhập tin nhắn...';
+        }
+        if (this.sendBtn) {
+            this.sendBtn.disabled = false;
+        }
+    }
+
+    async updateSelectedConversationInfo(userId) {
+        if (!this.selectedConversationInfo) return;
+        
+        const conversation = this.conversations.find(c => c.user_id === userId);
+        if (!conversation || !conversation.user) return;
+        
+        const user = conversation.user;
+        const avatarHtml = user.avatar 
+            ? `<img src="${this.config.appUrl}/storage/${user.avatar}" alt="${escapeHtml(user.name)}" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">`
+            : `<div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;"><i class="fas fa-user"></i></div>`;
+        
+        this.selectedConversationInfo.innerHTML = `
+            <div class="user-avatar">${avatarHtml}</div>
+            <div>
+                <strong id="roomUserName">${escapeHtml(user.name)}</strong>
+                <div class="text-muted small" id="roomUserEmail">${escapeHtml(user.email || '')}</div>
+            </div>
+        `;
+        
+        if (this.roomUserIdEl) {
+            this.roomUserIdEl.textContent = userId;
+        }
+    }
+
+    filterConversations(searchTerm) {
+        if (!searchTerm) {
+            this.renderConversations();
+            return;
+        }
+        
+        const filtered = this.conversations.filter(conv => {
+            const user = conv.user || {};
+            const name = (user.name || '').toLowerCase();
+            const email = (user.email || '').toLowerCase();
+            const term = searchTerm.toLowerCase();
+            return name.includes(term) || email.includes(term);
+        });
+        
+        this.renderConversations(filtered);
+    }
+
+    initAdminChannel() {
+        // Admin channel initialization - không cần tạo Echo instance riêng
+        // Echo instance sẽ được tạo khi mở conversation trong initEcho()
+        // Chỉ cần đảm bảo config được set đúng
+        if (this.config.mode !== 'admin') return;
+        
+        console.log('Admin channel initialized. Echo will be created when opening a conversation.');
+    }
+
+    showNotification(message, userId, userName) {
+        // Only show notification if not currently viewing this conversation
+        if (this.currentConversationId === userId) {
+            // Just update the conversation list
+            this.loadConversations();
+            return;
+        }
+        
+        const notification = document.createElement('div');
+        notification.className = 'notification-toast alert alert-info alert-dismissible fade show';
+        notification.innerHTML = `
+            <div class="d-flex align-items-center gap-2">
+                <i class="fas fa-bell text-primary"></i>
+                <div class="flex-grow-1">
+                    <strong>Tin nhắn mới từ ${escapeHtml(userName)}</strong>
+                    <div class="small">${escapeHtml(message.message || message).substring(0, 100)}${(message.message || message).length > 100 ? '...' : ''}</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            notification.remove();
+        }, 5000);
+        
+        // Update conversations list
+        this.loadConversations();
+    }
+
+    updateConversationUnread(userId, increment = true) {
+        const conv = this.conversations.find(c => c.user_id === userId);
+        if (conv) {
+            if (increment) {
+                conv.unread_count = (conv.unread_count || 0) + 1;
+            } else {
+                conv.unread_count = 0;
+            }
+            this.renderConversations();
+        }
     }
 }
 

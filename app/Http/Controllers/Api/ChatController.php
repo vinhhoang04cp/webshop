@@ -50,7 +50,7 @@ class ChatController extends Controller
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            
+
             return response()->json([
                 'message' => 'Không thể lấy lịch sử chat.',
                 'error' => config('app.debug') ? $e->getMessage() : null,
@@ -114,6 +114,7 @@ class ChatController extends Controller
 
     /**
      * Lấy danh sách các cuộc hội thoại (Admin only)
+     * Bao gồm unread count và thông tin tin nhắn cuối cùng
      */
     public function getConversationList(): JsonResponse
     {
@@ -125,10 +126,15 @@ class ChatController extends Controller
         }
 
         try {
-            $conversations = $this->chatService->getConversationList();
+            $conversations = $this->chatService->getConversationList($user->id);
 
             return response()->json($conversations, 200);
         } catch (\Exception $e) {
+            \Log::error('Error getting conversation list', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             return response()->json([
                 'message' => 'Không thể lấy danh sách cuộc hội thoại.',
                 'error' => config('app.debug') ? $e->getMessage() : null,

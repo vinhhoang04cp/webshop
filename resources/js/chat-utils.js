@@ -78,13 +78,30 @@ export function setupAxios(axiosInstance = null) {
  * @returns {Object} Reverb configuration
  */
 export function createReverbConfig({ key, wsHost, wsPort, wssPort, useTLS }) {
+    // Xử lý host - không bao gồm port trong host
+    let cleanHost = wsHost || window.location.hostname;
+    // Loại bỏ port nếu có trong host (ví dụ: localhost:8080 -> localhost)
+    if (cleanHost.includes(':')) {
+        cleanHost = cleanHost.split(':')[0];
+    }
+    
+    // Xử lý port - chỉ dùng port nếu không phải port mặc định
+    const isHTTPS = useTLS ?? (window.location.protocol === 'https:');
+    const defaultWSPort = 80;
+    const defaultWSSPort = 443;
+    
+    // Nếu dùng HTTPS và port là 443 (mặc định), không cần chỉ định port
+    // Nếu dùng HTTP và port là 80 (mặc định), không cần chỉ định port
+    const finalWsPort = Number(wsPort || defaultWSPort);
+    const finalWssPort = Number(wssPort || defaultWSSPort);
+    
     return {
         broadcaster: 'reverb',
         key: key || '',
-        wsHost: wsHost || window.location.hostname,
-        wsPort: Number(wsPort || 80),
-        wssPort: Number(wssPort || 443),
-        forceTLS: useTLS ?? (window.location.protocol === 'https:'),
+        wsHost: cleanHost,
+        wsPort: finalWsPort,
+        wssPort: finalWssPort,
+        forceTLS: isHTTPS,
         enabledTransports: ['ws', 'wss'],
         authorizer: (channel, options) => {
             return {
@@ -151,12 +168,43 @@ export function initializeEcho(config, PusherConstructor = null, EchoConstructor
         window.Pusher = PusherConstructor;
     }
     
+    // Ưu tiên sử dụng config từ server, không fallback về localhost
+    const wsHost = config.pusher?.ws_host || config.wsHost;
+    if (!wsHost) {
+        console.warn('WebSocket host not configured. Using current hostname as fallback.');
+    }
+    
+    const finalWsHost = wsHost || (typeof window !== 'undefined' ? window.location.hostname : 'localhost');
+    const finalWsPort = config.pusher?.ws_port || config.wsPort || 80;
+    const finalWssPort = config.pusher?.wss_port || config.wssPort || 443;
+    const finalUseTLS = config.pusher?.use_tls ?? config.useTLS ?? (typeof window !== 'undefined' ? window.location.protocol === 'https:' : false);
+    
+    console.log('Echo config input:', {
+        wsHost_from_config: wsHost,
+        wsPort_from_config: finalWsPort,
+        wssPort_from_config: finalWssPort,
+        useTLS_from_config: finalUseTLS,
+        current_hostname: typeof window !== 'undefined' ? window.location.hostname : 'N/A',
+        current_protocol: typeof window !== 'undefined' ? window.location.protocol : 'N/A'
+    });
+    
     const reverbConfig = createReverbConfig({
         key: config.pusher?.key || config.key || '',
-        wsHost: config.pusher?.ws_host || config.wsHost || (typeof window !== 'undefined' ? window.location.hostname : 'localhost'),
-        wsPort: config.pusher?.ws_port || config.wsPort || 80,
-        wssPort: config.pusher?.wss_port || config.wssPort || 443,
-        useTLS: config.pusher?.use_tls ?? config.useTLS ?? (typeof window !== 'undefined' ? window.location.protocol === 'https:' : false)
+        wsHost: finalWsHost,
+        wsPort: finalWsPort,
+        wssPort: finalWssPort,
+        useTLS: finalUseTLS
+    });
+    
+    console.log('Creating Echo with config:', {
+        wsHost: reverbConfig.wsHost,
+        wsPort: reverbConfig.wsPort,
+        wssPort: reverbConfig.wssPort,
+        forceTLS: reverbConfig.forceTLS,
+        key: reverbConfig.key ? '***' : 'MISSING',
+        fullUrl: reverbConfig.forceTLS 
+            ? `wss://${reverbConfig.wsHost}:${reverbConfig.wssPort}` 
+            : `ws://${reverbConfig.wsHost}:${reverbConfig.wsPort}`
     });
     
     // Disconnect existing Echo instance if any

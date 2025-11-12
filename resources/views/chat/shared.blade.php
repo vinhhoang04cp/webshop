@@ -113,6 +113,144 @@ $isAdmin = ($mode ?? '') === 'admin';
             flex-direction: column;
         }
         
+        /* Conversations Sidebar */
+        .conversations-sidebar {
+            border: 1px solid #dee2e6;
+        }
+        
+        .conversations-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .conversation-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            position: relative;
+        }
+        
+        .conversation-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .conversation-item.active {
+            background-color: #e7f3ff;
+            border-left: 3px solid #0d6efd;
+        }
+        
+        .conversation-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 5px;
+        }
+        
+        .conversation-item-user {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .conversation-item-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+        
+        .conversation-item-avatar-placeholder {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        
+        .conversation-item-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .conversation-item-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #212529;
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .conversation-item-time {
+            font-size: 0.75rem;
+            color: #6c757d;
+            margin-top: 2px;
+        }
+        
+        .conversation-item-preview {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-top: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .unread-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #dc3545;
+            color: white;
+            border-radius: 12px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            min-width: 20px;
+            text-align: center;
+        }
+        
+        .conversation-item.unread {
+            background-color: #fff3cd;
+        }
+        
+        .conversation-item.unread.active {
+            background-color: #e7f3ff;
+        }
+        
+        /* Notification Toast */
+        .notification-toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            min-width: 300px;
+            max-width: 400px;
+            animation: slideInRight 0.3s ease-out;
+        }
+        
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
         /* Responsive trong dashboard */
         @media (max-width: 768px) {
             .dashboard-content {
@@ -123,19 +261,14 @@ $isAdmin = ($mode ?? '') === 'admin';
                 font-size: 1.3rem;
             }
             
+            .conversations-sidebar {
+                margin-bottom: 15px;
+            }
+            
             .dashboard-content .chat-panel-header {
                 flex-direction: column;
                 gap: 10px;
                 align-items: flex-start;
-            }
-            
-            .dashboard-content .chat-panel-header .toolbar {
-                width: 100%;
-            }
-            
-            .dashboard-content .chat-panel-header .toolbar input {
-                max-width: 100% !important;
-                width: 100%;
             }
         }
     </style>
@@ -166,56 +299,100 @@ $isAdmin = ($mode ?? '') === 'admin';
                 
                 @include('components.alerts')
                 
-                <!-- Chat Panel -->
-                <div class="card chat-panel">
-                    <!-- Panel Header -->
-                    <div class="chat-panel-header">
-                        <div class="room-info">
-                            <span class="text-muted">Phòng chat của Customer ID:</span>
-                            <strong id="roomUserId" class="text-primary">{{ $chatUserId ?: 'Chưa chọn' }}</strong>
-                            @if(!$chatUserId)
-                                <span class="badge bg-warning text-dark ms-2">
-                                    <i class="fas fa-info-circle"></i> Nhập Customer ID để mở phòng
-                                </span>
-                            @endif
-                        </div>
-                        <div class="toolbar">
-                            <input 
-                                id="targetUserId" 
-                                type="number" 
-                                min="1" 
-                                class="form-control form-control-sm" 
-                                placeholder="Customer ID" 
-                                value="{{ $chatUserId ?: '' }}"
-                                style="max-width: 150px; display: inline-block;"
-                            >
-                            <button id="openRoomBtn" class="btn btn-primary btn-sm">
-                                <i class="fas fa-door-open"></i> Open room
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Chat Messages Body -->
-                    <div id="chatBody" class="chat-panel-body">
-                        <div class="text-center py-5">
-                            <i class="fas fa-comment-dots text-muted" style="font-size: 3rem;"></i>
-                            <p class="mt-3 text-muted">Đang tải tin nhắn...</p>
+                <!-- Chat Layout: Conversations Sidebar + Chat Panel -->
+                <div class="row g-3 h-100" style="min-height: 600px;">
+                    <!-- Conversations Sidebar -->
+                    <div class="col-md-4 col-lg-3">
+                        <div class="card h-100 conversations-sidebar">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-comments me-2"></i>Cuộc hội thoại
+                                </h6>
+                                <button id="refreshConversationsBtn" class="btn btn-sm btn-outline-secondary" title="Làm mới">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="conversations-search p-2 border-bottom">
+                                    <input 
+                                        type="text" 
+                                        id="conversationsSearch" 
+                                        class="form-control form-control-sm" 
+                                        placeholder="Tìm kiếm khách hàng..."
+                                    >
+                                </div>
+                                <div id="conversationsList" class="conversations-list" style="max-height: calc(100vh - 300px); overflow-y: auto;">
+                                    <div class="text-center py-4">
+                                        <i class="fas fa-spinner fa-spin text-muted"></i>
+                                        <p class="text-muted small mt-2">Đang tải...</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Chat Input Footer -->
-                    <div class="chat-panel-footer">
-                        <div class="chat-input-group">
-                            <input 
-                                id="messageInput" 
-                                type="text" 
-                                class="form-control" 
-                                placeholder="Chọn phòng chat (Customer ID) trước khi gửi..."
-                                autocomplete="off"
-                            >
-                            <button id="sendBtn" class="btn btn-primary">
-                                <i class="fas fa-paper-plane"></i> Gửi
-                            </button>
+                    <!-- Chat Panel -->
+                    <div class="col-md-8 col-lg-9">
+                        <div class="card chat-panel h-100">
+                            <!-- Panel Header -->
+                            <div class="chat-panel-header">
+                                <div class="room-info">
+                                    <div id="selectedConversationInfo" class="d-flex align-items-center gap-2">
+                                        @if($chatUserId && $chatUser)
+                                            <div class="user-avatar">
+                                                @if($chatUser->avatar)
+                                                    <img src="{{ asset('storage/' . $chatUser->avatar) }}" alt="{{ $chatUser->name }}" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
+                                                @else
+                                                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                        <i class="fas fa-user"></i>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                            <div>
+                                                <strong id="roomUserName">{{ $chatUser->name }}</strong>
+                                                <div class="text-muted small" id="roomUserEmail">{{ $chatUser->email }}</div>
+                                            </div>
+                                        @else
+                                            <div>
+                                                <span class="text-muted">Chọn cuộc hội thoại để bắt đầu chat</span>
+                                            </div>
+                                        @endif
+                                    </div>
+                                    <div id="roomUserId" class="text-muted small" style="display: none;">{{ $chatUserId ?: '' }}</div>
+                                </div>
+                            </div>
+
+                            <!-- Chat Messages Body -->
+                            <div id="chatBody" class="chat-panel-body">
+                                @if($chatUserId)
+                                    <div class="text-center py-5">
+                                        <i class="fas fa-comment-dots text-muted" style="font-size: 3rem;"></i>
+                                        <p class="mt-3 text-muted">Đang tải tin nhắn...</p>
+                                    </div>
+                                @else
+                                    <div class="text-center py-5">
+                                        <i class="fas fa-comments text-muted" style="font-size: 4rem;"></i>
+                                        <p class="mt-3 text-muted">Chọn một cuộc hội thoại từ danh sách bên trái để bắt đầu chat</p>
+                                    </div>
+                                @endif
+                            </div>
+
+                            <!-- Chat Input Footer -->
+                            <div class="chat-panel-footer">
+                                <div class="chat-input-group">
+                                    <input 
+                                        id="messageInput" 
+                                        type="text" 
+                                        class="form-control" 
+                                        placeholder="{{ $chatUserId ? 'Nhập tin nhắn...' : 'Chọn cuộc hội thoại để gửi tin nhắn...' }}"
+                                        autocomplete="off"
+                                        {{ !$chatUserId ? 'disabled' : '' }}
+                                    >
+                                    <button id="sendBtn" class="btn btn-primary" {{ !$chatUserId ? 'disabled' : '' }}>
+                                        <i class="fas fa-paper-plane"></i> Gửi
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -134,21 +134,69 @@ class ChatService
 
     /**
      * Lấy danh sách các cuộc hội thoại (cho admin)
+     * Bao gồm unread count (tin nhắn từ customer chưa được admin đọc)
      */
-    public function getConversationList(): Collection
+    public function getConversationList(?int $adminId = null): Collection
     {
         try {
             // Lấy user_id duy nhất và tin nhắn cuối cùng
             $conversations = ChatMessage::select('user_id')
                 ->selectRaw('MAX(created_at) as last_message_at')
+                ->selectRaw('MAX(id) as last_message_id')
                 ->selectRaw('COUNT(*) as message_count')
-                ->with([
-                    'user:id,name,email,avatar',
-                    'sender:id,name,email,avatar',
-                ])
                 ->groupBy('user_id')
                 ->orderBy('last_message_at', 'desc')
                 ->get();
+
+            // Load user info và tính unread count
+            $conversations = $conversations->map(function ($conv) use ($adminId) {
+                $userId = $conv->user_id;
+
+                // Load user info
+                $user = \App\Models\User::find($userId);
+                $conv->user = $user ? [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'avatar' => $user->avatar,
+                ] : null;
+
+                // Lấy tin nhắn cuối cùng từ admin (nếu có)
+                $lastAdminMessage = ChatMessage::where('user_id', $userId)
+                    ->where('sender_id', $adminId)
+                    ->orderBy('created_at', 'desc')
+                    ->first();
+
+                // Tính unread count: tin nhắn từ customer sau tin nhắn cuối của admin
+                $unreadCount = 0;
+                if ($lastAdminMessage) {
+                    $unreadCount = ChatMessage::where('user_id', $userId)
+                        ->where('sender_id', '!=', $adminId) // Tin nhắn từ customer
+                        ->where('id', '>', $lastAdminMessage->id)
+                        ->count();
+                } else {
+                    // Nếu admin chưa trả lời, đếm tất cả tin nhắn từ customer
+                    $unreadCount = ChatMessage::where('user_id', $userId)
+                        ->where('sender_id', '!=', $adminId)
+                        ->count();
+                }
+
+                $conv->unread_count = $unreadCount;
+
+                // Lấy tin nhắn cuối cùng để hiển thị preview
+                $lastMessage = ChatMessage::where('user_id', $userId)
+                    ->with('sender:id,name')
+                    ->orderBy('created_at', 'desc')
+                    ->first();
+
+                $conv->last_message = $lastMessage ? [
+                    'message' => $lastMessage->message,
+                    'sender_name' => $lastMessage->sender->name ?? 'Unknown',
+                    'created_at' => $lastMessage->created_at,
+                ] : null;
+
+                return $conv;
+            });
 
             return $conversations;
         } catch (\Exception $e) {
