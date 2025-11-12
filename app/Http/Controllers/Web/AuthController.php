@@ -18,10 +18,10 @@ class AuthController extends Controller
         $this->authService = $authService;
     }
 
-    public function showLogin()
+    public function showLogin() // ham hien thi form dang nhap
     {
-        if (Auth::check()) {
-            return redirect()->route('dashboard');
+        if (Auth::check()) { // Auth::check kiem tra nguoi dung da dang nhap chua
+            return redirect()->route('dashboard'); // neu da dang nhap thi chuyen huong den dashboard
         }
 
         return view('auth.login');
@@ -36,19 +36,21 @@ class AuthController extends Controller
         }
     }
 
-    public function login(LoginRequest $request)
+    public function login(LoginRequest $request) // lay du lieu tu form dang nhap
     {
         $user = $this->authService->authenticate($request->email, $request->password);
+        // goi den ham authenticate trong AuthService voi tham so email va password
 
-        if (! $user) {
+        if (! $user) { // neu khong co user tra ve loi
             return back()->withErrors([
-                'email' => 'Thông tin đăng nhập không chính xác.',
-            ])->withInput();
+                'email' => 'Thông tin đăng nhập không chính xác.', // tra ve loi cho truong email
+            ])->withInput(); // giu lai du lieu nguoi dung da nhap
         }
 
-        Auth::login($user);
+        Auth::login($user); // dang nhap nguoi dung
 
         $redirectRoute = $this->authService->getRedirectRoute($user);
+        // goi den ham getRedirectRoute trong AuthService de lay duong dan chuyen huong sau khi dang nhap
 
         return redirect()->route($redirectRoute)->with('success', 'Đăng nhập thành công!');
     }

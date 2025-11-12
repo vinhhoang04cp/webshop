@@ -11,6 +11,7 @@ class CouponController extends Controller
 {
     protected $couponService;
 
+    // injections dependeces cho CouponService
     public function __construct(CouponService $couponService)
     {
         $this->couponService = $couponService;
@@ -19,8 +20,9 @@ class CouponController extends Controller
     public function index(Request $request)
     {
         try {
-            $filters = $request->only(['search']);
+            $filters = $request->only(['search']); // Lấy bộ lọc từ request voi key 'search'
             $coupons = $this->couponService->getCouponsForAdmin($filters, 15);
+            //goi den phuong thuc trong service de lay danh sach coupon voi bo loc va phan trang
 
             return view('dashboard.coupons.index', [
                 'coupons' => $coupons,

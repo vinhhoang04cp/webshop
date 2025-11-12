@@ -29,27 +29,31 @@ class CartService implements CartServiceInterface
      * @return array ['success', 'order', 'discount_amount', 'payment_method']
      */
     public function processCheckout(array $data, $userId = null)
+    // tham so truyen vao la mang du lieu checkout va userId co the la null
     {
         // Lấy cart của user (hỗ trợ cả Web session và API token)
-        $userId = $userId ?? Auth::id();
-        $cart = Cart::where('user_id', $userId)->first();
+        $userId = $userId ?? Auth::id(); // userId neu null thi lay tu Auth
+        $cart = Cart::where('user_id', $userId)->first(); // lay cart theo userId
+
+        // Kiểm tra giỏ hàng có tồn tại và có sản phẩm
 
         if (! $cart || $cart->items()->count() == 0) {
-            throw new EmptyCartException();
+            throw new EmptyCartException(); // neu khong ton tai hoac khong co san pham thi nem loi EmptyCartException
         }
 
-        DB::beginTransaction();
+        DB::beginTransaction(); // bat dau giao dich database
         try {
             // Kiểm tra tồn kho
-            $this->validateStock($cart);
+            $this->validateStock($cart); // goi den ham validateStock de kiem tra ton kho
 
-            $totalAmount = $cart->totalPrice();
-            $discountAmount = 0;
-            $coupon = null;
+            $totalAmount = $cart->totalPrice(); // tinh tong tien trong cart
+            $discountAmount = 0; // khoi tao bien giam gia bang 0
+            $coupon = null; // khoi tao bien coupon bang null
 
             // Xử lý coupon
-            if (! empty($data['coupon_code'])) {
+            if (! empty($data['coupon_code'])) { // neu co coupon_code trong du lieu checkout
                 $result = $this->applyCoupon($data['coupon_code'], $totalAmount);
+                // goi den ham applyCoupon de ap dung coupon
                 $coupon = $result['coupon'];
                 $discountAmount = $result['discount'];
                 $totalAmount = $result['total'];

@@ -48,13 +48,20 @@ class SecurityHeadersMiddleware
 
         // Content Security Policy (CSP)
         // Định nghĩa nguồn tài nguyên nào được phép load
+        // Lấy WebSocket host từ env hoặc từ request
+        $wsHost = env('VITE_REVERB_HOST', env('PUSHER_HOST', $request->getHost()));
+        $wsPort = env('VITE_REVERB_PORT', env('PUSHER_PORT', 6001));
+        $useTLS = env('VITE_REVERB_SCHEME', 'https') === 'https' || $request->secure();
+        $wsScheme = $useTLS ? 'wss' : 'ws';
+        $wsUrl = "{$wsScheme}://{$wsHost}:{$wsPort}";
+
         $csp = implode('; ', [
             "default-src 'self'", // Mặc định chỉ cho phép từ cùng origin
             "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com", // Nguồn script
             "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com https://unpkg.com", // Nguồn CSS
             "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com", // Nguồn font
             "img-src 'self' data: https: blob:", // Nguồn hình ảnh
-            "connect-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com", // API endpoints + CDN
+            "connect-src 'self' {$wsUrl} https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com", // API endpoints + WebSocket + CDN
             "frame-ancestors 'none'", // Không cho phép nhúng trong iframe
         ]);
         $response->headers->set('Content-Security-Policy', $csp);
