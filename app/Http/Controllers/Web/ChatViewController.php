@@ -35,22 +35,36 @@ class ChatViewController extends Controller
         // Lưu ý: token này chỉ phục vụ cho giao diện chat và có thể thu hồi khi cần.
         $apiToken = $currentUser->createToken('chat_ui')->plainTextToken;
 
+        // Cấu hình Reverb/Pusher lấy từ env (render sang client)
+        // Ưu tiên env variables, nếu không có thì dùng domain thực tế từ request
+        $defaultHost = request()->getHost();
+        // Loại bỏ port nếu có trong host (ví dụ: localhost:8080 -> localhost)
+        if (strpos($defaultHost, ':') !== false) {
+            $defaultHost = explode(':', $defaultHost)[0];
+        }
+
+        $pusherConfig = [
+            'key' => env('VITE_REVERB_APP_KEY', env('PUSHER_APP_KEY', '')),
+            'cluster' => env('VITE_REVERB_APP_CLUSTER', env('PUSHER_APP_CLUSTER', 'mt1')),
+            'ws_host' => env('VITE_REVERB_HOST', env('PUSHER_HOST', $defaultHost)),
+            'ws_port' => env('VITE_REVERB_PORT', env('PUSHER_PORT', 6001)),
+            'wss_port' => env('VITE_REVERB_PORT', env('PUSHER_PORT', 6001)),
+            'encrypted' => (bool) env('PUSHER_ENCRYPTED', true),
+            'use_tls' => (bool) (env('VITE_REVERB_SCHEME', request()->getScheme()) === 'https'),
+        ];
+
+        // Loại bỏ port khỏi ws_host nếu có
+        if (strpos($pusherConfig['ws_host'], ':') !== false) {
+            $pusherConfig['ws_host'] = explode(':', $pusherConfig['ws_host'])[0];
+        }
+
         return view($view, [
             'currentUser' => $currentUser,
             'chatUser' => $chatUser,
             'chatUserId' => $chatUserId,
             'apiToken' => $apiToken,
             'mode' => $currentUser->canAccessDashboard() ? 'admin' : 'user',
-            // Cấu hình Reverb/Pusher lấy từ env (render sang client)
-            'pusher' => [
-                'key' => env('VITE_REVERB_APP_KEY', env('PUSHER_APP_KEY', '')),
-                'cluster' => env('VITE_REVERB_APP_CLUSTER', env('PUSHER_APP_CLUSTER', 'mt1')),
-                'ws_host' => env('VITE_REVERB_HOST', env('PUSHER_HOST', request()->getHost())),
-                'ws_port' => env('VITE_REVERB_PORT', env('PUSHER_PORT', 6001)),
-                'wss_port' => env('VITE_REVERB_PORT', env('PUSHER_PORT', 6001)),
-                'encrypted' => (bool) env('PUSHER_ENCRYPTED', true),
-                'use_tls' => (bool) (env('VITE_REVERB_SCHEME', 'https') === 'https'),
-            ],
+            'pusher' => $pusherConfig,
         ]);
     }
 }

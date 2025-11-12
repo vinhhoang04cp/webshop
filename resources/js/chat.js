@@ -278,9 +278,13 @@ class ChatManager {
             // Subscribe to private channel
             this.channel = this.echoInstance.private(`chat.user.${this.chatUserId}`);
             
+            console.log(`Subscribed to channel: chat.user.${this.chatUserId}`);
+            
             // Listen for new messages
             this.channel.listen('.NewChatMessage', (event) => {
+                console.log('NewChatMessage event received:', event);
                 if (event?.message) {
+                    console.log('Rendering new message:', event.message);
                     this.renderMessage(event.message);
                     
                     // For admin: show notification if message is from customer
@@ -289,8 +293,12 @@ class ChatManager {
                         this.showNotification(event.message, this.chatUserId, senderName);
                         this.updateConversationUnread(this.chatUserId, true);
                     }
+                } else {
+                    console.warn('NewChatMessage event received but no message data:', event);
                 }
             });
+            
+            console.log('Event listener registered for .NewChatMessage');
             
             // For admin: also listen to all chat channels to detect new messages from any customer
             if (this.config.mode === 'admin') {
@@ -314,16 +322,21 @@ class ChatManager {
     }
     
     setupEchoEvents() {
-        if (!this.echoInstance?.connector?.pusher?.connection) return;
+        if (!this.echoInstance?.connector?.pusher?.connection) {
+            console.warn('Cannot setup Echo events: connection not available');
+            return;
+        }
         
         const connection = this.echoInstance.connector.pusher.connection;
         
         connection.bind('connected', () => {
+            console.log('WebSocket connected successfully');
             this.updateConnectionStatus('connected');
             this.reconnectAttempts = 0;
         });
         
         connection.bind('disconnected', () => {
+            console.warn('WebSocket disconnected');
             this.updateConnectionStatus('disconnected');
             this.attemptReconnect();
         });
@@ -332,6 +345,21 @@ class ChatManager {
             console.error('Pusher connection error:', error);
             this.updateConnectionStatus('error');
         });
+        
+        connection.bind('state_change', (states) => {
+            console.log('WebSocket state changed:', states);
+        });
+        
+        // Log subscription events
+        if (this.channel) {
+            this.channel.subscribed(() => {
+                console.log('Channel subscribed successfully');
+            });
+            
+            this.channel.error((error) => {
+                console.error('Channel subscription error:', error);
+            });
+        }
     }
 
     disconnectEcho() {
