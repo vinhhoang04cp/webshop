@@ -71,10 +71,20 @@
      */
     function createReverbConfig(config) {
         const reverbKey = config.pusher?.key || '';
+        // Ưu tiên sử dụng config từ server, không fallback về localhost
         const reverbHost = config.pusher?.ws_host || window.location.hostname;
         const reverbPort = Number(config.pusher?.ws_port || 80);
         const reverbWssPort = Number(config.pusher?.wss_port || 443);
         const useTLS = config.pusher?.use_tls ?? (window.location.protocol === 'https:');
+        
+        // Debug log
+        console.log('Reverb Config:', {
+            key: reverbKey ? '***' : 'MISSING',
+            wsHost: reverbHost,
+            wsPort: reverbPort,
+            wssPort: reverbWssPort,
+            useTLS: useTLS
+        });
         
         return {
             broadcaster: 'reverb',

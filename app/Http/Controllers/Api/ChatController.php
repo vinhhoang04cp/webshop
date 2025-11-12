@@ -40,7 +40,17 @@ class ChatController extends Controller
             );
 
             return response()->json($messages, 200);
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            return response()->json([
+                'message' => 'Bạn không có quyền xem lịch sử chat này.',
+            ], 403);
         } catch (\Exception $e) {
+            \Log::error('Chat history error', [
+                'user_id' => $userId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
             return response()->json([
                 'message' => 'Không thể lấy lịch sử chat.',
                 'error' => config('app.debug') ? $e->getMessage() : null,
